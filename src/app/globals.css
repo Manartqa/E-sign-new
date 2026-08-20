@@ -37,6 +37,15 @@
   --color-action-reject: #ef4444;
   --color-action-return: #f59e0b;
 
+  /* --- Toast accents (modals-overlays 8:514) ------------------------- */
+  --color-info: #0ea5e9;
+
+  /* --- PDF viewer chrome (PDF Viewer/Fullscreen 145:43) -------------- */
+  --color-viewer-toolbar: #2d3748;
+  --color-viewer-field: #1a202c;
+  --color-viewer-border: #4a5568;
+  --color-viewer-muted: #a0aec0;
+
   /* --- Layout metrics ------------------------------------------------ */
   --spacing-sidebar: 240px;
   --spacing-topbar: 83px;
