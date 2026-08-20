@@ -1,14 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LabeledSelect } from "@/components/common";
 import { STATUS_OPTIONS } from "@/constant/status";
 import { APPLICATION_TYPE_OPTIONS } from "@/mocks/applications.mock";
 import type { ApplicationListParams } from "@/types/app/applications";
@@ -38,13 +32,22 @@ export function ApplicationListHeader({
 
   useEffect(() => setDraft(filters), [filters]);
 
+  const typeOptions = useMemo(
+    () => [{ value: "all", label: "ทุกประเภท" }, ...APPLICATION_TYPE_OPTIONS],
+    [],
+  );
+  const statusOptions = useMemo(
+    () => [{ value: "all", label: "ทั้งหมด" }, ...STATUS_OPTIONS],
+    [],
+  );
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         onApply({ ...draft, page: 1 });
       }}
-      className="flex flex-col gap-4 rounded-2xl border bg-card p-6 lg:flex-row lg:items-end"
+      className="flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:p-6 lg:flex-row lg:items-end"
     >
       <div className="flex flex-col gap-1.5 lg:w-80">
         <label htmlFor="keyword" className="text-sm font-medium text-[#334155]">
@@ -63,57 +66,35 @@ export function ApplicationListHeader({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#334155]">ประเภท</label>
-          <Select
-            value={draft.type ?? "all"}
-            onValueChange={(value) =>
-              setDraft((d) => ({ ...d, type: value ?? "all" }))
-            }
-          >
-            <SelectTrigger className="w-full rounded-lg border bg-[#f8fafc]">
-              <SelectValue placeholder="ทุกประเภท" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">ทุกประเภท</SelectItem>
-              {APPLICATION_TYPE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <LabeledSelect
+          label="ประเภท"
+          className="flex-1"
+          labelClassName="text-[#334155]"
+          triggerClassName="bg-[#f8fafc]"
+          value={draft.type ?? "all"}
+          options={typeOptions}
+          onChange={(value) => setDraft((d) => ({ ...d, type: value }))}
+        />
 
         {!lockStatus && (
-          <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-sm font-medium text-[#334155]">สถานะ</label>
-            <Select
-              value={draft.status ?? "all"}
-              onValueChange={(value) =>
-                setDraft((d) => ({
-                  ...d,
-                  status: (value ?? "all") as ApplicationListParams["status"],
-                }))
-              }
-            >
-              <SelectTrigger className="w-full rounded-lg border bg-[#f8fafc]">
-                <SelectValue placeholder="ทั้งหมด" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <LabeledSelect
+            label="สถานะ"
+            className="flex-1"
+            labelClassName="text-[#334155]"
+            triggerClassName="bg-[#f8fafc]"
+            value={draft.status ?? "all"}
+            options={statusOptions}
+            onChange={(value) =>
+              setDraft((d) => ({
+                ...d,
+                status: value as ApplicationListParams["status"],
+              }))
+            }
+          />
         )}
 
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#334155]">ช่วงวันที่</label>
+          <span className="text-sm font-medium text-[#334155]">ช่วงวันที่</span>
           <button
             type="button"
             disabled

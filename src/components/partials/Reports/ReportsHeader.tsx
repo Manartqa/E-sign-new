@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Table } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LabeledSelect } from "@/components/common";
 import {
   FISCAL_YEAR_OPTIONS,
   QUARTER_OPTIONS,
@@ -37,72 +31,40 @@ export function ReportsHeader({
         e.preventDefault();
         onApply(draft);
       }}
-      className="flex flex-col gap-4 rounded-2xl border bg-card p-6 lg:flex-row lg:items-end"
+      className="flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:p-6 lg:flex-row lg:items-end"
     >
-      <div className="flex flex-1 flex-col gap-1.5">
-        <label className="text-[13px] font-semibold text-black">ปีงบประมาณ</label>
-        <Select
-          value={draft.fiscalYear}
-          onValueChange={(value) =>
-            setDraft((d) => ({ ...d, fiscalYear: value ?? undefined }))
-          }
-        >
-          <SelectTrigger className="w-full rounded-lg border p-2.5 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FISCAL_YEAR_OPTIONS.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <LabeledSelect
+        label="ปีงบประมาณ"
+        className="flex-1"
+        labelClassName="text-[13px] font-semibold text-black"
+        triggerClassName="p-2.5 text-xs"
+        value={draft.fiscalYear ?? ""}
+        options={FISCAL_YEAR_OPTIONS.map((year) => ({
+          value: year,
+          label: year,
+        }))}
+        onChange={(value) => setDraft((d) => ({ ...d, fiscalYear: value }))}
+      />
 
-      <div className="flex flex-1 flex-col gap-1.5">
-        <label className="text-[13px] font-semibold text-black">ไตรมาส</label>
-        <Select
-          value={draft.quarter}
-          onValueChange={(value) =>
-            setDraft((d) => ({ ...d, quarter: value ?? undefined }))
-          }
-        >
-          <SelectTrigger className="w-full rounded-lg border p-2.5 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {QUARTER_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <LabeledSelect
+        label="ไตรมาส"
+        className="flex-1"
+        labelClassName="text-[13px] font-semibold text-black"
+        triggerClassName="p-2.5 text-xs"
+        value={draft.quarter ?? "all"}
+        options={QUARTER_OPTIONS}
+        onChange={(value) => setDraft((d) => ({ ...d, quarter: value }))}
+      />
 
-      <div className="flex flex-1 flex-col gap-1.5">
-        <label className="text-[13px] font-semibold text-black">
-          ประเภทรายงาน
-        </label>
-        <Select
-          value={draft.reportType}
-          onValueChange={(value) =>
-            setDraft((d) => ({ ...d, reportType: value ?? undefined }))
-          }
-        >
-          <SelectTrigger className="w-full rounded-lg border p-2.5 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {REPORT_TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <LabeledSelect
+        label="ประเภทรายงาน"
+        className="flex-1"
+        labelClassName="text-[13px] font-semibold text-black"
+        triggerClassName="p-2.5 text-xs"
+        value={draft.reportType ?? "summary"}
+        options={REPORT_TYPE_OPTIONS}
+        onChange={(value) => setDraft((d) => ({ ...d, reportType: value }))}
+      />
 
       <div className="flex items-center gap-2">
         <button

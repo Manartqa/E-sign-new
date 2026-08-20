@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { RotateCcw, X, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LabeledSelect } from "@/components/common";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { ReturnFormValues } from "@/types/app/applications";
@@ -38,7 +32,7 @@ export function ReturnForEditModal({
   const isReject = mode === "reject";
   const reasons = isReject ? REJECT_REASONS : RETURN_REASONS;
 
-  const [reason, setReason] = useState(reasons[0]);
+  const [reason, setReason] = useState<string>(reasons[0]);
   const [notes, setNotes] = useState("");
 
   const canSubmit = notes.trim() !== "" && !isSubmitting;
@@ -63,26 +57,14 @@ export function ReturnForEditModal({
         </header>
 
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-black">
-              {isReject ? "ระบุสาเหตุที่ปฏิเสธ" : "ระบุสาเหตุที่ส่งคืน"}
-            </label>
-            <Select
-              value={reason}
-              onValueChange={(value) => setReason(value ?? reasons[0])}
-            >
-              <SelectTrigger className="w-full rounded-lg border p-3">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {reasons.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <LabeledSelect
+            label={isReject ? "ระบุสาเหตุที่ปฏิเสธ" : "ระบุสาเหตุที่ส่งคืน"}
+            labelClassName="text-sm font-semibold text-black"
+            triggerClassName="p-3"
+            value={reason}
+            options={reasons.map((item) => ({ value: item, label: item }))}
+            onChange={setReason}
+          />
 
           <div className="flex flex-col gap-2">
             <label htmlFor="return-notes" className="text-sm font-semibold text-black">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronDown, LogOut, User } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -19,10 +19,16 @@ import { BREADCRUMBS, getInitials } from "../AdminLayout.config";
 interface HeaderProps {
   user: UserProfile | null;
   hasNotification?: boolean;
+  /** opens the sidebar drawer; the trigger only shows below lg */
+  onOpenMenu?: () => void;
 }
 
 /** Figma: 🧩 Components › TopBar/detail (5 states) + Profile Dropdown Card */
-export function Header({ user, hasNotification = true }: HeaderProps) {
+export function Header({
+  user,
+  hasNotification = true,
+  onOpenMenu,
+}: HeaderProps) {
   const pathname = usePathname();
   const trail =
     BREADCRUMBS[pathname] ??
@@ -30,8 +36,20 @@ export function Header({ user, hasNotification = true }: HeaderProps) {
     ["หน้าหลัก"];
 
   return (
-    <header className="flex h-topbar shrink-0 items-center justify-between border-b bg-card px-8 py-4">
-      <nav aria-label="breadcrumb" className="flex items-center gap-1 text-sm">
+    <header className="flex h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-4 sm:px-8">
+      <button
+        type="button"
+        onClick={onOpenMenu}
+        aria-label="เปิดเมนู"
+        className="shrink-0 text-muted-foreground lg:hidden"
+      >
+        <Menu className="size-6" aria-hidden />
+      </button>
+
+      <nav
+        aria-label="breadcrumb"
+        className="flex min-w-0 flex-1 items-center gap-1 text-sm"
+      >
         {trail.map((crumb, index) => (
           <span key={crumb} className="flex items-center gap-1">
             {index > 0 && <span className="font-bold text-slate-400">/</span>}
@@ -40,7 +58,7 @@ export function Header({ user, hasNotification = true }: HeaderProps) {
         ))}
       </nav>
 
-      <div className="flex items-center gap-5">
+      <div className="flex shrink-0 items-center gap-3 sm:gap-5">
         <button
           type="button"
           aria-label="การแจ้งเตือน"
@@ -59,7 +77,7 @@ export function Header({ user, hasNotification = true }: HeaderProps) {
                 {getInitials(user?.name ?? "")}
               </AvatarFallback>
             </Avatar>
-            <span className="flex flex-col items-start gap-px">
+            <span className="hidden flex-col items-start gap-px md:flex">
               <span className="text-sm font-bold text-foreground">
                 {user?.name ?? "—"}
               </span>
@@ -67,7 +85,10 @@ export function Header({ user, hasNotification = true }: HeaderProps) {
                 {user?.email ?? ""}
               </span>
             </span>
-            <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
+            <ChevronDown
+              className="hidden size-3.5 text-muted-foreground md:block"
+              aria-hidden
+            />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
