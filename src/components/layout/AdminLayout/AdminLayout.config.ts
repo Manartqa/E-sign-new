@@ -16,9 +16,15 @@ export interface NavItem {
   badgeKey?: "pending";
 }
 
-/** Figma: 🧩 Components › Sidebar/Navigation (5 active states) */
+/**
+ * Figma: 🧩 Components › Sidebar/Navigation (5 active states).
+ *
+ * Order deviates from the design on purpose: Figma puts รายงานภาพรวม first,
+ * but it sits below รอการอนุมัติ here at the user's request, so the two
+ * คำขอ entries lead — which also matches /applications being the landing
+ * route after sign-in.
+ */
 export const NAV_ITEMS: NavItem[] = [
-  { href: ROUTES.reports, label: "รายงานภาพรวม", icon: BarChart3 },
   { href: ROUTES.applications, label: "คำขอทั้งหมด", icon: FileText },
   {
     href: ROUTES.applicationsPending,
@@ -26,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Clock,
     badgeKey: "pending",
   },
+  { href: ROUTES.reports, label: "รายงานภาพรวม", icon: BarChart3 },
   { href: ROUTES.profile, label: "โปรไฟล์ผู้ใช้งาน", icon: User },
   { href: ROUTES.settings, label: "ตั้งค่าระบบ", icon: Settings },
 ];
