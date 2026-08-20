@@ -1,18 +1,9 @@
-export interface ReportKpiResponse {
-  key: string;
-  label: string;
-  value: number;
-  deltaPercent: number;
-}
+import type { ReportSummary } from "@/types/app/reports";
 
-export interface ReportSeriesPointResponse {
-  label: string;
-  value: number;
-}
-
-export interface ReportSummaryResponse {
-  kpis: ReportKpiResponse[];
-  byMonth: ReportSeriesPointResponse[];
-  byStatus: ReportSeriesPointResponse[];
-  byType: ReportSeriesPointResponse[];
-}
+/**
+ * GET /api/reports/summary?year&q
+ *
+ * The handoff names the endpoint but not its body; this mirrors what the
+ * dashboard renders (Figma reports-dashboard 8:222).
+ */
+export type ReportSummaryResponse = ReportSummary;
