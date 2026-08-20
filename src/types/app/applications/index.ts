@@ -64,39 +64,92 @@ export interface TimelineEvent {
   status: "COMPLETED" | "PENDING";
 }
 
-export interface Attachment {
-  id: string;
-  name: string;
-  fileName: string;
-  sizeBytes: number;
-  uploadedAt: string;
-  url: string;
-}
-
 export interface ApplicationField {
   label: string;
   value: string;
 }
 
-export interface ApplicationDetail extends ApplicationItem {
-  sections: Record<string, ApplicationField[]>;
-  attachments: Attachment[];
-  timeline: TimelineEvent[];
+/** A row of the attached-documents table (Figma 83:3204). */
+export interface DocumentItem {
+  id: string;
+  name: string;
+  /** วันที่เอกสาร (ISO) */
+  documentDate: string;
+  /** วันหมดอายุ (ISO) */
+  expiryDate: string;
+  /** สถานที่ออกเอกสาร */
+  issuedPlace: string;
+  fileUrl: string;
 }
 
-/** The 8 detail tabs, in Figma order. */
+export interface DetailSection {
+  title: string;
+  fields: ApplicationField[];
+}
+
+export interface DetailTableColumn {
+  key: string;
+  label: string;
+  width?: string;
+}
+
+/**
+ * The eight detail tabs render four distinct panel shapes in Figma
+ * (tabs-content 106:7034): label/value sections, a data table, a card grid,
+ * and a timeline. Panels are data-driven so a tab's content can change with
+ * the backend without touching a component.
+ */
+export type DetailPanel =
+  | { kind: "fields"; sections: DetailSection[]; documents?: DocumentItem[] }
+  | { kind: "table"; columns: DetailTableColumn[]; rows: Record<string, string>[] }
+  | { kind: "cards"; cards: DetailSection[] }
+  | { kind: "timeline"; events: TimelineEvent[] };
+
+/**
+ * Tab labels are taken from the tab bar itself, not the frame names — they
+ * disagree (the frame `app-detail/รายการที่ขออนุญาต` renders the tab
+ * `รายการอาวุธ/วัตถุดิบ`). The bar is what a user actually reads.
+ */
 export const DETAIL_TABS = [
-  { key: "applicant", label: "ข้อมูลผู้ยื่น-บริษัท" },
+  { key: "applicant", label: "ข้อมูลผู้ยื่น/บริษัท" },
   { key: "factory", label: "ข้อมูลโรงงาน" },
-  { key: "persons", label: "บุคคลและผู้มีอำนาจ" },
+  { key: "people", label: "บุคคลและผู้มีอำนาจ" },
   { key: "buildings", label: "อาคารและสถานที่" },
-  { key: "requestedItems", label: "รายการที่ขออนุญาต" },
+  { key: "permits", label: "รายการอาวุธ/วัตถุดิบ" },
   { key: "project", label: "ข้อมูลโครงการ" },
-  { key: "attachments", label: "เอกสารแนบอื่นๆ" },
+  { key: "docs", label: "เอกสารแนบอื่นๆ" },
   { key: "history", label: "ประวัติการดำเนินการ" },
 ] as const;
 
 export type DetailTabKey = (typeof DETAIL_TABS)[number]["key"];
+
+/** The `ข้อมูลคำขอ` summary card above the tabs (Figma 156:1991). */
+export interface ApplicationSummary {
+  /** ประเภทใบอนุญาต */
+  licenseType: string;
+  /** เลขรับคำขอ */
+  requestNo: string;
+  /** วันที่ยื่นคำขอ (ISO) */
+  submittedAt: string;
+  /** เลขที่รับเรื่อง */
+  receiptNo: string;
+  /** วันที่รับเรื่อง (ISO) */
+  receivedAt: string;
+  /** เลขที่นำเรียน */
+  submissionNo: string;
+  /** วันที่นำเรียน (ISO) */
+  submissionDate: string;
+  /** ผู้ประกอบการ */
+  operatorName: string;
+  status: ApplicationStatus;
+  /** ตัวอย่างใบอนุญาต — opens the PDF viewer (Phase 5B) */
+  licensePreviewUrl?: string;
+}
+
+export interface ApplicationDetail extends ApplicationItem {
+  summary: ApplicationSummary;
+  panels: Record<DetailTabKey, DetailPanel>;
+}
 
 export type ActionMode = "approve" | "reject" | "return";
 

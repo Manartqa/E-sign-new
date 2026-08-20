@@ -18,7 +18,8 @@ import type {
   ApplicationStats,
 } from "@/types/app/applications";
 import { APPLICATION_STATUS } from "@/constant/status";
-import { MOCK_APPLICATIONS, buildMockDetail } from "@/mocks/applications.mock";
+import { MOCK_APPLICATIONS } from "@/mocks/applications.mock";
+import { buildMockDetail } from "@/mocks/applicationDetail.mock";
 
 const DEFAULT_LIMIT = 10;
 
@@ -115,12 +116,7 @@ export async function getApplicationDetail(
   }
   const res = await getApplicationDetailApi(id);
   const raw = res.data.data;
-  return {
-    ...toItem(raw),
-    sections: raw.sections ?? {},
-    attachments: raw.attachments ?? [],
-    timeline: raw.timeline ?? [],
-  };
+  return { ...toItem(raw), summary: raw.summary, panels: raw.panels };
 }
 
 export async function approveApplication(id: string, body: ApproveRequest) {
