@@ -52,6 +52,9 @@ export interface ApplicationListParams {
   keyword?: string;
   status?: ApplicationStatus | "all";
   type?: string | "all";
+  /** ช่วงวันที่รับเรื่อง — inclusive ISO bounds, both optional */
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   limit?: number;
 }

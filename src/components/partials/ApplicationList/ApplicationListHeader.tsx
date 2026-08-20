@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Search } from "lucide-react";
-import { LabeledSelect } from "@/components/common";
+import { Search } from "lucide-react";
+import { DateRangePicker, LabeledSelect } from "@/components/common";
 import { STATUS_OPTIONS } from "@/constant/status";
 import { APPLICATION_TYPE_OPTIONS } from "@/mocks/applications.mock";
 import type { ApplicationListParams } from "@/types/app/applications";
@@ -18,10 +18,19 @@ interface ApplicationListHeaderProps {
 /**
  * Figma: app-list › filter card (6:330).
  *
- * The design's fourth control, `ช่วงวันที่`, is rendered disabled: neither the
- * handoff API table nor the mock service exposes a date-range parameter, so
- * there is nothing to filter on yet. Wire it up when the backend adds one.
+ * The design's fourth control, `ช่วงวันที่`, filters on วันที่รับเรื่อง. The
+ * handoff API table has no date-range parameter, so `dateFrom`/`dateTo` are
+ * this app's own names — confirm them when the real endpoint lands.
  */
+/**
+ * The select primitive ships a 32px trigger (`data-[size=default]:h-8`),
+ * which sits short next to the 42px search box and date button in this bar —
+ * hence the height override, which has to carry the data-size prefix to win
+ * over the base rule.
+ */
+const FILTER_TRIGGER =
+  "bg-[#f8fafc] p-2.5 data-[size=default]:h-[42px]";
+
 export function ApplicationListHeader({
   filters,
   onApply,
@@ -70,7 +79,7 @@ export function ApplicationListHeader({
           label="ประเภท"
           className="flex-1"
           labelClassName="text-[#334155]"
-          triggerClassName="bg-[#f8fafc]"
+          triggerClassName={FILTER_TRIGGER}
           value={draft.type ?? "all"}
           options={typeOptions}
           onChange={(value) => setDraft((d) => ({ ...d, type: value }))}
@@ -81,7 +90,7 @@ export function ApplicationListHeader({
             label="สถานะ"
             className="flex-1"
             labelClassName="text-[#334155]"
-            triggerClassName="bg-[#f8fafc]"
+            triggerClassName={FILTER_TRIGGER}
             value={draft.status ?? "all"}
             options={statusOptions}
             onChange={(value) =>
@@ -95,15 +104,17 @@ export function ApplicationListHeader({
 
         <div className="flex flex-1 flex-col gap-1.5">
           <span className="text-sm font-medium text-[#334155]">ช่วงวันที่</span>
-          <button
-            type="button"
-            disabled
-            title="ยังไม่รองรับ — รอ API รับพารามิเตอร์ช่วงวันที่"
-            className="flex items-center justify-between rounded-lg border bg-[#f8fafc] p-2.5 text-sm text-slate-400"
-          >
-            เลือกช่วงวันที่
-            <CalendarDays className="size-3.5" aria-hidden />
-          </button>
+          <DateRangePicker
+            value={{ from: draft.dateFrom, to: draft.dateTo }}
+            onChange={(range) =>
+              setDraft((d) => ({
+                ...d,
+                dateFrom: range.from ?? "",
+                dateTo: range.to ?? "",
+              }))
+            }
+            triggerClassName="h-[42px]"
+          />
         </div>
       </div>
 

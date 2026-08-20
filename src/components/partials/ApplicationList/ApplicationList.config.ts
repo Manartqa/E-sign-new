@@ -14,6 +14,8 @@ export const DEFAULT_FILTERS: ApplicationListParams = {
   keyword: "",
   type: "all",
   status: "all",
+  dateFrom: "",
+  dateTo: "",
   page: 1,
   limit: 10,
 };

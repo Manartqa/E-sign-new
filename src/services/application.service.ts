@@ -61,6 +61,9 @@ export async function getApplicationList(
         return false;
       if (params.type && params.type !== "all" && item.type !== params.type)
         return false;
+      // ช่วงวันที่ filters on วันที่รับเรื่อง, the date shown in the table
+      if (params.dateFrom && item.receivedAt < params.dateFrom) return false;
+      if (params.dateTo && item.receivedAt > params.dateTo) return false;
       if (
         keyword &&
         !`${item.requestNo} ${item.receiptNo} ${item.operatorName} ${item.applicantName} ${item.typeName}`

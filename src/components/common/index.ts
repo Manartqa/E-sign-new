@@ -4,6 +4,7 @@ export * from "./ActionButton";
 export * from "./TabNav";
 export * from "./Timeline";
 export * from "./LabeledSelect";
+export * from "./DateRangePicker";
 export * from "./Pagination";
 export * from "./RelativeTime";
 export * from "./states";
