@@ -10,6 +10,11 @@ export interface ApplicationResponse {
   id: string;
   type: string;
   typeName: string;
+  /** columns present in the Figma table but absent from the handoff sample */
+  requestNo: string;
+  receiptNo: string;
+  receivedAt: string;
+  operatorName: string;
   applicant: ApplicantResponse;
   status: ApplicationStatus;
   submittedAt: string;

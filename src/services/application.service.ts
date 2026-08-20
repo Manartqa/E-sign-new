@@ -5,13 +5,19 @@ import {
   getApplicationsApi,
   signApplicationApi,
 } from "@/lib/api/api-main";
-import type { ApproveRequest, SignRequest } from "@/types/api/main/application";
+import type {
+  ApplicationResponse,
+  ApproveRequest,
+  SignRequest,
+} from "@/types/api/main/application";
 import type {
   ApplicationDetail,
   ApplicationItem,
   ApplicationListParams,
   ApplicationListResult,
+  ApplicationStats,
 } from "@/types/app/applications";
+import { APPLICATION_STATUS } from "@/constant/status";
 import { MOCK_APPLICATIONS, buildMockDetail } from "@/mocks/applications.mock";
 
 const DEFAULT_LIMIT = 10;
@@ -23,20 +29,15 @@ const DEFAULT_LIMIT = 10;
  * hooks/ or components/ needs to change.
  */
 
-function toItem(raw: {
-  id: string;
-  type: string;
-  typeName: string;
-  applicant: { name: string; nationalId: string };
-  status: ApplicationItem["status"];
-  submittedAt: string;
-  updatedAt: string;
-  assignedOfficer: string;
-}): ApplicationItem {
+function toItem(raw: ApplicationResponse): ApplicationItem {
   return {
     id: raw.id,
     type: raw.type,
     typeName: raw.typeName,
+    requestNo: raw.requestNo,
+    receiptNo: raw.receiptNo,
+    receivedAt: raw.receivedAt,
+    operatorName: raw.operatorName,
     applicantName: raw.applicant.name,
     applicantNationalId: raw.applicant.nationalId,
     status: raw.status,
@@ -61,7 +62,7 @@ export async function getApplicationList(
         return false;
       if (
         keyword &&
-        !`${item.id} ${item.applicantName} ${item.typeName}`
+        !`${item.requestNo} ${item.receiptNo} ${item.operatorName} ${item.applicantName} ${item.typeName}`
           .toLowerCase()
           .includes(keyword)
       )
@@ -83,6 +84,25 @@ export async function getApplicationList(
     total: res.data.total ?? 0,
     page: res.data.page ?? page,
     limit: res.data.limit ?? limit,
+  };
+}
+
+/** Feeds the four stat cards above the table (Figma 6:293). */
+export async function getApplicationStats(): Promise<ApplicationStats> {
+  const list = USE_MOCK
+    ? MOCK_APPLICATIONS
+    : (await getApplicationsApi({ limit: 1000 })).data.data.map(toItem);
+
+  const countBy = (status: ApplicationItem["status"]) =>
+    list.filter((item) => item.status === status).length;
+
+  return {
+    total: list.length,
+    pending: countBy(APPLICATION_STATUS.PENDING_APPROVAL),
+    approved: countBy(APPLICATION_STATUS.APPROVED),
+    rejectedOrReturned:
+      countBy(APPLICATION_STATUS.REJECTED) +
+      countBy(APPLICATION_STATUS.RETURNED),
   };
 }
 

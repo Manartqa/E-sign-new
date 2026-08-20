@@ -4,12 +4,24 @@ import type {
   ApplicationItem,
 } from "@/types/app/applications";
 
+/** Request types as worded in the Figma table (171:1843). */
 const TYPES = [
+  {
+    type: "sell_in_kingdom",
+    typeName: "คำขออนุญาตขายหรือจำหน่ายในราชอาณาจักร (อ.15)",
+  },
   { type: "factory_license", typeName: "ใบอนุญาตประกอบกิจการโรงงาน" },
   { type: "factory_expand", typeName: "ใบอนุญาตขยายโรงงาน" },
   { type: "machine_register", typeName: "การจดทะเบียนเครื่องจักร" },
   { type: "hazard_material", typeName: "ใบอนุญาตวัตถุอันตราย" },
-  { type: "building_permit", typeName: "ใบอนุญาตก่อสร้างอาคารโรงงาน" },
+];
+
+const OPERATORS = [
+  "บริษัท แมกซ์ อาร์ม อินดัสตรี จำกัด",
+  "บริษัท ไทยอุตสาหกรรม จำกัด",
+  "บริษัท เอเชีย พลาสติก จำกัด",
+  "ห้างหุ้นส่วนจำกัด สยามเอ็นจิเนียริ่ง",
+  "บริษัท ดีเฟนซ์ เทค (ประเทศไทย) จำกัด",
 ];
 
 const APPLICANTS = [
@@ -23,10 +35,10 @@ const APPLICANTS = [
 ];
 
 const OFFICERS = [
+  "ส.อ.หญิง พิชารภรณ์ ผดุงขวัญ",
   "นางสาวมาลี รักงาน",
   "นายประสิทธิ์ ตั้งใจ",
   "นางสุดา ทองดี",
-  "นายกิตติ ศรีวิไล",
 ];
 
 const STATUSES: ApplicationStatus[] = [
@@ -38,7 +50,14 @@ const STATUSES: ApplicationStatus[] = [
   APPLICATION_STATUS.RETURNED,
 ];
 
-/** Deterministic — no Math.random, so SSR and client agree. */
+/**
+ * Deterministic ordering (no Math.random), but `updatedAt` is anchored to the
+ * real clock so the `วันที่อัปเดต` column reads as "N ชั่วโมงที่แล้ว" instead of
+ * drifting into the future. Safe against hydration mismatch because the list is
+ * only ever produced inside a React Query `queryFn`, which does not run during
+ * SSR — the table renders its loading state on the server.
+ */
+const NOW = Date.now();
 export const MOCK_APPLICATIONS: ApplicationItem[] = Array.from(
   { length: 47 },
   (_, i) => {
@@ -50,11 +69,16 @@ export const MOCK_APPLICATIONS: ApplicationItem[] = Array.from(
       id: `APP-2567-${String(1234 + i).padStart(6, "0")}`,
       type: t.type,
       typeName: t.typeName,
+      requestNo: `${40 + i}/2569`,
+      receiptNo: `อ${String(1424 + i).padStart(5, "0")}/2569`,
+      receivedAt: `2026-${month}-${day}T08:00:00Z`,
+      operatorName: OPERATORS[i % OPERATORS.length],
       applicantName: a.name,
       applicantNationalId: a.nationalId,
       status: STATUSES[i % STATUSES.length],
-      submittedAt: `2024-${month}-${day}T09:30:00Z`,
-      updatedAt: `2024-${month}-${day}T14:22:00Z`,
+      submittedAt: `2026-${month}-${day}T09:30:00Z`,
+      // spread backwards over the last few days
+      updatedAt: new Date(NOW - (i + 1) * 2 * 3_600_000).toISOString(),
       assignedOfficer: OFFICERS[i % OFFICERS.length],
     };
   },
@@ -71,6 +95,9 @@ export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
     sections: {
       applicant: [
         { label: "ชื่อผู้ยื่นคำขอ", value: item.applicantName },
+        { label: "ผู้ประกอบการ", value: item.operatorName },
+        { label: "เลขที่คำขอ", value: item.requestNo },
+        { label: "เลขรับเรื่อง", value: item.receiptNo },
         { label: "เลขประจำตัวประชาชน / นิติบุคคล", value: item.applicantNationalId },
         { label: "ประเภทคำขอ", value: item.typeName },
         { label: "โทรศัพท์", value: "02-123-4567" },
