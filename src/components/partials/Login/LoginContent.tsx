@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constant/routes";
@@ -11,8 +11,6 @@ import { LoginHero } from "./LoginHero";
 
 export default function LoginContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? ROUTES.applications;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,7 +31,11 @@ export default function LoginContent() {
       setErrorMessage(LOGIN_ERROR_MESSAGE);
       return;
     }
-    router.replace(callbackUrl);
+    // Always land on the application list. The proxy appends a `callbackUrl`
+    // when it bounces an unauthenticated request, but that value is
+    // attacker-controllable (/login?callbackUrl=https://evil.com), so it is
+    // deliberately ignored rather than passed to router.replace.
+    router.replace(ROUTES.applications);
   };
 
   const handleSso = () => {
