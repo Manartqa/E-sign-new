@@ -52,3 +52,19 @@ export const BREADCRUMBS: Record<string, string[]> = {
 export function getInitials(name: string): string {
   return name.trim().slice(0, 2);
 }
+
+/**
+ * The nav href that owns `pathname`, or undefined when none does.
+ *
+ * Plain prefix matching would light up both คำขอทั้งหมด and รอการอนุมัติ on
+ * /applications/pending, so the longest matching href wins: /applications
+ * still owns the detail pages (/applications/[id]) but yields the nested
+ * route to its own entry.
+ */
+export function getActiveNavHref(pathname: string): string | undefined {
+  return NAV_ITEMS.map((item) => item.href)
+    .filter(
+      (href) => pathname === href || pathname.startsWith(`${href}/`),
+    )
+    .sort((a, b) => b.length - a.length)[0];
+}

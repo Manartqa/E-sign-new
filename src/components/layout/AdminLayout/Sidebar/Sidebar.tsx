@@ -11,6 +11,7 @@ import {
   APP_NAME,
   APP_SUBTITLE,
   NAV_ITEMS,
+  getActiveNavHref,
   getInitials,
 } from "../AdminLayout.config";
 
@@ -31,6 +32,7 @@ interface SidebarProps {
  */
 export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const activeHref = getActiveNavHref(pathname);
 
   return (
     <>
@@ -75,7 +77,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
 
         <nav className="flex flex-col gap-1">
           {NAV_ITEMS.map(({ href, label, icon: Icon, badgeKey }) => {
-            const isActive = pathname === href || pathname.startsWith(`${href}/`);
+            const isActive = href === activeHref;
             const badge = badgeKey ? counts?.[badgeKey] : undefined;
 
             return (

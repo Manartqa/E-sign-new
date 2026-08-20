@@ -12,6 +12,7 @@ import {
   StatusBadge,
 } from "@/components/common";
 import { ROUTES } from "@/constant/routes";
+import { APPLICATION_STATUS } from "@/constant/status";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationItem } from "@/types/app/applications";
@@ -143,25 +144,52 @@ export function ApplicationTable({
                   {item.assignedOfficer}
                 </td>
                 <td className={CELL}>
-                  <div className="flex items-center justify-end gap-4">
-                    <Link
-                      href={ROUTES.applicationDetail(item.id)}
-                      aria-label={"ดูรายละเอียด " + item.requestNo}
-                      className="text-muted-foreground hover:text-brand-navy-mid"
-                    >
-                      <Eye className="size-[18px]" aria-hidden />
-                    </Link>
-                    {/* edit / return / pdf are driven from the detail page — Phase 5 */}
-                    <Pencil className="size-[18px] text-slate-300" aria-hidden />
-                    <RotateCcw
-                      className="size-[18px] text-slate-300"
-                      aria-hidden
-                    />
-                    <FileText
-                      className="size-[18px] text-slate-300"
-                      aria-hidden
-                    />
-                  </div>
+                  {/*
+                    Figma 171:2032 colours the row actions — eye #1b3a6b,
+                    edit #22c55e, rotate-ccw #ef4444 — but only while the
+                    application is still open. Once it is อนุมัติแล้ว there is
+                    nothing left to act on, so those icons stay muted. eye and
+                    pdf are always available, so both stay navy on every
+                    status.
+                    (rotate-ccw is red in the design, not the amber
+                    --color-action-return used by the detail-page button.)
+                  */}
+                  {(() => {
+                    const isOpen = item.status !== APPLICATION_STATUS.APPROVED;
+
+                    return (
+                      <div className="flex items-center justify-end gap-4">
+                        <Link
+                          href={ROUTES.applicationDetail(item.id)}
+                          aria-label={"ดูรายละเอียด " + item.requestNo}
+                          className="text-brand-navy-mid hover:opacity-70"
+                        >
+                          <Eye className="size-[18px]" aria-hidden />
+                        </Link>
+                        {/* edit / return / pdf are driven from the detail page — Phase 5 */}
+                        <Pencil
+                          className={cn(
+                            "size-[18px]",
+                            isOpen ? "text-action-approve" : "text-slate-300",
+                          )}
+                          aria-hidden
+                        />
+                        <RotateCcw
+                          className={cn(
+                            "size-[18px]",
+                            isOpen ? "text-action-reject" : "text-slate-300",
+                          )}
+                          aria-hidden
+                        />
+                        {/* the pdf icon is always available — every status
+                            can be printed — and shares the eye's navy */}
+                        <FileText
+                          className="size-[18px] text-brand-navy-mid"
+                          aria-hidden
+                        />
+                      </div>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}

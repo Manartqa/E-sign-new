@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton, StatusBadge } from "@/components/common";
+import { APPLICATION_STATUS } from "@/constant/status";
 import { formatThaiShortDate } from "@/lib/format";
 import type { ActionMode, ApplicationSummary } from "@/types/app/applications";
 
@@ -25,15 +26,21 @@ export function ApplicationDetailSummary({
   onAction,
   onPreviewLicense,
 }: ApplicationDetailSummaryProps) {
+  // an approved application is signed and closed — nothing left to approve,
+  // reject or send back, so the whole action group goes away
+  const canAct = summary.status !== APPLICATION_STATUS.APPROVED;
+
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-[#f8fafc] px-5 py-3.5">
         <h2 className="text-[15px] font-bold text-brand-navy-mid">ข้อมูลคำขอ</h2>
-        <div className="flex flex-wrap items-center gap-3">
-          <ActionButton action="return" onClick={() => onAction("return")} />
-          <ActionButton action="reject" onClick={() => onAction("reject")} />
-          <ActionButton action="approve" onClick={() => onAction("approve")} />
-        </div>
+        {canAct && (
+          <div className="flex flex-wrap items-center gap-3">
+            <ActionButton action="return" onClick={() => onAction("return")} />
+            <ActionButton action="reject" onClick={() => onAction("reject")} />
+            <ActionButton action="approve" onClick={() => onAction("approve")} />
+          </div>
+        )}
       </header>
 
       <div className="flex flex-col px-5 py-4">
