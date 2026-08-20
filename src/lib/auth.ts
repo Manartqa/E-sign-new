@@ -3,10 +3,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { USE_MOCK } from "@/lib/env";
 import { MOCK_PROFILE } from "@/mocks/profile.mock";
 
+/** Type this password in mock mode to see the login error state. */
+export const MOCK_REJECT_PASSWORD = "wrong";
+
 /**
  * Credentials flow against POST /api/auth/login (see the handoff API table).
  * While NEXT_PUBLIC_USE_MOCK is on, any non-empty username/password signs in
- * as the mock officer.
+ * as the mock officer — except the password `wrong`, which is rejected so the
+ * form's error state stays reachable without a backend.
  */
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -22,6 +26,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.pwd) return null;
 
         if (USE_MOCK) {
+          if (credentials.pwd === MOCK_REJECT_PASSWORD) return null;
           return {
             id: MOCK_PROFILE.id,
             name: MOCK_PROFILE.name,
