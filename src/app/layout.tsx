@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Noto_Sans_Thai } from "next/font/google";
 import { NextAuthProvider } from "@/context/auth/NextAuthProvider";
 import { QueryProvider } from "@/context/query/QueryProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <NextAuthProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </QueryProvider>
         </NextAuthProvider>
       </body>
     </html>

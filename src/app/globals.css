@@ -14,6 +14,7 @@
   --color-brand-navy: #0a1f44;        /* sidebar background            */
   --color-brand-blue: #4a7fd4;        /* active nav item / primary     */
   --color-brand-blue-muted: #89b4f0;  /* inactive nav label on navy    */
+  --color-brand-navy-mid: #1b3a6b;    /* active tab + timeline heading */
   --color-brand-on-navy: #f9fbff;     /* title text on navy            */
 
   /* --- Status palette (Status Badge, 6 variants) --------------------- */
