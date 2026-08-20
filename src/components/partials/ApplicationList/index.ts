@@ -1,4 +1,5 @@
 export { default as ApplicationListContent } from "./ApplicationListContent";
+export * from "./ApplicationBulkBar";
 export * from "./ApplicationListHeader";
 export * from "./ApplicationStatCards";
 export * from "./ApplicationTable";

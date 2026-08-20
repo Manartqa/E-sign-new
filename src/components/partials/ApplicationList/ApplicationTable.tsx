@@ -151,8 +151,8 @@ export function ApplicationTable({
                     nothing left to act on, so those icons stay muted. eye and
                     pdf are always available, so both stay navy on every
                     status.
-                    (rotate-ccw is red in the design, not the amber
-                    --color-action-return used by the detail-page button.)
+                    (rotate-ccw is red in the design, but follows the amber
+                    ส่งคืนเพื่อแก้ไข button instead, at the user's request.)
                   */}
                   {(() => {
                     const isOpen = item.status !== APPLICATION_STATUS.APPROVED;
@@ -177,7 +177,7 @@ export function ApplicationTable({
                         <RotateCcw
                           className={cn(
                             "size-[18px]",
-                            isOpen ? "text-action-reject" : "text-slate-300",
+                            isOpen ? "text-action-return" : "text-slate-300",
                           )}
                           aria-hidden
                         />
