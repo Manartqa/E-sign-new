@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ProfileFieldProps {
   label: string;
@@ -15,12 +16,18 @@ interface ProfileFieldProps {
   maskedValue?: string;
   /** renders a copy-to-clipboard button instead of the eye */
   copyable?: boolean;
+  /** renders an input (or, with `options`, a select) instead of static text */
+  editable?: boolean;
+  onChange?: (value: string) => void;
+  /** paired with `editable` to render a <select> instead of a text input */
+  options?: readonly string[];
 }
 
 /**
  * Figma: app-Profile › read-only field (116:1861 and friends).
- * Every field on this page is display-only — editing happens behind the
- * แก้ไขข้อมูล button, which has no designed screen yet.
+ * `editable` swaps the static display for a real input/select, driven by
+ * the แก้ไขข้อมูล toggle in ProfileContent — every field takes it except
+ * อีเมล, which stays display-only there regardless of edit mode.
  */
 export function ProfileField({
   label,
@@ -29,6 +36,9 @@ export function ProfileField({
   value,
   maskedValue,
   copyable,
+  editable,
+  onChange,
+  options,
 }: ProfileFieldProps) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,41 +63,70 @@ export function ProfileField({
         {required && <span className="text-destructive">*</span>}
       </div>
 
-      <div className="flex items-center justify-between gap-2 rounded-lg border bg-[#f8fafc] px-3 py-2.5">
-        <span className="min-w-0 truncate text-[13px] text-foreground">
-          {shown}
-        </span>
-
-        {maskedValue && (
-          <button
-            type="button"
-            onClick={() => setRevealed((v) => !v)}
-            aria-label={revealed ? `ซ่อน${label}` : `แสดง${label}`}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+      {editable ? (
+        options ? (
+          <select
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            aria-label={label}
+            className="rounded-lg border bg-white px-3 py-2.5 text-[13px] text-foreground outline-none focus:border-brand-navy-mid"
           >
-            {revealed ? (
-              <EyeOff className="size-3.5" aria-hidden />
-            ) : (
-              <Eye className="size-3.5" aria-hidden />
-            )}
-          </button>
-        )}
+            {options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            aria-label={label}
+            className="rounded-lg border bg-white px-3 py-2.5 text-[13px] text-foreground outline-none focus:border-brand-navy-mid"
+          />
+        )
+      ) : (
+        <div
+          className={cn(
+            "flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5",
+            "bg-[#f8fafc]",
+          )}
+        >
+          <span className="min-w-0 truncate text-[13px] text-foreground">
+            {shown}
+          </span>
 
-        {copyable && (
-          <button
-            type="button"
-            onClick={() => void handleCopy()}
-            aria-label={`คัดลอก${label}`}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
-          >
-            {copied ? (
-              <Check className="size-3.5 text-action-approve" aria-hidden />
-            ) : (
-              <Copy className="size-3.5" aria-hidden />
-            )}
-          </button>
-        )}
-      </div>
+          {maskedValue && (
+            <button
+              type="button"
+              onClick={() => setRevealed((v) => !v)}
+              aria-label={revealed ? `ซ่อน${label}` : `แสดง${label}`}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              {revealed ? (
+                <EyeOff className="size-3.5" aria-hidden />
+              ) : (
+                <Eye className="size-3.5" aria-hidden />
+              )}
+            </button>
+          )}
+
+          {copyable && (
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              aria-label={`คัดลอก${label}`}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              {copied ? (
+                <Check className="size-3.5 text-action-approve" aria-hidden />
+              ) : (
+                <Copy className="size-3.5" aria-hidden />
+              )}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

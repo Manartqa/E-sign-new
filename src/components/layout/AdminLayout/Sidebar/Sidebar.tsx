@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserProfile } from "@/types/app/profile";
 import { cn } from "@/lib/utils";
 import {
@@ -178,7 +178,10 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
               isCollapsed && "justify-center",
             )}
           >
-            <Avatar className="size-10">
+            <Avatar className="size-10 border-2 border-white">
+              {user?.avatarUrl && (
+                <AvatarImage src={user.avatarUrl} alt={user?.name ?? ""} />
+              )}
               <AvatarFallback className="bg-sidebar-accent text-sm text-white">
                 {getInitials(user?.name ?? "")}
               </AvatarFallback>

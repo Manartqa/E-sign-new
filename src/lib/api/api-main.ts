@@ -40,3 +40,6 @@ export const getReportSummaryApi = (params?: Record<string, unknown>) =>
 
 export const getProfileApi = () =>
   mainClient.get<ApiResponse<UserResponse>>("/api/me");
+
+export const updateProfileApi = (body: Partial<UserResponse>) =>
+  mainClient.patch<ApiResponse<UserResponse>>("/api/me", body);

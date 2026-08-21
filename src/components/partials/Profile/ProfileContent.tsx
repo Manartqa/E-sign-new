@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
   AlertCircle,
   Calendar,
+  Camera,
   Clock,
   Lock,
   Mail,
@@ -11,11 +13,12 @@ import {
   Shield,
   ShieldCheck,
   User,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ErrorState, LoadingState } from "@/components/common";
-import { useProfile } from "@/hooks/profile";
+import { useProfile, useUpdateProfile } from "@/hooks/profile";
 import {
   formatPhone,
   formatThaiLongDate,
@@ -23,7 +26,15 @@ import {
   maskEmail,
   maskPhone,
 } from "@/lib/format";
+import { PREFIX_OPTIONS, type UserProfile } from "@/types/app/profile";
 import { ProfileField } from "./ProfileField";
+
+type EditableFields = Pick<
+  UserProfile,
+  "prefix" | "firstName" | "lastName" | "position" | "phone"
+> & { avatarUrl?: string };
+
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 function Card({
   icon,
@@ -48,9 +59,62 @@ function Card({
 
 export default function ProfileContent() {
   const { profile, isLoading, isError } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const [form, setForm] = useState<EditableFields | null>(null);
+  // saveEditing reads this instead of the closured `form` so it always acts
+  // on the value from the render that's actually on screen when clicked
+  const formRef = useRef(form);
+  formRef.current = form;
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   if (isError) return <ErrorState />;
   if (isLoading || !profile) return <LoadingState rows={6} />;
+
+  const isEditing = form !== null;
+
+  const startEditing = () =>
+    setForm({
+      prefix: profile.prefix,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      position: profile.position,
+      phone: profile.phone,
+      avatarUrl: profile.avatarUrl,
+    });
+
+  const updateField =
+    (field: keyof EditableFields) => (value: string | undefined) =>
+      setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+
+  const handleAvatarFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("กรุณาเลือกไฟล์รูปภาพ");
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("ไฟล์รูปภาพต้องมีขนาดไม่เกิน 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => updateField("avatarUrl")(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const saveEditing = async () => {
+    const current = formRef.current;
+    if (!current) return;
+    try {
+      await updateProfile.mutateAsync({
+        ...current,
+        name: `${current.prefix}${current.firstName} ${current.lastName}`,
+      });
+      setForm(null);
+      toast.success("บันทึกข้อมูลโปรไฟล์แล้ว");
+    } catch {
+      toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
 
   const notImplemented = (what: string) =>
     toast.info(`${what} — ยังไม่มีแบบใน Figma`);
@@ -63,11 +127,56 @@ export default function ProfileContent() {
       </div>
 
       <section className="flex flex-wrap items-center gap-5 rounded-xl border bg-card p-6 shadow-[0_2px_4px_rgba(0,0,0,0.06)]">
-        <Avatar className="size-20">
-          <AvatarFallback className="bg-brand-navy-mid text-xl text-white">
-            {profile.firstName.slice(0, 2)}
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative shrink-0">
+          <Avatar className="size-20">
+            {(() => {
+              // while editing, `form.avatarUrl` is the only source of truth
+              // (it's seeded from profile.avatarUrl at startEditing) — an
+              // explicit clear must not fall back to the still-saved value
+              const avatarUrl = isEditing ? form?.avatarUrl : profile.avatarUrl;
+              return (
+                avatarUrl && <AvatarImage src={avatarUrl} alt={profile.name} />
+              );
+            })()}
+            <AvatarFallback className="bg-brand-navy-mid text-xl text-white">
+              {profile.firstName.slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+
+          {isEditing && (
+            <>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleAvatarFile(e.target.files?.[0])}
+              />
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                aria-label="อัปโหลดรูปโปรไฟล์"
+                className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border-2 border-white bg-brand-navy-mid text-white hover:bg-brand-navy-hover"
+              >
+                <Camera className="size-3.5" aria-hidden />
+              </button>
+
+              {form?.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateField("avatarUrl")(undefined);
+                    if (avatarInputRef.current) avatarInputRef.current.value = "";
+                  }}
+                  aria-label="ลบรูปโปรไฟล์"
+                  className="absolute top-0 right-0 flex size-6 items-center justify-center rounded-full border-2 border-white bg-destructive text-white hover:opacity-90"
+                >
+                  <X className="size-3" aria-hidden />
+                </button>
+              )}
+            </>
+          )}
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <p className="text-lg font-bold text-foreground">{profile.name}</p>
@@ -78,28 +187,74 @@ export default function ProfileContent() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => notImplemented("แก้ไขข้อมูลโปรไฟล์")}
-          className="flex items-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
-        >
-          <Pencil className="size-3.5" aria-hidden />
-          แก้ไขข้อมูล
-        </button>
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setForm(null)}
+              disabled={updateProfile.isPending}
+              className="flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50"
+            >
+              <X className="size-3.5" aria-hidden />
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveEditing()}
+              disabled={updateProfile.isPending}
+              className="flex items-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover disabled:opacity-60"
+            >
+              {updateProfile.isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={startEditing}
+            className="flex items-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
+          >
+            <Pencil className="size-3.5" aria-hidden />
+            แก้ไขข้อมูล
+          </button>
+        )}
       </section>
 
       <Card
         icon={<User className="size-4 text-foreground" aria-hidden />}
         title="ข้อมูลส่วนตัว"
       >
-        <ProfileField label="ยศ/ตำแหน่ง" required value={profile.prefix} />
+        <ProfileField
+          label="ยศ/ตำแหน่ง"
+          required
+          value={form?.prefix ?? profile.prefix}
+          editable={isEditing}
+          onChange={updateField("prefix")}
+          options={PREFIX_OPTIONS}
+        />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <ProfileField label="ชื่อ" required value={profile.firstName} />
-          <ProfileField label="นามสกุล" required value={profile.lastName} />
+          <ProfileField
+            label="ชื่อ"
+            required
+            value={form?.firstName ?? profile.firstName}
+            editable={isEditing}
+            onChange={updateField("firstName")}
+          />
+          <ProfileField
+            label="นามสกุล"
+            required
+            value={form?.lastName ?? profile.lastName}
+            editable={isEditing}
+            onChange={updateField("lastName")}
+          />
         </div>
 
-        <ProfileField label="ตำแหน่ง" value={profile.position} />
+        <ProfileField
+          label="ตำแหน่ง"
+          value={form?.position ?? profile.position}
+          editable={isEditing}
+          onChange={updateField("position")}
+        />
 
         <ProfileField
           label="อีเมล"
@@ -113,8 +268,14 @@ export default function ProfileContent() {
           label="เบอร์โทรศัพท์"
           required
           icon={<Phone className="size-3.5 text-muted-foreground" aria-hidden />}
-          value={formatPhone(profile.phone)}
-          maskedValue={maskPhone(profile.phone)}
+          value={
+            isEditing && form
+              ? form.phone
+              : formatPhone(profile.phone)
+          }
+          maskedValue={isEditing ? undefined : maskPhone(profile.phone)}
+          editable={isEditing}
+          onChange={updateField("phone")}
         />
       </Card>
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,7 +86,10 @@ export function Header({
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-2">
             <Avatar className="size-8">
-              <AvatarFallback className="bg-secondary text-xs">
+              {user?.avatarUrl && (
+                <AvatarImage src={user.avatarUrl} alt={user?.name ?? ""} />
+              )}
+              <AvatarFallback className="bg-brand-blue text-xs text-white">
                 {getInitials(user?.name ?? "")}
               </AvatarFallback>
             </Avatar>
@@ -108,13 +111,23 @@ export function Header({
             align="end"
             className="w-70 rounded-xl p-0 shadow-[0_8px_24px_-4px_rgba(0,0,0,0.1)]"
           >
-            <div className="flex flex-col gap-0.5 p-4">
-              <span className="text-sm font-bold text-foreground">
-                {user?.name ?? "—"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {user?.email ?? ""}
-              </span>
+            <div className="flex items-center gap-3 p-4">
+              <Avatar className="size-10 shrink-0">
+                {user?.avatarUrl && (
+                  <AvatarImage src={user.avatarUrl} alt={user?.name ?? ""} />
+                )}
+                <AvatarFallback className="bg-brand-navy-mid text-sm text-white">
+                  {getInitials(user?.name ?? "")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-sm font-bold text-foreground">
+                  {user?.name ?? "—"}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user?.email ?? ""}
+                </span>
+              </div>
             </div>
             <DropdownMenuSeparator className="m-0" />
             <DropdownMenuItem
