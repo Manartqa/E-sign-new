@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { DateRangePicker, LabeledSelect } from "@/components/common";
+import {
+  DateRangePicker,
+  FILTER_TRIGGER,
+  LabeledSelect,
+} from "@/components/common";
 import { STATUS_OPTIONS } from "@/constant/status";
 import { APPLICATION_TYPE_OPTIONS } from "@/mocks/applications.mock";
 import type { ApplicationListParams } from "@/types/app/applications";
@@ -22,15 +26,6 @@ interface ApplicationListHeaderProps {
  * handoff API table has no date-range parameter, so `dateFrom`/`dateTo` are
  * this app's own names — confirm them when the real endpoint lands.
  */
-/**
- * The select primitive ships a 32px trigger (`data-[size=default]:h-8`),
- * which sits short next to the 42px search box and date button in this bar —
- * hence the height override, which has to carry the data-size prefix to win
- * over the base rule.
- */
-const FILTER_TRIGGER =
-  "bg-[#f8fafc] p-2.5 data-[size=default]:h-[42px]";
-
 export function ApplicationListHeader({
   filters,
   onApply,
@@ -63,11 +58,16 @@ export function ApplicationListHeader({
           ค้นหา
         </label>
         <div className="flex items-center gap-2.5 rounded-lg border bg-[#f8fafc] p-2.5">
-          <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <Search
+            className="size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
           <input
             id="keyword"
             value={draft.keyword ?? ""}
-            onChange={(e) => setDraft((d) => ({ ...d, keyword: e.target.value }))}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, keyword: e.target.value }))
+            }
             placeholder="ค้นหาชื่อผู้ยื่น, เลขที่คำขอ..."
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
           />

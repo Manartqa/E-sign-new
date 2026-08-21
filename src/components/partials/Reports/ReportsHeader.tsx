@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Table } from "lucide-react";
-import { LabeledSelect } from "@/components/common";
+import { FILTER_TRIGGER, LabeledSelect } from "@/components/common";
 import {
   FISCAL_YEAR_OPTIONS,
   QUARTER_OPTIONS,
@@ -36,8 +36,8 @@ export function ReportsHeader({
       <LabeledSelect
         label="ปีงบประมาณ"
         className="flex-1"
-        labelClassName="text-[13px] font-semibold text-black"
-        triggerClassName="p-2.5 text-xs"
+        labelClassName="text-[#334155]"
+        triggerClassName={FILTER_TRIGGER}
         value={draft.fiscalYear ?? ""}
         options={FISCAL_YEAR_OPTIONS.map((year) => ({
           value: year,
@@ -49,8 +49,8 @@ export function ReportsHeader({
       <LabeledSelect
         label="ไตรมาส"
         className="flex-1"
-        labelClassName="text-[13px] font-semibold text-black"
-        triggerClassName="p-2.5 text-xs"
+        labelClassName="text-[#334155]"
+        triggerClassName={FILTER_TRIGGER}
         value={draft.quarter ?? "all"}
         options={QUARTER_OPTIONS}
         onChange={(value) => setDraft((d) => ({ ...d, quarter: value }))}
@@ -59,8 +59,8 @@ export function ReportsHeader({
       <LabeledSelect
         label="ประเภทรายงาน"
         className="flex-1"
-        labelClassName="text-[13px] font-semibold text-black"
-        triggerClassName="p-2.5 text-xs"
+        labelClassName="text-[#334155]"
+        triggerClassName={FILTER_TRIGGER}
         value={draft.reportType ?? "summary"}
         options={REPORT_TYPE_OPTIONS}
         onChange={(value) => setDraft((d) => ({ ...d, reportType: value }))}

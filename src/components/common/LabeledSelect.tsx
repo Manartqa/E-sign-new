@@ -15,6 +15,15 @@ export interface SelectOption {
   label: string;
 }
 
+/**
+ * Shared trigger styling for every page's filter bar, so the report bar and the
+ * application-list bar stay identical. The select primitive ships a 32px
+ * trigger (`data-[size=default]:h-8`), which sits short next to a 42px search
+ * box or date button — hence the height override, which must carry the
+ * data-size prefix to win over the base rule.
+ */
+export const FILTER_TRIGGER = "bg-[#f8fafc] p-2.5 data-[size=default]:h-[42px]";
+
 interface LabeledSelectProps {
   label: string;
   value: string;

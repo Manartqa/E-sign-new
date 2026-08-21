@@ -105,7 +105,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-4 border-t border-sidebar-border pt-5">
+        <div className="flex flex-col gap-4 border-t border-sidebar-border pt-5">
           <div className="flex items-center gap-3">
             <Avatar className="size-10">
               <AvatarFallback className="bg-sidebar-accent text-sm text-white">

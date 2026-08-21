@@ -1,14 +1,27 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+/** default 10 first, per the app's standard page size */
+export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 
 interface PaginationProps {
   page: number;
   limit: number;
   total: number;
   onPageChange: (page: number) => void;
+  /** when provided, renders the "แสดงหน้าละ N รายการ" size selector */
+  onLimitChange?: (limit: number) => void;
+  pageSizeOptions?: readonly number[];
   className?: string;
 }
 
@@ -26,6 +39,8 @@ export function Pagination({
   limit,
   total,
   onPageChange,
+  onLimitChange,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
   className,
 }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -39,10 +54,40 @@ export function Pagination({
         className,
       )}
     >
-      <p className="text-muted-foreground">
-        แสดง {formatNumber(from)}–{formatNumber(to)} จาก {formatNumber(total)}{" "}
-        รายการ
-      </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+        {onLimitChange && (
+          <div className="flex items-center gap-2">
+            <span>แสดงหน้าละ</span>
+            <Select
+              value={String(limit)}
+              onValueChange={(next) =>
+                onLimitChange(Number(next ?? limit) || limit)
+              }
+            >
+              <SelectTrigger
+                size="sm"
+                aria-label="จำนวนรายการต่อหน้า"
+                className="w-[74px]"
+              >
+                <SelectValue>{formatNumber(limit)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {formatNumber(size)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>รายการ</span>
+          </div>
+        )}
+
+        <p>
+          แสดง {formatNumber(from)}–{formatNumber(to)} จาก {formatNumber(total)}{" "}
+          รายการ
+        </p>
+      </div>
 
       <div className="flex items-center gap-1">
         <button

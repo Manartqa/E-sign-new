@@ -33,9 +33,10 @@ export default function ApplicationListContent({
   variant = "all",
 }: ApplicationListContentProps) {
   const isPending = variant === "pending";
-  const defaults = (
-    isPending ? PENDING_FILTERS : DEFAULT_FILTERS
-  ) as Record<string, unknown>;
+  const defaults = (isPending ? PENDING_FILTERS : DEFAULT_FILTERS) as Record<
+    string,
+    unknown
+  >;
 
   const { filterValues, persist, reset } = useSearchPersist(
     `${APPLICATION_LIST_STORAGE_KEY}-${variant}`,
@@ -139,7 +140,12 @@ export default function ApplicationListContent({
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
         onToggleSelectAll={toggleSelectAll}
-        onPageChange={(nextPage) => applyFilters({ ...filters, page: nextPage })}
+        onPageChange={(nextPage) =>
+          applyFilters({ ...filters, page: nextPage })
+        }
+        onLimitChange={(nextLimit) =>
+          applyFilters({ ...filters, limit: nextLimit, page: 1 })
+        }
       />
 
       <BulkConfirmModal
