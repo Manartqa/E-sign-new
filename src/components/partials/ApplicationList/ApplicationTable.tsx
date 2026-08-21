@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,7 +18,11 @@ import { APPLICATION_STATUS } from "@/constant/status";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationItem } from "@/types/app/applications";
+import { PDFViewer } from "@/components/partials/ApplicationDetail";
 import { TABLE_COLUMNS } from "./ApplicationList.config";
+
+/** The signed PDF only exists once the application is อนุมัติแล้ว. */
+const APPROVED_LICENSE_URL = "/mock/license-approved.pdf";
 
 interface ApplicationTableProps {
   items: ApplicationItem[];
@@ -66,6 +71,7 @@ export function ApplicationTable({
 }: ApplicationTableProps) {
   const allSelected =
     items.length > 0 && items.every((item) => selectedIds.includes(item.id));
+  const [previewItem, setPreviewItem] = useState<ApplicationItem | null>(null);
 
   return (
     <div className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -229,14 +235,23 @@ export function ApplicationTable({
                             />
                             {/* the signed pdf exists only once the application
                             is อนุมัติแล้ว, so the icon is its #ff4d4f red (Ant
-                            "file-pdf", Figma 4184:430930) only then — otherwise
-                            there is nothing to view, so it greys out */}
-                            <PdfIcon
-                              className={cn(
-                                "size-[18px]",
-                                isOpen ? "text-slate-300" : "text-[#ff4d4f]",
-                              )}
-                            />
+                            "file-pdf", Figma 4184:430930) and opens the signed
+                            file only then — otherwise there is nothing to
+                            view, so it greys out and stays inert */}
+                            <button
+                              type="button"
+                              disabled={isOpen}
+                              onClick={() => setPreviewItem(item)}
+                              aria-label={"ดูไฟล์ใบอนุญาต " + item.requestNo}
+                              className="disabled:cursor-not-allowed"
+                            >
+                              <PdfIcon
+                                className={cn(
+                                  "size-[18px]",
+                                  isOpen ? "text-slate-300" : "text-[#ff4d4f]",
+                                )}
+                              />
+                            </button>
                           </div>
                         );
                       })()}
@@ -255,6 +270,15 @@ export function ApplicationTable({
             onLimitChange={onLimitChange}
           />
         </div>
+      )}
+
+      {previewItem && (
+        <PDFViewer
+          open
+          fileName={previewItem.typeName + ".pdf"}
+          fileUrl={APPROVED_LICENSE_URL}
+          onClose={() => setPreviewItem(null)}
+        />
       )}
     </div>
   );

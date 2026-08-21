@@ -4,6 +4,12 @@ import type {
   DocumentItem,
 } from "@/types/app/applications";
 
+/** ตัวอย่างใบอนุญาต — a preview of the license, shown regardless of status. */
+const LICENSE_PREVIEW_URL = "/mock/license-approved.pdf";
+
+/** เอกสารแนบประกอบคำขอ — sample preview for every attached supporting document. */
+const DOCUMENT_ATTACHMENT_URL = "/mock/document-attachment-sample.pdf";
+
 /** Figma 83:3204 — the attached-documents table shared by several panels. */
 function buildDocuments(item: ApplicationItem): DocumentItem[] {
   const base = Date.parse(item.receivedAt);
@@ -16,7 +22,7 @@ function buildDocuments(item: ApplicationItem): DocumentItem[] {
       documentDate: new Date(base - 30 * 24 * 3_600_000).toISOString(),
       expiryDate: new Date(base + year).toISOString(),
       issuedPlace: "จังหวัดยโสธร ออกโดย: อำเภอไทยเจริญ",
-      fileUrl: "/mock/doc-registration.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: "DOC-2",
@@ -33,7 +39,7 @@ function buildDocuments(item: ApplicationItem): DocumentItem[] {
       documentDate: new Date(base - 60 * 24 * 3_600_000).toISOString(),
       expiryDate: new Date(base + year).toISOString(),
       issuedPlace: "จังหวัดยโสธร ออกโดย: อำเภอคำเขื่อนแก้ว",
-      fileUrl: "/mock/doc-moa.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: "DOC-4",
@@ -56,7 +62,7 @@ function buildFactoryDocuments(): DocumentItem[] {
       documentDate: "2026-01-01",
       expiryDate: "2028-05-11",
       issuedPlace: "จังหวัดอุบลราชธานี ออกโดย: อำเภอเมืองอุบลราชธานี",
-      fileUrl: "/mock/doc-factory-license.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: "FDOC-2",
@@ -64,7 +70,7 @@ function buildFactoryDocuments(): DocumentItem[] {
       documentDate: "2026-02-13",
       expiryDate: "2027-02-28",
       issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
-      fileUrl: "/mock/doc-factory-map.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: "FDOC-3",
@@ -72,7 +78,7 @@ function buildFactoryDocuments(): DocumentItem[] {
       documentDate: "2026-02-13",
       expiryDate: "2027-01-09",
       issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
-      fileUrl: "/mock/doc-factory-land.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
   ];
 }
@@ -86,7 +92,7 @@ function buildPersonDocuments(prefix: string): DocumentItem[] {
       documentDate: "2026-01-01",
       expiryDate: "2028-05-11",
       issuedPlace: "จังหวัดอุบลราชธานี ออกโดย: อำเภอเมืองอุบลราชธานี",
-      fileUrl: "/mock/doc-appointment.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: `${prefix}-2`,
@@ -94,7 +100,7 @@ function buildPersonDocuments(prefix: string): DocumentItem[] {
       documentDate: "2026-02-13",
       expiryDate: "2027-02-28",
       issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
-      fileUrl: "/mock/doc-power-of-attorney.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: `${prefix}-3`,
@@ -102,7 +108,7 @@ function buildPersonDocuments(prefix: string): DocumentItem[] {
       documentDate: "2026-02-13",
       expiryDate: "2027-01-09",
       issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขต",
-      fileUrl: "/mock/doc-shareholders.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
   ];
 }
@@ -123,7 +129,7 @@ function buildProjectDocuments(): DocumentItem[] {
     documentDate: "",
     expiryDate: "",
     issuedPlace: "",
-    fileUrl: `/mock/doc-project-${i + 1}.pdf`,
+    fileUrl: DOCUMENT_ATTACHMENT_URL,
   }));
 }
 
@@ -136,7 +142,7 @@ function buildOtherDocuments(): DocumentItem[] {
       documentDate: "2026-01-01",
       expiryDate: "2028-05-11",
       issuedPlace: "จังหวัดอุบลราชธานี ออกโดย: อำเภอเมืองอุบลราชธานี",
-      fileUrl: "/mock/doc-other-1.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: "ODOC-2",
@@ -144,7 +150,7 @@ function buildOtherDocuments(): DocumentItem[] {
       documentDate: "2026-02-13",
       expiryDate: "2027-02-28",
       issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
-      fileUrl: "/mock/doc-other-2.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
     {
       id: "ODOC-3",
@@ -152,7 +158,7 @@ function buildOtherDocuments(): DocumentItem[] {
       documentDate: "2026-02-13",
       expiryDate: "2027-01-09",
       issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขต",
-      fileUrl: "/mock/doc-other-3.pdf",
+      fileUrl: DOCUMENT_ATTACHMENT_URL,
     },
   ];
 }
@@ -180,7 +186,7 @@ export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
       submissionDate: new Date(received + 5 * 24 * hour).toISOString(),
       operatorName: item.operatorName,
       status: item.status,
-      licensePreviewUrl: "/mock/license-preview.pdf",
+      licensePreviewUrl: LICENSE_PREVIEW_URL,
     },
     panels: {
       applicant: {
