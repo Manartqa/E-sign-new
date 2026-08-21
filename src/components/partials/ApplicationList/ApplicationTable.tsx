@@ -10,7 +10,6 @@ import {
   LoadingState,
   Pagination,
   PdfIcon,
-  RelativeTime,
   StatusBadge,
 } from "@/components/common";
 import { ROUTES } from "@/constant/routes";
@@ -69,8 +68,14 @@ export function ApplicationTable({
   onPageChange,
   onLimitChange,
 }: ApplicationTableProps) {
+  // only a pending request can be bulk-acted on, so selection is restricted
+  // to รอการอนุมัติ rows — everything else's checkbox stays disabled
+  const pendingItems = items.filter(
+    (item) => item.status === APPLICATION_STATUS.PENDING_APPROVAL,
+  );
   const allSelected =
-    items.length > 0 && items.every((item) => selectedIds.includes(item.id));
+    pendingItems.length > 0 &&
+    pendingItems.every((item) => selectedIds.includes(item.id));
   const [previewItem, setPreviewItem] = useState<ApplicationItem | null>(null);
 
   return (
@@ -104,6 +109,7 @@ export function ApplicationTable({
                         <Checkbox
                           checked={allSelected}
                           onCheckedChange={onToggleSelectAll}
+                          disabled={pendingItems.length === 0}
                           aria-label="เลือกทั้งหมด"
                           className="size-4 rounded-[3px]"
                         />
@@ -125,6 +131,9 @@ export function ApplicationTable({
                       <Checkbox
                         checked={selectedIds.includes(item.id)}
                         onCheckedChange={() => onToggleSelect(item.id)}
+                        disabled={
+                          item.status !== APPLICATION_STATUS.PENDING_APPROVAL
+                        }
                         aria-label={"เลือกคำขอ " + item.requestNo}
                         className="size-4 rounded-[3px]"
                       />
@@ -170,14 +179,6 @@ export function ApplicationTable({
                     <td
                       className={cn(
                         CELL,
-                        "text-[13px] whitespace-nowrap text-slate-400",
-                      )}
-                    >
-                      <RelativeTime iso={item.updatedAt} />
-                    </td>
-                    <td
-                      className={cn(
-                        CELL,
                         NO_RIGHT,
                         "text-sm text-muted-foreground",
                       )}
@@ -194,16 +195,19 @@ export function ApplicationTable({
                       {/*
                     Figma 171:2032 colours the row actions — eye #1b3a6b,
                     edit #22c55e, rotate-ccw #ef4444 — but only while the
-                    application is still open. Once it is อนุมัติแล้ว there is
-                    nothing left to act on, so those icons stay muted. eye and
-                    pdf are always available, so both stay navy on every
-                    status.
+                    application is still รอการอนุมัติ; there is nothing left
+                    to edit or return once it has been acted on (อนุมัติ,
+                    ไม่อนุมัติ, or ส่งกลับแก้ไข already happened), so those
+                    icons stay muted for every other status. eye and pdf are
+                    always available, so both stay navy on every status.
                     (rotate-ccw is red in the design, but follows the amber
                     ส่งคืนเพื่อแก้ไข button instead, at the user's request.)
                   */}
                       {(() => {
-                        const isOpen =
-                          item.status !== APPLICATION_STATUS.APPROVED;
+                        const isApproved =
+                          item.status === APPLICATION_STATUS.APPROVED;
+                        const canEdit =
+                          item.status === APPLICATION_STATUS.PENDING_APPROVAL;
 
                         return (
                           <div className="flex items-center justify-end gap-4">
@@ -218,7 +222,7 @@ export function ApplicationTable({
                             <Pencil
                               className={cn(
                                 "size-[18px]",
-                                isOpen
+                                canEdit
                                   ? "text-action-approve"
                                   : "text-slate-300",
                               )}
@@ -227,7 +231,7 @@ export function ApplicationTable({
                             <RotateCcw
                               className={cn(
                                 "size-[18px]",
-                                isOpen
+                                canEdit
                                   ? "text-action-return"
                                   : "text-slate-300",
                               )}
@@ -240,7 +244,7 @@ export function ApplicationTable({
                             view, so it greys out and stays inert */}
                             <button
                               type="button"
-                              disabled={isOpen}
+                              disabled={!isApproved}
                               onClick={() => setPreviewItem(item)}
                               aria-label={"ดูไฟล์ใบอนุญาต " + item.requestNo}
                               className="disabled:cursor-not-allowed"
@@ -248,7 +252,9 @@ export function ApplicationTable({
                               <PdfIcon
                                 className={cn(
                                   "size-[18px]",
-                                  isOpen ? "text-slate-300" : "text-[#ff4d4f]",
+                                  isApproved
+                                    ? "text-[#ff4d4f]"
+                                    : "text-slate-300",
                                 )}
                               />
                             </button>

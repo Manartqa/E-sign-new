@@ -314,7 +314,7 @@ export default function ReportsContent() {
 
       {summary && (
         <>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {summary.kpis.map((kpi) => (
               <KpiCard key={kpi.key} kpi={kpi} />
             ))}

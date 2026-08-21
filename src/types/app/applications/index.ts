@@ -1,4 +1,7 @@
-import type { ApplicationStatus } from "@/constant/status";
+import type {
+  ApplicationStatus,
+  REJECTED_OR_RETURNED_FILTER,
+} from "@/constant/status";
 
 /**
  * One row of the application table.
@@ -50,7 +53,10 @@ export interface ApplicationListResult {
 
 export interface ApplicationListParams {
   keyword?: string;
-  status?: ApplicationStatus | "all";
+  status?:
+    | ApplicationStatus
+    | typeof REJECTED_OR_RETURNED_FILTER
+    | "all";
   type?: string | "all";
   /** ช่วงวันที่รับเรื่อง — inclusive ISO bounds, both optional */
   dateFrom?: string;

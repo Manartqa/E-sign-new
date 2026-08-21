@@ -17,7 +17,10 @@ import type {
   ApplicationListResult,
   ApplicationStats,
 } from "@/types/app/applications";
-import { APPLICATION_STATUS } from "@/constant/status";
+import {
+  APPLICATION_STATUS,
+  REJECTED_OR_RETURNED_FILTER,
+} from "@/constant/status";
 import { MOCK_APPLICATIONS } from "@/mocks/applications.mock";
 import { buildMockDetail } from "@/mocks/applicationDetail.mock";
 
@@ -57,8 +60,19 @@ export async function getApplicationList(
   if (USE_MOCK) {
     const keyword = params.keyword?.trim().toLowerCase() ?? "";
     const filtered = MOCK_APPLICATIONS.filter((item) => {
-      if (params.status && params.status !== "all" && item.status !== params.status)
+      if (params.status === REJECTED_OR_RETURNED_FILTER) {
+        if (
+          item.status !== APPLICATION_STATUS.REJECTED &&
+          item.status !== APPLICATION_STATUS.RETURNED
+        )
+          return false;
+      } else if (
+        params.status &&
+        params.status !== "all" &&
+        item.status !== params.status
+      ) {
         return false;
+      }
       if (params.type && params.type !== "all" && item.type !== params.type)
         return false;
       // ช่วงวันที่ filters on วันที่รับเรื่อง, the date shown in the table

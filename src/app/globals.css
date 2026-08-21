@@ -18,7 +18,7 @@
   --color-brand-navy-hover: #1e3a5f;  /* primary button hover           */
   --color-brand-on-navy: #f9fbff;     /* title text on navy            */
 
-  /* --- Status palette (Status Badge, 6 variants) --------------------- */
+  /* --- Status palette (Status Badge, 4 variants) --------------------- */
   --color-status-pending-approval-bg: #fef3c7;
   --color-status-pending-approval-fg: #92400e;
   --color-status-approved-bg: #dcfce7;
@@ -27,10 +27,6 @@
   --color-status-rejected-fg: #991b1b;
   --color-status-returned-bg: #ffedd5;
   --color-status-returned-fg: #9a3412;
-  --color-status-pending-signature-bg: #dbeafe;
-  --color-status-pending-signature-fg: #1e40af;
-  --color-status-in-progress-bg: #ecfeff;
-  --color-status-in-progress-fg: #0e7490;
 
   /* --- Action colours (Button/Action variants) ----------------------- */
   --color-action-approve: #22c55e;
@@ -47,7 +43,6 @@
   --color-viewer-muted: #a0aec0;
 
   /* --- Layout metrics ------------------------------------------------ */
-  --spacing-sidebar: 240px;
   --spacing-topbar: 83px;
 }
 

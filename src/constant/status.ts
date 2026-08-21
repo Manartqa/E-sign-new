@@ -1,18 +1,13 @@
 /**
  * Application status — single source of truth.
  *
- * Reconciled from the Figma `Status Badge` component (6 variants), which is
- * the only place in the design with real UI for every state. The
- * `developer-handoff` frame lists a different 5-code set
- * (PENDING_REVIEW / IN_REVIEW / PENDING_SIGNATURE / APPROVED / REJECTED) and
- * its sample JSON uses PENDING_APPROVAL — both are superseded here.
- * Revisit when the real backend contract lands.
+ * Trimmed to the 4 statuses the product actually uses (plus the "ทั้งหมด"
+ * filter option, which isn't a real status and is added separately by
+ * ApplicationListHeader). Revisit when the real backend contract lands.
  */
 
 export const APPLICATION_STATUS = {
   PENDING_APPROVAL: "PENDING_APPROVAL",
-  IN_PROGRESS: "IN_PROGRESS",
-  PENDING_SIGNATURE: "PENDING_SIGNATURE",
   APPROVED: "APPROVED",
   REJECTED: "REJECTED",
   RETURNED: "RETURNED",
@@ -36,29 +31,18 @@ export const STATUS_META: Record<ApplicationStatus, StatusMeta> = {
       "bg-status-pending-approval-bg text-status-pending-approval-fg",
     dotClassName: "bg-status-pending-approval-fg",
   },
-  IN_PROGRESS: {
-    label: "อยู่ระหว่างดำเนินการ",
-    className: "bg-status-in-progress-bg text-status-in-progress-fg",
-    dotClassName: "bg-status-in-progress-fg",
-  },
-  PENDING_SIGNATURE: {
-    label: "รอการลงนาม",
-    className:
-      "bg-status-pending-signature-bg text-status-pending-signature-fg",
-    dotClassName: "bg-status-pending-signature-fg",
-  },
   APPROVED: {
-    label: "อนุมัติแล้ว",
+    label: "อนุมัติ",
     className: "bg-status-approved-bg text-status-approved-fg",
     dotClassName: "bg-status-approved-fg",
   },
   REJECTED: {
-    label: "ปฏิเสธ",
+    label: "ไม่อนุมัติ",
     className: "bg-status-rejected-bg text-status-rejected-fg",
     dotClassName: "bg-status-rejected-fg",
   },
   RETURNED: {
-    label: "ส่งคืนแก้ไข",
+    label: "ส่งกลับแก้ไข",
     className: "bg-status-returned-bg text-status-returned-fg",
     dotClassName: "bg-status-returned-fg",
   },
@@ -68,3 +52,9 @@ export const STATUS_META: Record<ApplicationStatus, StatusMeta> = {
 export const STATUS_OPTIONS = (
   Object.keys(STATUS_META) as ApplicationStatus[]
 ).map((value) => ({ value, label: STATUS_META[value].label }));
+
+/**
+ * Not a real status — the "ไม่อนุมัติ/ส่งกลับแก้ไข" stat card combines two
+ * statuses, so clicking it needs a filter value the dropdown never offers.
+ */
+export const REJECTED_OR_RETURNED_FILTER = "REJECTED_OR_RETURNED" as const;

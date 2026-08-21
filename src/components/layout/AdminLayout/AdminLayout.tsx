@@ -35,7 +35,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header user={profile} onOpenMenu={() => setMenuOpen(true)} />
-        <main className="min-w-0 flex-1 p-4 sm:p-8">{children}</main>
+        <main className="min-w-0 flex-1 p-4 pt-1 sm:p-8 sm:pt-2">{children}</main>
       </div>
     </div>
   );

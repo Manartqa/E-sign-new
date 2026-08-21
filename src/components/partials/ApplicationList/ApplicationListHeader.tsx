@@ -57,7 +57,7 @@ export function ApplicationListHeader({
         <label htmlFor="keyword" className="text-sm font-medium text-[#334155]">
           ค้นหา
         </label>
-        <div className="flex items-center gap-2.5 rounded-lg border bg-[#f8fafc] p-2.5">
+        <div className="flex items-center gap-2.5 rounded-lg border bg-white p-2.5">
           <Search
             className="size-4 shrink-0 text-muted-foreground"
             aria-hidden
@@ -68,7 +68,7 @@ export function ApplicationListHeader({
             onChange={(e) =>
               setDraft((d) => ({ ...d, keyword: e.target.value }))
             }
-            placeholder="ค้นหาชื่อผู้ยื่น, เลขที่คำขอ..."
+            placeholder="ค้นหาผู้ประกอบการ, เลขที่คำขอ..."
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
           />
         </div>

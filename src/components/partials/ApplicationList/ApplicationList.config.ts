@@ -5,7 +5,10 @@ import {
   XCircle,
   type LucideIcon,
 } from "lucide-react";
-import { APPLICATION_STATUS } from "@/constant/status";
+import {
+  APPLICATION_STATUS,
+  REJECTED_OR_RETURNED_FILTER,
+} from "@/constant/status";
 import type { ApplicationListParams, ApplicationStats } from "@/types/app/applications";
 
 export const APPLICATION_LIST_STORAGE_KEY = "application-list-filters";
@@ -30,40 +33,41 @@ export interface StatCardDef {
   key: keyof ApplicationStats;
   label: string;
   icon: LucideIcon;
-  /** icon tile tint — 8% of the accent, per Figma 6:294 */
-  tileClassName: string;
-  iconClassName: string;
+  /** solid accent behind the (always white) icon — matches the Reports page's KPI cards */
+  circleClassName: string;
+  /** the status filter clicking this card applies to the table below */
+  statusFilter: NonNullable<ApplicationListParams["status"]>;
 }
 
-/** Figma: app-list › stat-card ×4 (6:293) */
+/** Same visual style as the Reports page's KPI cards (ReportsContent's KPI_META). */
 export const STAT_CARDS: StatCardDef[] = [
   {
     key: "total",
     label: "คำขอทั้งหมด",
     icon: FileText,
-    tileClassName: "bg-brand-navy-mid/8",
-    iconClassName: "text-brand-navy-mid",
+    circleClassName: "bg-brand-navy-mid",
+    statusFilter: "all",
   },
   {
     key: "pending",
     label: "รอการอนุมัติ",
     icon: Clock,
-    tileClassName: "bg-action-return/8",
-    iconClassName: "text-action-return",
+    circleClassName: "bg-action-return",
+    statusFilter: APPLICATION_STATUS.PENDING_APPROVAL,
   },
   {
     key: "approved",
-    label: "อนุมัติแล้ว",
+    label: "อนุมัติ",
     icon: CheckCircle2,
-    tileClassName: "bg-action-approve/8",
-    iconClassName: "text-action-approve",
+    circleClassName: "bg-action-approve",
+    statusFilter: APPLICATION_STATUS.APPROVED,
   },
   {
     key: "rejectedOrReturned",
-    label: "ปฏิเสธ/ส่งคืน",
+    label: "ไม่อนุมัติ/ส่งกลับแก้ไข",
     icon: XCircle,
-    tileClassName: "bg-action-reject/8",
-    iconClassName: "text-action-reject",
+    circleClassName: "bg-action-reject",
+    statusFilter: REJECTED_OR_RETURNED_FILTER,
   },
 ];
 
@@ -76,7 +80,6 @@ export const TABLE_COLUMNS = [
   { key: "receivedAt", label: "วันที่รับเรื่อง", width: "min-w-[116px]" },
   { key: "operatorName", label: "ผู้ประกอบการ", width: "min-w-[280px]" },
   { key: "status", label: "สถานะ", width: "min-w-[144px]" },
-  { key: "updatedAt", label: "วันที่อัปเดต", width: "min-w-[117px]" },
   { key: "assignedOfficer", label: "เจ้าหน้าที่รับเรื่อง", width: "min-w-[195px]" },
   { key: "actions", label: "การดำเนินการ", width: "min-w-[155px]" },
 ] as const;

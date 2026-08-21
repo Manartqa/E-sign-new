@@ -57,19 +57,31 @@ export const MOCK_REPORT_SUMMARY: ReportSummary = {
 
   // every dimension sums to the 1,247 total, so the donut's centre stays right
   breakdowns: {
+    // labels match TYPES in mocks/applications.mock.ts, the single source
+    // for request-type names used everywhere else in the app
     licenseType: [
-      { label: "ใบอนุญาตประกอบกิจการโรงงานฯ (อ.1)", value: 399 },
-      { label: "ใบอนุญาตประกอบกิจการโรงงานฯ (อ.3)", value: 299 },
-      { label: "เปลี่ยนแปลงกรรมการ ผู้ถือหุ้น ผู้จัดการ", value: 224 },
-      { label: "เปิดดำเนินกิจการโรงงานผลิตอาวุธ", value: 100 },
-      { label: "นำเข้า/ส่งออกยุทธภัณฑ์", value: 62 },
-      { label: "ครอบครองวัตถุระเบิด", value: 45 },
-      { label: "ค้าอาวุธปืน/เครื่องกระสุน (อ.15)", value: 30 },
-      { label: "ต่ออายุใบอนุญาต", value: 22 },
-      { label: "ย้ายสถานที่ประกอบการ", value: 20 },
-      { label: "ทดสอบ/วิจัยอาวุธ", value: 16 },
-      { label: "อื่นๆ เบ็ดเตล็ด", value: 15 },
-      { label: "แจ้งเลิกกิจการ", value: 15 },
+      {
+        label: "คำขอรับใบอนุญาตประกอบกิจการโรงงานฯ (อ.1, อ.3)",
+        value: 320,
+      },
+      { label: "คำขออนุญาตขนย้ายวัตถุหรืออาวุธฯ (อ.9)", value: 210 },
+      { label: "คำขออนุญาตตั้งหรือมีคลังเก็บ (อ.4)", value: 175 },
+      {
+        label: "คำขออนุญาตขายหรือจำหน่ายฯ ในราชอาณาจักร (อ.15)",
+        value: 160,
+      },
+      {
+        label: "คำขออนุญาตขายหรือจำหน่ายฯ โดยการส่งออกไปนอกราชอาณาจักร (อ.14)",
+        value: 140,
+      },
+      { label: "คำขออนุญาตเปิดดำเนินกิจการโรงงานผลิตอาวุธ", value: 110 },
+      { label: "คำขออนุญาตขยายสายการผลิตอาวุธ", value: 65 },
+      { label: "คำขออนุญาตเปลี่ยนแปลงโรงงาน", value: 42 },
+      {
+        label:
+          "คำขออนุญาตเปลี่ยนแปลงกรรมการ ผู้ถือหุ้น ผู้จัดการหรือเปลี่ยนชื่อโรงงาน",
+        value: 25,
+      },
     ],
     division: [
       { label: "กองโรงงานอุตสาหกรรม", value: 512 },

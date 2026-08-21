@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { APPLICATION_STATUS } from "@/constant/status";
 import { useSearchPersist } from "@/hooks/common";
 import {
   useApplicationList,
@@ -102,16 +103,26 @@ export default function ApplicationListContent({
     }
   };
 
-  const toggleSelectAll = () =>
+  // bulk actions (approve/reject/return) only apply to pending requests, so
+  // "select all" only ever selects the pending rows on this page
+  const toggleSelectAll = () => {
+    const pendingIds = items
+      .filter((item) => item.status === APPLICATION_STATUS.PENDING_APPROVAL)
+      .map((item) => item.id);
     setSelectedIds((prev) =>
-      items.every((item) => prev.includes(item.id))
+      pendingIds.length > 0 && pendingIds.every((id) => prev.includes(id))
         ? []
-        : items.map((item) => item.id),
+        : pendingIds,
     );
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      <ApplicationStatCards />
+    <div className="flex flex-col gap-4">
+      <ApplicationStatCards
+        activeStatus={filters.status}
+        onSelectStatus={(status) => applyFilters({ ...filters, status, page: 1 })}
+        showActiveRing={!isPending}
+      />
 
       <ApplicationListHeader
         filters={filters}

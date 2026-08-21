@@ -1,16 +1,44 @@
 import { APPLICATION_STATUS, type ApplicationStatus } from "@/constant/status";
 import type { ApplicationItem } from "@/types/app/applications";
 
-/** Request types as worded in the Figma table (171:1843). */
 const TYPES = [
   {
-    type: "sell_in_kingdom",
-    typeName: "คำขออนุญาตขายหรือจำหน่ายในราชอาณาจักร (อ.15)",
+    type: "factory_license",
+    typeName: "คำขอรับใบอนุญาตประกอบกิจการโรงงานฯ (อ.1, อ.3)",
   },
-  { type: "factory_license", typeName: "ใบอนุญาตประกอบกิจการโรงงาน" },
-  { type: "factory_expand", typeName: "ใบอนุญาตขยายโรงงาน" },
-  { type: "machine_register", typeName: "การจดทะเบียนเครื่องจักร" },
-  { type: "hazard_material", typeName: "ใบอนุญาตวัตถุอันตราย" },
+  {
+    type: "transport_permit",
+    typeName: "คำขออนุญาตขนย้ายวัตถุหรืออาวุธฯ (อ.9)",
+  },
+  {
+    type: "storage_permit",
+    typeName: "คำขออนุญาตตั้งหรือมีคลังเก็บ (อ.4)",
+  },
+  {
+    type: "sell_in_kingdom",
+    typeName: "คำขออนุญาตขายหรือจำหน่ายฯ ในราชอาณาจักร (อ.15)",
+  },
+  {
+    type: "sell_export",
+    typeName: "คำขออนุญาตขายหรือจำหน่ายฯ โดยการส่งออกไปนอกราชอาณาจักร (อ.14)",
+  },
+  {
+    type: "factory_open",
+    typeName: "คำขออนุญาตเปิดดำเนินกิจการโรงงานผลิตอาวุธ",
+  },
+  {
+    type: "production_line_expand",
+    typeName: "คำขออนุญาตขยายสายการผลิตอาวุธ",
+  },
+  {
+    type: "factory_change",
+    typeName: "คำขออนุญาตเปลี่ยนแปลงโรงงาน",
+  },
+  {
+    type: "director_change",
+    typeName:
+      "คำขออนุญาตเปลี่ยนแปลงกรรมการ ผู้ถือหุ้น ผู้จัดการหรือเปลี่ยนชื่อโรงงาน",
+  },
 ];
 
 const OPERATORS = [
@@ -40,8 +68,6 @@ const OFFICERS = [
 
 const STATUSES: ApplicationStatus[] = [
   APPLICATION_STATUS.PENDING_APPROVAL,
-  APPLICATION_STATUS.IN_PROGRESS,
-  APPLICATION_STATUS.PENDING_SIGNATURE,
   APPLICATION_STATUS.APPROVED,
   APPLICATION_STATUS.REJECTED,
   APPLICATION_STATUS.RETURNED,
