@@ -6,11 +6,38 @@ const HOUR = 3_600_000;
 
 /** Bar heights are the Figma design's (8:336), scaled back to counts. */
 export const MOCK_REPORT_SUMMARY: ReportSummary = {
+  // fixed timestamp (not Date.now()) so SSR and client render the same string
+  updatedAt: "2026-08-21T09:06:00+07:00",
+
   kpis: [
-    { key: "total", label: "คำขอทั้งหมด", value: 1247, deltaPercent: 12 },
-    { key: "approved", label: "อนุมัติแล้ว", value: 942, deltaPercent: 8 },
-    { key: "pending", label: "รอดำเนินการ", value: 263, deltaPercent: -5 },
-    { key: "rejected", label: "ปฏิเสธ/ส่งคืน", value: 42, deltaPercent: 2 },
+    {
+      key: "total",
+      label: "คำขอทั้งหมด",
+      value: 1247,
+      deltaPercent: 12,
+      spark: [60, 64, 58, 70, 66, 73, 68, 79, 74, 84],
+    },
+    {
+      key: "approved",
+      label: "อนุมัติแล้ว",
+      value: 942,
+      deltaPercent: 8,
+      spark: [48, 54, 50, 60, 57, 66, 62, 70, 68, 76],
+    },
+    {
+      key: "pending",
+      label: "รอดำเนินการ",
+      value: 263,
+      deltaPercent: -5,
+      spark: [72, 66, 69, 60, 63, 55, 58, 50, 53, 46],
+    },
+    {
+      key: "rejected",
+      label: "ปฏิเสธ/ส่งคืน",
+      value: 42,
+      deltaPercent: 2,
+      spark: [40, 45, 38, 49, 43, 51, 46, 53, 48, 55],
+    },
   ],
 
   byMonth: [
@@ -28,16 +55,43 @@ export const MOCK_REPORT_SUMMARY: ReportSummary = {
     { label: "ธ.ค.", value: 133 },
   ],
 
-  byLicenseType: [
-    { label: "ใบอนุญาตประกอบกิจการโรงงานฯ (อ.1)", percent: 32 },
-    { label: "ใบอนุญาตประกอบกิจการโรงงานฯ (อ.3)", percent: 24 },
-    {
-      label: "อนุญาตเปลี่ยนแปลงกรรมการ ผู้ถือหุ้น ผู้จัดการหรือเปลี่ยนชื่อโรงงาน",
-      percent: 18,
-    },
-    { label: "อนุญาตเปิดดำเนินกิจการโรงงานผลิตอาวุธ", percent: 14 },
-    { label: "อื่นๆ", percent: 12 },
-  ],
+  // every dimension sums to the 1,247 total, so the donut's centre stays right
+  breakdowns: {
+    licenseType: [
+      { label: "ใบอนุญาตประกอบกิจการโรงงานฯ (อ.1)", value: 399 },
+      { label: "ใบอนุญาตประกอบกิจการโรงงานฯ (อ.3)", value: 299 },
+      { label: "เปลี่ยนแปลงกรรมการ ผู้ถือหุ้น ผู้จัดการ", value: 224 },
+      { label: "เปิดดำเนินกิจการโรงงานผลิตอาวุธ", value: 100 },
+      { label: "นำเข้า/ส่งออกยุทธภัณฑ์", value: 62 },
+      { label: "ครอบครองวัตถุระเบิด", value: 45 },
+      { label: "ค้าอาวุธปืน/เครื่องกระสุน (อ.15)", value: 30 },
+      { label: "ต่ออายุใบอนุญาต", value: 22 },
+      { label: "ย้ายสถานที่ประกอบการ", value: 20 },
+      { label: "ทดสอบ/วิจัยอาวุธ", value: 16 },
+      { label: "อื่นๆ เบ็ดเตล็ด", value: 15 },
+      { label: "แจ้งเลิกกิจการ", value: 15 },
+    ],
+    division: [
+      { label: "กองโรงงานอุตสาหกรรม", value: 512 },
+      { label: "กองอาวุธและยุทโธปกรณ์", value: 318 },
+      { label: "กองมาตรฐานและควบคุมคุณภาพ", value: 205 },
+      { label: "กองนิติการ", value: 121 },
+      { label: "กองแผนและงบประมาณ", value: 58 },
+      { label: "กองบริหารทั่วไป", value: 33 },
+    ],
+    department: [
+      { label: "แผนกทะเบียนใบอนุญาต", value: 288 },
+      { label: "แผนกตรวจสอบโรงงาน", value: 241 },
+      { label: "แผนกควบคุมยุทธภัณฑ์", value: 198 },
+      { label: "แผนกวัตถุระเบิด", value: 152 },
+      { label: "แผนกนิติกรรมสัญญา", value: 96 },
+      { label: "แผนกมาตรฐานผลิตภัณฑ์", value: 84 },
+      { label: "แผนกประเมินความปลอดภัย", value: 66 },
+      { label: "แผนกทะเบียนผู้ประกอบการ", value: 52 },
+      { label: "แผนกวิเคราะห์ข้อมูล", value: 38 },
+      { label: "แผนกธุรการ", value: 32 },
+    ],
+  },
 
   recentSignatures: [
     {

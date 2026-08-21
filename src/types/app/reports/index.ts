@@ -7,6 +7,8 @@ export interface ReportKpi {
   value: number;
   /** rendered as +12% / -5%, green when positive */
   deltaPercent: number;
+  /** points for the card's trend sparkline, oldest → newest */
+  spark: number[];
 }
 
 /** One bar of ยอดคำขอรายเดือน (Figma 8:336). */
@@ -17,11 +19,14 @@ export interface MonthlyPoint {
   highlighted?: boolean;
 }
 
-/** One slice of สัดส่วนตามประเภทใบอนุญาต (Figma 8:378). */
-export interface LicenseTypeShare {
+/** One category of the สัดส่วน donut — a real count, so percentages derive. */
+export interface BreakdownItem {
   label: string;
-  percent: number;
+  value: number;
 }
+
+/** the donut can be sliced by any of these — switched from the card's dropdown */
+export type BreakdownDimension = "licenseType" | "division" | "department";
 
 /** One row of รายการลงนามล่าสุด (Figma 8:409). */
 export interface RecentSignature {
@@ -33,9 +38,12 @@ export interface RecentSignature {
 }
 
 export interface ReportSummary {
+  /** ISO timestamp shown in the "ข้อมูลอัปเดตล่าสุด" bar */
+  updatedAt: string;
   kpis: ReportKpi[];
   byMonth: MonthlyPoint[];
-  byLicenseType: LicenseTypeShare[];
+  /** the donut's data for each dimension the dropdown can switch to */
+  breakdowns: Record<BreakdownDimension, BreakdownItem[]>;
   recentSignatures: RecentSignature[];
 }
 
