@@ -5,7 +5,6 @@ import {
   BookmarkCheck,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Menu,
   Minus,
   MoreVertical,
@@ -15,6 +14,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { PdfIcon } from "@/components/common";
 
 const ZOOM_STEPS = [50, 75, 100, 125, 150, 200];
 
@@ -36,7 +36,12 @@ const INERT_TOOLS = [
 ];
 
 /** Figma: PDF Viewer/Fullscreen ใบอนุญาต (145:43) */
-export function PDFViewer({ open, fileName, fileUrl, onClose }: PDFViewerProps) {
+export function PDFViewer({
+  open,
+  fileName,
+  fileUrl,
+  onClose,
+}: PDFViewerProps) {
   const [zoom, setZoom] = useState(100);
   const [page, setPage] = useState(1);
   const totalPages = 1;
@@ -54,7 +59,10 @@ export function PDFViewer({ open, fileName, fileUrl, onClose }: PDFViewerProps) 
 
   const stepZoom = (direction: -1 | 1) => {
     const index = ZOOM_STEPS.indexOf(zoom);
-    const next = ZOOM_STEPS[Math.min(Math.max(index + direction, 0), ZOOM_STEPS.length - 1)];
+    const next =
+      ZOOM_STEPS[
+        Math.min(Math.max(index + direction, 0), ZOOM_STEPS.length - 1)
+      ];
     setZoom(next);
   };
 
@@ -181,7 +189,7 @@ export function PDFViewer({ open, fileName, fileUrl, onClose }: PDFViewerProps) 
               />
             ) : (
               <div className="flex size-full flex-col items-center justify-center gap-3 text-muted-foreground">
-                <FileText className="size-12" aria-hidden />
+                <PdfIcon className="size-12 text-slate-300" />
                 <p className="text-sm">ไม่พบไฟล์เอกสาร</p>
               </div>
             )}

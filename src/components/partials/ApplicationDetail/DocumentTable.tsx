@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText } from "lucide-react";
-import { Pagination } from "@/components/common";
+import { Pagination, PdfIcon } from "@/components/common";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DocumentItem } from "@/types/app/applications";
@@ -27,22 +26,55 @@ export function DocumentTable({ documents, onOpen }: DocumentTableProps) {
         <table className="w-full border-collapse text-left">
           <thead className="border-b bg-[#f8fafc]">
             <tr>
-              <th scope="col" className={cn(CELL, "w-12 text-[13px] font-bold text-brand-navy-mid")}>
+              <th
+                scope="col"
+                className={cn(
+                  CELL,
+                  "w-12 text-[13px] font-bold text-brand-navy-mid",
+                )}
+              >
                 #
               </th>
-              <th scope="col" className={cn(CELL, "min-w-[380px] text-[13px] font-bold text-brand-navy-mid")}>
+              <th
+                scope="col"
+                className={cn(
+                  CELL,
+                  "min-w-[380px] text-[13px] font-bold text-brand-navy-mid",
+                )}
+              >
                 ชื่อเอกสาร
               </th>
-              <th scope="col" className={cn(CELL, "min-w-[104px] text-[13px] font-bold whitespace-nowrap text-brand-navy-mid")}>
+              <th
+                scope="col"
+                className={cn(
+                  CELL,
+                  "min-w-[104px] text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
+                )}
+              >
                 วันที่เอกสาร
               </th>
-              <th scope="col" className={cn(CELL, "min-w-[116px] text-[13px] font-bold whitespace-nowrap text-brand-navy-mid")}>
+              <th
+                scope="col"
+                className={cn(
+                  CELL,
+                  "min-w-[116px] text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
+                )}
+              >
                 วันหมดอายุ
               </th>
-              <th scope="col" className={cn(CELL, "min-w-[260px] text-[13px] font-bold text-brand-navy-mid")}>
+              <th
+                scope="col"
+                className={cn(
+                  CELL,
+                  "min-w-[260px] text-[13px] font-bold text-brand-navy-mid",
+                )}
+              >
                 สถานที่ออกเอกสาร
               </th>
-              <th scope="col" className="px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid">
+              <th
+                scope="col"
+                className="px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid"
+              >
                 เอกสาร
               </th>
             </tr>
@@ -57,30 +89,69 @@ export function DocumentTable({ documents, onOpen }: DocumentTableProps) {
                   (start + index) % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]",
                 )}
               >
-                <td className={cn(CELL, "text-center text-sm text-muted-foreground")}>
+                <td
+                  className={cn(
+                    CELL,
+                    "text-center text-sm text-muted-foreground",
+                  )}
+                >
                   {start + index + 1}
                 </td>
-                <td className={cn(CELL, "text-sm font-medium text-brand-navy-mid")}>
+                <td
+                  className={cn(
+                    CELL,
+                    "text-sm font-medium text-brand-navy-mid",
+                  )}
+                >
                   {document.name}
                 </td>
-                <td className={cn(CELL, "text-sm whitespace-nowrap text-muted-foreground")}>
+                <td
+                  className={cn(
+                    CELL,
+                    "text-sm whitespace-nowrap text-muted-foreground",
+                  )}
+                >
                   {formatThaiShortDate(document.documentDate)}
                 </td>
-                <td className={cn(CELL, "text-sm whitespace-nowrap text-muted-foreground")}>
+                <td
+                  className={cn(
+                    CELL,
+                    "text-sm whitespace-nowrap text-muted-foreground",
+                  )}
+                >
                   {formatThaiShortDate(document.expiryDate)}
                 </td>
                 <td className={cn(CELL, "text-sm text-muted-foreground")}>
                   {document.issuedPlace}
                 </td>
                 <td className="px-3 py-3">
-                  <button
-                    type="button"
-                    onClick={() => onOpen?.(document)}
-                    aria-label={"เปิดเอกสาร " + document.name}
-                    className="flex h-8 w-6 items-center justify-center rounded-md border text-muted-foreground hover:text-brand-navy-mid"
-                  >
-                    <FileText className="size-4" aria-hidden />
-                  </button>
+                  {(() => {
+                    const hasFile = Boolean(document.fileUrl);
+
+                    return (
+                      <button
+                        type="button"
+                        disabled={!hasFile}
+                        onClick={() => hasFile && onOpen?.(document)}
+                        aria-label={
+                          hasFile
+                            ? "เปิดเอกสาร " + document.name
+                            : document.name + " (ไม่มีเอกสาร)"
+                        }
+                        className={cn(
+                          "flex h-8 w-7 items-center justify-center transition-opacity",
+                          hasFile ? "hover:opacity-70" : "cursor-not-allowed",
+                        )}
+                      >
+                        <PdfIcon
+                          className={cn(
+                            "size-5",
+                            hasFile ? "text-[#ff4d4f]" : "text-slate-300",
+                          )}
+                        />
+                      </button>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}

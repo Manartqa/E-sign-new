@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, FileText, Pencil, RotateCcw } from "lucide-react";
+import { Eye, Pencil, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   EmptyState,
   ErrorState,
   LoadingState,
   Pagination,
+  PdfIcon,
   RelativeTime,
   StatusBadge,
 } from "@/components/common";
@@ -226,11 +227,15 @@ export function ApplicationTable({
                               )}
                               aria-hidden
                             />
-                            {/* the pdf icon is always available — every status
-                            can be printed — and shares the eye's navy */}
-                            <FileText
-                              className="size-[18px] text-brand-navy-mid"
-                              aria-hidden
+                            {/* the signed pdf exists only once the application
+                            is อนุมัติแล้ว, so the icon is its #ff4d4f red (Ant
+                            "file-pdf", Figma 4184:430930) only then — otherwise
+                            there is nothing to view, so it greys out */}
+                            <PdfIcon
+                              className={cn(
+                                "size-[18px]",
+                                isOpen ? "text-slate-300" : "text-[#ff4d4f]",
+                              )}
                             />
                           </div>
                         );

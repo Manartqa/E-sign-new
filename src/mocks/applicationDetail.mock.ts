@@ -24,7 +24,8 @@ function buildDocuments(item: ApplicationItem): DocumentItem[] {
       documentDate: new Date(base - 22 * 24 * 3_600_000).toISOString(),
       expiryDate: new Date(base + 2 * year).toISOString(),
       issuedPlace: "จังหวัดยโสธร ออกโดย: อำเภอคำเขื่อนแก้ว",
-      fileUrl: "/mock/doc-certificate.pdf",
+      // no file attached — the row's document icon greys out and is disabled
+      fileUrl: "",
     },
     {
       id: "DOC-3",
@@ -40,7 +41,8 @@ function buildDocuments(item: ApplicationItem): DocumentItem[] {
       documentDate: new Date(base - 30 * 24 * 3_600_000).toISOString(),
       expiryDate: new Date(base + year).toISOString(),
       issuedPlace: "จังหวัดนครนายก ออกโดย: อำเภอเมืองนครนายก",
-      fileUrl: "/mock/doc-tax-id.pdf",
+      // no file attached — the row's document icon greys out and is disabled
+      fileUrl: "",
     },
   ];
 }
