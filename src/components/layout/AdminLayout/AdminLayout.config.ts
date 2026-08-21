@@ -45,6 +45,13 @@ export const APP_NAME = "ระบบการลงนามอนุมัต�
  */
 export const APP_NAME_LINES = ["ระบบการลงนามอนุมัติ", "ดิจิทัล"];
 export const APP_SUBTITLE = "E-Signature";
+/**
+ * Full system name shown above the TopBar breadcrumb — Figma login-hero
+ * title. The "(E-Signature)" suffix is dropped below `sm`, where there's no
+ * room for it and it would otherwise just get truncated with an ellipsis.
+ */
+export const SYSTEM_TITLE = "ระบบการลงนามอนุมัติด้วยลายมือชื่อดิจิทัล";
+export const SYSTEM_TITLE_SUFFIX = "(E-Signature)";
 
 /** Breadcrumb trail per route, rendered in the TopBar. */
 export const BREADCRUMBS: Record<string, string[]> = {

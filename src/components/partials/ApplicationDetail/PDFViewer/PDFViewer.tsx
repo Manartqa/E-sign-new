@@ -28,7 +28,14 @@ export interface PDFViewerProps {
 function PDFDocumentView({ fileUrl }: { fileUrl?: string }) {
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
-  const [zoom, setZoom] = useState(100);
+  // the viewer becomes a full-width bottom sheet below `sm` (640px) — the
+  // page reads better zoomed in there than at the desktop-panel default
+  const [zoom, setZoom] = useState<number>(() =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 639px)").matches
+      ? 150
+      : 100,
+  );
   const [failed, setFailed] = useState(false);
   const [pageWidth, setPageWidth] = useState<number>();
   const resizeObserverRef = useRef<ResizeObserver | null>(null);

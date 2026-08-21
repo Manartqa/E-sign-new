@@ -59,7 +59,7 @@ export function BulkConfirmModal({
         showCloseButton={false}
         className="w-[440px] max-w-[calc(100vw-2rem)] items-center gap-6 rounded-2xl p-8 shadow-[0_32px_64px_rgba(0,0,0,0.25)]"
       >
-        <Icon className={cn("size-12", accent)} aria-hidden />
+        <Icon className={cn("size-12 justify-self-center", accent)} aria-hidden />
 
         <div className="flex flex-col items-center gap-2">
           <DialogTitle className="text-xl font-bold text-brand-navy-mid">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   EmptyState,
@@ -14,10 +15,17 @@ import {
 } from "@/components/common";
 import { ROUTES } from "@/constant/routes";
 import { APPLICATION_STATUS } from "@/constant/status";
+import { useApplicationActions } from "@/hooks/applications";
+import { useProfile } from "@/hooks/profile";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { ApplicationItem } from "@/types/app/applications";
-import { PDFViewer } from "@/components/partials/ApplicationDetail";
+import type { ApplicationItem, ReturnFormValues } from "@/types/app/applications";
+import {
+  MOCK_CERTIFICATE,
+  PDFViewer,
+  ReturnForEditModal,
+  SignatureModal,
+} from "@/components/partials/ApplicationDetail";
 import { TABLE_COLUMNS } from "./ApplicationList.config";
 
 /** The signed PDF only exists once the application is อนุมัติแล้ว. */
@@ -77,6 +85,45 @@ export function ApplicationTable({
     pendingItems.length > 0 &&
     pendingItems.every((item) => selectedIds.includes(item.id));
   const [previewItem, setPreviewItem] = useState<ApplicationItem | null>(null);
+  const [returnTarget, setReturnTarget] = useState<ApplicationItem | null>(
+    null,
+  );
+  const [signTarget, setSignTarget] = useState<ApplicationItem | null>(null);
+  const { profile } = useProfile();
+  const { approve } = useApplicationActions(returnTarget?.id ?? "");
+  const { sign } = useApplicationActions(signTarget?.id ?? "");
+
+  const handleReturn = async (values: ReturnFormValues) => {
+    try {
+      await approve.mutateAsync({
+        notes: values.reason + " — " + values.notes,
+        officerId: profile?.id ?? "",
+      });
+      setReturnTarget(null);
+      toast.success("ส่งคืนคำขอเพื่อแก้ไขแล้ว");
+    } catch {
+      toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
+
+  const handleSign = async () => {
+    if (!signTarget) return;
+    try {
+      await sign.mutateAsync({
+        certificateId: MOCK_CERTIFICATE.id,
+        certificateOwner: profile?.name ?? "",
+        signature: "base64_encoded_signature",
+        timestamp: new Date().toISOString(),
+        applicationId: signTarget.id,
+        officerId: profile?.id ?? "",
+        notes: "",
+      });
+      setSignTarget(null);
+      toast.success("อนุมัติและลงนามแล้ว");
+    } catch {
+      toast.error("ลงนามไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  };
 
   return (
     <div className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -218,25 +265,44 @@ export function ApplicationTable({
                             >
                               <Eye className="size-[18px]" aria-hidden />
                             </Link>
-                            {/* edit / return / pdf are driven from the detail page — Phase 5 */}
-                            <Pencil
-                              className={cn(
-                                "size-[18px]",
-                                canEdit
-                                  ? "text-action-approve"
-                                  : "text-slate-300",
-                              )}
-                              aria-hidden
-                            />
-                            <RotateCcw
-                              className={cn(
-                                "size-[18px]",
-                                canEdit
-                                  ? "text-action-return"
-                                  : "text-slate-300",
-                              )}
-                              aria-hidden
-                            />
+                            {/* pencil = quick อนุมัติและลงนาม (green, same
+                            SignatureModal as the detail page's Check button);
+                            rotate-ccw = quick ส่งคืนเพื่อแก้ไข (amber, same
+                            ReturnForEditModal as the detail page's button) */}
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setSignTarget(item)}
+                              aria-label={"อนุมัติและลงนาม " + item.requestNo}
+                              className="disabled:cursor-not-allowed"
+                            >
+                              <Pencil
+                                className={cn(
+                                  "size-[18px]",
+                                  canEdit
+                                    ? "text-action-approve"
+                                    : "text-slate-300",
+                                )}
+                                aria-hidden
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setReturnTarget(item)}
+                              aria-label={"ส่งคืนเพื่อแก้ไข " + item.requestNo}
+                              className="disabled:cursor-not-allowed"
+                            >
+                              <RotateCcw
+                                className={cn(
+                                  "size-[18px]",
+                                  canEdit
+                                    ? "text-action-return"
+                                    : "text-slate-300",
+                                )}
+                                aria-hidden
+                              />
+                            </button>
                             {/* the signed pdf exists only once the application
                             is อนุมัติแล้ว, so the icon is its #ff4d4f red (Ant
                             "file-pdf", Figma 4184:430930) and opens the signed
@@ -284,6 +350,25 @@ export function ApplicationTable({
           fileName={previewItem.typeName + ".pdf"}
           fileUrl={APPROVED_LICENSE_URL}
           onClose={() => setPreviewItem(null)}
+        />
+      )}
+
+      <ReturnForEditModal
+        open={!!returnTarget}
+        mode="return"
+        isSubmitting={approve.isPending}
+        onClose={() => setReturnTarget(null)}
+        onConfirm={(values) => void handleReturn(values)}
+      />
+
+      {signTarget && (
+        <SignatureModal
+          open
+          detail={signTarget}
+          signer={profile}
+          isSubmitting={sign.isPending}
+          onClose={() => setSignTarget(null)}
+          onConfirm={() => void handleSign()}
         />
       )}
     </div>

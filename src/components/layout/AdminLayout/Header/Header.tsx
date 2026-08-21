@@ -14,7 +14,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/constant/routes";
 import type { UserProfile } from "@/types/app/profile";
-import { BREADCRUMBS, getInitials } from "../AdminLayout.config";
+import {
+  BREADCRUMBS,
+  SYSTEM_TITLE,
+  SYSTEM_TITLE_SUFFIX,
+  getInitials,
+} from "../AdminLayout.config";
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -36,7 +41,7 @@ export function Header({
     ["หน้าหลัก"];
 
   return (
-    <header className="flex h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-4 sm:px-8">
+    <header className="flex min-h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-4 sm:px-8">
       <button
         type="button"
         onClick={onOpenMenu}
@@ -46,17 +51,25 @@ export function Header({
         <Menu className="size-6" aria-hidden />
       </button>
 
-      <nav
-        aria-label="breadcrumb"
-        className="flex min-w-0 flex-1 items-center gap-1 text-sm"
-      >
-        {trail.map((crumb, index) => (
-          <span key={crumb} className="flex items-center gap-1">
-            {index > 0 && <span className="font-bold text-slate-400">/</span>}
-            <span className="text-muted-foreground">{crumb}</span>
-          </span>
-        ))}
-      </nav>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="truncate text-sm font-bold text-brand-navy-mid">
+          {SYSTEM_TITLE}{" "}
+          <span className="hidden sm:inline">{SYSTEM_TITLE_SUFFIX}</span>
+        </span>
+        <nav
+          aria-label="breadcrumb"
+          className="flex min-w-0 items-center gap-1 text-sm"
+        >
+          {trail.map((crumb, index) => (
+            <span key={crumb} className="flex items-center gap-1">
+              {index > 0 && (
+                <span className="font-bold text-slate-400">/</span>
+              )}
+              <span className="text-muted-foreground">{crumb}</span>
+            </span>
+          ))}
+        </nav>
+      </div>
 
       <div className="flex shrink-0 items-center gap-3 sm:gap-5">
         <button

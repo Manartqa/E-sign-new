@@ -18,6 +18,19 @@ interface DocumentTableProps {
 const CELL = "border-r px-3 py-3 align-top";
 const PAGE_SIZE = 10;
 
+/**
+ * Freezes the "เอกสาร" (open-file) column to the right edge on the narrow
+ * viewports (iPad/mobile) where the fixed min-widths above force this table
+ * to scroll horizontally — otherwise the action icon scrolls out of view.
+ * Same box-shadow-as-border trick as ApplicationTable's sticky actions
+ * column: border-collapse hands the grid hairlines to the table, so the
+ * sticky cell's own left border has to be redrawn as an inset box-shadow
+ * (which sticks) instead, and the column before it drops its border-r so
+ * the seam isn't doubled.
+ */
+const STICKY_DOC = "sticky right-0 shadow-[inset_1px_0_0_0_var(--border)]";
+const NO_RIGHT = "border-r-0!";
+
 /** Figma: tab-panel-applicant-company › table (83:3204) */
 export function DocumentTable({
   documents,
@@ -49,6 +62,7 @@ export function DocumentTable({
                 className={cn(
                   CELL,
                   "min-w-[380px] text-[13px] font-bold text-brand-navy-mid",
+                  compact && NO_RIGHT,
                 )}
               >
                 ชื่อเอกสาร
@@ -78,6 +92,7 @@ export function DocumentTable({
                     className={cn(
                       CELL,
                       "min-w-[260px] text-[13px] font-bold text-brand-navy-mid",
+                      NO_RIGHT,
                     )}
                   >
                     สถานที่ออกเอกสาร
@@ -86,7 +101,10 @@ export function DocumentTable({
               )}
               <th
                 scope="col"
-                className="px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid"
+                className={cn(
+                  STICKY_DOC,
+                  "z-20 bg-[#f8fafc] px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
+                )}
               >
                 เอกสาร
               </th>
@@ -94,13 +112,13 @@ export function DocumentTable({
           </thead>
 
           <tbody>
-            {rows.map((document, index) => (
+            {rows.map((document, index) => {
+              const isEven = (start + index) % 2 === 0;
+
+              return (
               <tr
                 key={document.id}
-                className={cn(
-                  "border-b",
-                  (start + index) % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]",
-                )}
+                className={cn("border-b", isEven ? "bg-white" : "bg-[#f9f9f9]")}
               >
                 <td
                   className={cn(
@@ -114,6 +132,7 @@ export function DocumentTable({
                   className={cn(
                     CELL,
                     "text-sm font-medium text-brand-navy-mid",
+                    compact && NO_RIGHT,
                   )}
                 >
                   {document.name}
@@ -136,12 +155,24 @@ export function DocumentTable({
                     >
                       {formatThaiShortDate(document.expiryDate)}
                     </td>
-                    <td className={cn(CELL, "text-sm text-muted-foreground")}>
+                    <td
+                      className={cn(
+                        CELL,
+                        "text-sm text-muted-foreground",
+                        NO_RIGHT,
+                      )}
+                    >
                       {document.issuedPlace}
                     </td>
                   </>
                 )}
-                <td className="px-3 py-3">
+                <td
+                  className={cn(
+                    STICKY_DOC,
+                    "z-10 px-3 py-3",
+                    isEven ? "bg-white" : "bg-[#f9f9f9]",
+                  )}
+                >
                   {(() => {
                     const hasFile = Boolean(document.fileUrl);
 
@@ -171,7 +202,8 @@ export function DocumentTable({
                   })()}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

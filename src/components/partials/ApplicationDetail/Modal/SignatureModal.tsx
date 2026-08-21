@@ -3,13 +3,14 @@
 import { AlertTriangle, FileSignature, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatThaiShortDate } from "@/lib/format";
-import type { ApplicationDetail } from "@/types/app/applications";
+import type { ApplicationItem } from "@/types/app/applications";
 import type { UserProfile } from "@/types/app/profile";
 import { MOCK_CERTIFICATE } from "../ApplicationDetail.config";
 
 interface SignatureModalProps {
   open: boolean;
-  detail: ApplicationDetail;
+  /** only the shared list/detail fields are read, so either fits */
+  detail: ApplicationItem;
   signer: UserProfile | null;
   isSubmitting: boolean;
   onClose: () => void;

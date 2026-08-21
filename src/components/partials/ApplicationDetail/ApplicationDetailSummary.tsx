@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight, Eye } from "lucide-react";
 import { ActionButton, StatusBadge } from "@/components/common";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { formatThaiShortDate } from "@/lib/format";
@@ -28,7 +29,15 @@ export function ApplicationDetailSummary({
 }: ApplicationDetailSummaryProps) {
   // an approved application is signed and closed — nothing left to approve,
   // reject or send back, so the whole action group goes away
-  const canAct = summary.status !== APPLICATION_STATUS.APPROVED;
+  const isApproved = summary.status === APPLICATION_STATUS.APPROVED;
+  const canAct = !isApproved;
+  // once approved there's a real license to open, not just a preview of one
+  const licenseLabel = isApproved
+    ? "ใบอนุญาต/หนังสืออนุญาต"
+    : "ตัวอย่างใบอนุญาต";
+  const licenseButtonText = isApproved
+    ? "ใบอนุญาต/หนังสืออนุญาต"
+    : "ดูตัวอย่างใบอนุญาต/หนังสืออนุญาต";
 
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
@@ -74,13 +83,17 @@ export function ApplicationDetailSummary({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] text-slate-400">ตัวอย่างใบอนุญาต</span>
+            <span className="text-[11px] text-slate-400">{licenseLabel}</span>
             <button
               type="button"
               onClick={onPreviewLicense}
-              className="w-fit rounded-md border bg-white px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+              className="flex w-fit items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-b from-brand-blue to-brand-navy-mid px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
             >
-              ดูตัวอย่างใบอนุญาต/หนังสืออนุญาต
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/15">
+                <Eye className="size-3" aria-hidden />
+              </span>
+              {licenseButtonText}
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden />
             </button>
           </div>
         </div>
