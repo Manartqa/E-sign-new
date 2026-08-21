@@ -40,7 +40,7 @@ export function ApplicationBulkBar({
         ล้างการเลือก
       </button>
 
-      <div className="ml-auto flex flex-wrap items-center gap-3">
+      <div className="grid w-full grid-cols-3 items-center gap-1.5 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
         <ActionButton
           action="return"
           disabled={isSubmitting}

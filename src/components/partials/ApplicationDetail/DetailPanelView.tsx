@@ -10,13 +10,24 @@ import { AuthorizedPeoplePanel } from "./AuthorizedPeoplePanel";
 import { DataTablePanel } from "./DataTablePanel";
 import { DocumentTable } from "./DocumentTable";
 
-/** label : value row — Figma 43:98 */
+/**
+ * label : value row — Figma 43:98.
+ *
+ * Below `sm` there's no room for the 208px label column beside the value, so
+ * the label stacks above it instead (colon dropped there — it only makes
+ * sense inline). `break-words` keeps unbroken tokens like emails from
+ * overflowing the row now that the value column can be quite narrow.
+ */
 function FieldRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-1 text-sm">
-      <span className="w-52 shrink-0 text-muted-foreground">{label}</span>
-      <span className="shrink-0 text-muted-foreground">:</span>
-      <span className="min-w-0 flex-1 font-bold text-brand-navy-mid">
+    <div className="flex flex-col gap-0.5 text-sm sm:flex-row sm:gap-1">
+      <span className="text-muted-foreground sm:w-52 sm:shrink-0">
+        {label}
+      </span>
+      <span className="hidden text-muted-foreground sm:inline sm:shrink-0">
+        :
+      </span>
+      <span className="min-w-0 flex-1 font-bold break-words text-brand-navy-mid">
         {value}
       </span>
     </div>

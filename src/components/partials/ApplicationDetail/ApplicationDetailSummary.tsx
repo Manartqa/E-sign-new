@@ -35,7 +35,7 @@ export function ApplicationDetailSummary({
       <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-[#f8fafc] px-5 py-3.5">
         <h2 className="text-[15px] font-bold text-brand-navy-mid">ข้อมูลคำขอ</h2>
         {canAct && (
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid w-full grid-cols-3 items-center gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
             <ActionButton action="return" onClick={() => onAction("return")} />
             <ActionButton action="reject" onClick={() => onAction("reject")} />
             <ActionButton action="approve" onClick={() => onAction("approve")} />

@@ -173,7 +173,7 @@ export function LicenseTypeDonut({ items, total }: LicenseTypeDonutProps) {
         )}
       </div>
 
-      <ul className="flex min-w-0 flex-1 flex-col gap-2.5">
+      <ul className="flex w-full min-w-0 flex-1 flex-col gap-2.5 self-stretch">
         {top.map((item, i) => (
           <LegendRow
             key={item.label}

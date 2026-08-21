@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { UserProfile } from "@/types/app/profile";
 import { cn } from "@/lib/utils";
 import {
-  APP_NAME,
+  APP_NAME_LINES,
   APP_SUBTITLE,
   NAV_ITEMS,
   getActiveNavHref,
@@ -92,9 +92,13 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
             </span>
             {!isCollapsed && (
               <div className="flex min-w-0 flex-col">
-                <span className="text-sm font-bold text-brand-on-navy">
-                  {APP_NAME}
-                </span>
+                <div className="text-xs font-bold text-brand-on-navy lg:text-sm">
+                  {APP_NAME_LINES.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </div>
                 <span className="text-[11px] text-brand-blue-muted">
                   {APP_SUBTITLE}
                 </span>

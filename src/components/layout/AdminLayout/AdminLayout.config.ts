@@ -38,6 +38,12 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const APP_NAME = "ระบบการลงนามอนุมัติดิจิทัล";
+/**
+ * Curated wrap points for the sidebar's ~150px name column. Without them,
+ * the browser's automatic Thai line-breaking picks whatever syllable
+ * boundary fits tightest, which can land mid-word (e.g. "อนุ" / "มัติ").
+ */
+export const APP_NAME_LINES = ["ระบบการลงนามอนุมัติ", "ดิจิทัล"];
 export const APP_SUBTITLE = "E-Signature";
 
 /** Breadcrumb trail per route, rendered in the TopBar. */
