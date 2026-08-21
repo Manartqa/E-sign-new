@@ -47,6 +47,116 @@ function buildDocuments(item: ApplicationItem): DocumentItem[] {
   ];
 }
 
+/** Figma 49:2 — evidence documents shown under the ข้อมูลโรงงาน tab. */
+function buildFactoryDocuments(): DocumentItem[] {
+  return [
+    {
+      id: "FDOC-1",
+      name: "สำเนาใบอนุญาตประกอบกิจการโรงงานตามกฎหมายว่าด้วยโรงงาน หรือเอกสารหรือหลักฐานแสดงการเป็นผู้รับใบอนุญาตให้ตั้งโรงงาน",
+      documentDate: "2026-01-01",
+      expiryDate: "2028-05-11",
+      issuedPlace: "จังหวัดอุบลราชธานี ออกโดย: อำเภอเมืองอุบลราชธานี",
+      fileUrl: "/mock/doc-factory-license.pdf",
+    },
+    {
+      id: "FDOC-2",
+      name: "แผนที่แสดงสถานที่ตั้งโรงงาน รายการและแบบของสถานที่เก็บวัตถุระเบิดหรือใช้ในการผลิตอาวุธหรืออาวุธที่ผลิตขึ้น",
+      documentDate: "2026-02-13",
+      expiryDate: "2027-02-28",
+      issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
+      fileUrl: "/mock/doc-factory-map.pdf",
+    },
+    {
+      id: "FDOC-3",
+      name: "สำเนาโฉนดที่ดิน หนังสือรับรองการทำประโยชน์ของที่ตั้งโรงงาน หรือเอกสารแสดงสิทธิในที่ดินอื่นๆ",
+      documentDate: "2026-02-13",
+      expiryDate: "2027-01-09",
+      issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
+      fileUrl: "/mock/doc-factory-land.pdf",
+    },
+  ];
+}
+
+/** Figma 49:491 — the three evidence documents each authorised signer carries. */
+function buildPersonDocuments(prefix: string): DocumentItem[] {
+  return [
+    {
+      id: `${prefix}-1`,
+      name: "หนังสือแต่งตั้งผู้แทนนิติบุคคล",
+      documentDate: "2026-01-01",
+      expiryDate: "2028-05-11",
+      issuedPlace: "จังหวัดอุบลราชธานี ออกโดย: อำเภอเมืองอุบลราชธานี",
+      fileUrl: "/mock/doc-appointment.pdf",
+    },
+    {
+      id: `${prefix}-2`,
+      name: "หนังสือมอบอำนาจ กรณีที่ผู้ยื่นคำขอได้รับมอบอำนาจให้ยื่นคำขอแทน",
+      documentDate: "2026-02-13",
+      expiryDate: "2027-02-28",
+      issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
+      fileUrl: "/mock/doc-power-of-attorney.pdf",
+    },
+    {
+      id: `${prefix}-3`,
+      name: "บัญชีรายชื่อผู้ถือหุ้นซึ่งแสดงรายละเอียดเกี่ยวกับชื่อ สัญชาติ จำนวนหุ้นที่ถือ",
+      documentDate: "2026-02-13",
+      expiryDate: "2027-01-09",
+      issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขต",
+      fileUrl: "/mock/doc-shareholders.pdf",
+    },
+  ];
+}
+
+/** Figma 49:1958 — the project tab's document list (name + file only). */
+function buildProjectDocuments(): DocumentItem[] {
+  return [
+    "สรุปโครงการ",
+    "รายการลงทุน",
+    "การจัดหาเงินทุนและโครงการสร้างเงินทุน",
+    "การศึกษาความเป็นไปได้ที่สำคัญ",
+    "ความสามารถในการดำเนินงาน",
+    "มาตรการอื่นๆ",
+  ].map((name, i) => ({
+    id: `PRJDOC-${i + 1}`,
+    name,
+    // compact table hides these, so they stay blank
+    documentDate: "",
+    expiryDate: "",
+    issuedPlace: "",
+    fileUrl: `/mock/doc-project-${i + 1}.pdf`,
+  }));
+}
+
+/** Figma 106:8900 — the เอกสารแนบอื่นๆ tab's evidence documents. */
+function buildOtherDocuments(): DocumentItem[] {
+  return [
+    {
+      id: "ODOC-1",
+      name: "เอกสารแสดงว่ามีความรู้และความชำนาญเกี่ยวกับการประกอบกิจการผลิตอาวุธ กรณีที่ผู้ขออนุญาตจะผลิตอาวุธที่มีผู้ผลิตอยู่แล้วจะต้องมีหนังสือรับรองจากผู้ผลิตที่แท้จริง ซึ่งแสดงได้ว่ายินยอมอนุญาตให้ผลิตได้ หากเป็นเอกสารที่จัดทำขึ้นในต่างประเทศ จะต้องได้รับการรับรองเอกสารจากประเทศที่จัดทำเอกสารด้วย และจะต้องแปลเป็นภาษาไทย โดยผ่านการรับรองผู้เชี่ยวชาญในการแปลเป็นภาษาไทย",
+      documentDate: "2026-01-01",
+      expiryDate: "2028-05-11",
+      issuedPlace: "จังหวัดอุบลราชธานี ออกโดย: อำเภอเมืองอุบลราชธานี",
+      fileUrl: "/mock/doc-other-1.pdf",
+    },
+    {
+      id: "ODOC-2",
+      name: "เอกสารแสดงว่ามีทุน เครื่องมือ อุปกรณ์และผู้เชี่ยวชาญเพียงพอที่จะดำเนินการตามคำขอนี้ พร้อมด้วยหนังสือรับรองของผู้ซึ่งเกี่ยวข้อง",
+      documentDate: "2026-02-13",
+      expiryDate: "2027-02-28",
+      issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขตบางกอกน้อย",
+      fileUrl: "/mock/doc-other-2.pdf",
+    },
+    {
+      id: "ODOC-3",
+      name: "ทดสอบxx",
+      documentDate: "2026-02-13",
+      expiryDate: "2027-01-09",
+      issuedPlace: "จังหวัดกรุงเทพมหานคร ออกโดย: เขต",
+      fileUrl: "/mock/doc-other-3.pdf",
+    },
+  ];
+}
+
 /**
  * Builds the detail payload for one application.
  *
@@ -116,145 +226,168 @@ export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
           {
             title: "ข้อมูลโรงงาน",
             fields: [
-              { label: "ชื่อโรงงาน", value: "โรงงานผลิตชิ้นส่วนยานยนต์ สาขา 1" },
-              { label: "เลขทะเบียนโรงงาน", value: "3-64(1)-1/56" },
-              { label: "จำพวกโรงงาน", value: "จำพวกที่ 3" },
-              { label: "แรงม้าเครื่องจักรรวม", value: "1,250 แรงม้า" },
-              { label: "จำนวนคนงาน", value: "184 คน" },
+              { label: "ชื่อโรงงาน", value: "โรงงานศรีอุตสาหกรรมอาวุธ" },
               {
-                label: "ที่ตั้งโรงงาน",
-                value: "นิคมอุตสาหกรรมอมตะซิตี้ จังหวัดชลบุรี",
+                label: "ขนาดพื้นที่",
+                value: "20,000.11 ไร่ 10,000.22 งาน 40,000.33 ตารางวา",
+              },
+              { label: "ข้อมูลละติจูด", value: "14.1297308381" },
+              { label: "ข้อมูลลองจิจูด", value: "101.0910070294" },
+              {
+                label: "ที่ตั้ง",
+                value:
+                  "88/12 หมู่ 4 อาคารโรงงานผลิต ซอยอุตสาหกรรม xx ถนนพัฒนาอุตสาหกรรม xx2 ต.ไร่ขิง อ.สามพราน จ.นครปฐม 73210",
+              },
+              { label: "โทรศัพท์", value: "037889900" },
+              { label: "เลขทะเบียนโรงงาน", value: "4-26110-4587" },
+              { label: "กำลังเครื่องจักรที่ได้รับอนุญาต", value: "1,111.124" },
+              {
+                label: "รายละเอียดเพิ่มเติมของสถานที่",
+                value:
+                  "แบ่งพื้นที่เป็นส่วนผลิต ส่วนประกอบ ส่วนเก็บวัตถุดิบ และส่วนสำนักงาน โดยมีรั้วรอบขอบชิดและระบบควบคุมการเข้าออก",
               },
             ],
           },
         ],
+        documents: buildFactoryDocuments(),
       },
 
       people: {
-        kind: "table",
-        columns: [
-          { key: "no", label: "ลำดับ", width: "w-16" },
-          { key: "name", label: "ชื่อ-นามสกุล", width: "min-w-[240px]" },
-          { key: "role", label: "ตำแหน่ง", width: "min-w-[180px]" },
-          { key: "nationalId", label: "เลขประจำตัวประชาชน", width: "min-w-[160px]" },
-          { key: "authority", label: "อำนาจลงนาม", width: "min-w-[140px]" },
-        ],
-        rows: [
+        kind: "people",
+        heading: "รายชื่อผู้มีอำนาจลงนามผูกพันนิติบุคคล",
+        people: [
           {
-            no: "1",
-            name: "นายวิชัย รักชาติ",
+            id: "P-1",
+            name: "นายสมชาย ใจดี",
             role: "กรรมการผู้จัดการ",
-            nationalId: "1509900234567",
-            authority: "ลงนามผูกพันได้",
+            nationalId: "1-2345-67890-12-3",
+            documents: buildPersonDocuments("PDOC-1"),
           },
           {
-            no: "2",
-            name: "นางสาวปรียา วงศ์สุวรรณ",
-            role: "ผู้รับมอบอำนาจ",
-            nationalId: "3101800123456",
-            authority: "ลงนามร่วม",
+            id: "P-2",
+            name: "นางสาวมาลี รักดี",
+            role: "กรรมการผู้จัดการ",
+            nationalId: "1-9876-54321-09-8",
+            documents: buildPersonDocuments("PDOC-2"),
           },
           {
-            no: "3",
-            name: "นายธนา สุขเกษม",
-            role: "วิศวกรควบคุม (ภย. 12345)",
-            nationalId: "1103700456789",
-            authority: "-",
+            id: "P-3",
+            name: "นายวิชัย เก่งงาน",
+            role: "ผู้ถือหุ้น",
+            nationalId: "1-2345-67890-12-3",
+            documents: buildPersonDocuments("PDOC-3"),
           },
         ],
       },
 
       buildings: {
-        kind: "cards",
-        cards: [
+        kind: "table",
+        heading: "อาคารและสถานที่",
+        columns: [
+          { key: "no", label: "", width: "w-12" },
           {
-            title: "อาคาร A — อาคารผลิต",
-            fields: [
-              { label: "พื้นที่ใช้สอย", value: "4,200 ตารางเมตร" },
-              { label: "จำนวนชั้น", value: "2 ชั้น" },
-              { label: "ปีที่ก่อสร้าง", value: "2562" },
-            ],
+            key: "name",
+            label: "ชื่ออาคาร",
+            width: "min-w-[240px]",
+            strong: true,
+          },
+          { key: "type", label: "ประเภทอาคาร", width: "min-w-[140px]" },
+          {
+            key: "purpose",
+            label: "วัตถุประสงค์การใช้งาน",
+            width: "min-w-[360px]",
+          },
+          { key: "status", label: "สถานะอาคาร", width: "min-w-[120px]" },
+        ],
+        rows: [
+          {
+            no: "1",
+            name: "อาคารโรงงานผลิต",
+            type: "อาคารการผลิต",
+            purpose:
+              "ใช้เป็นพื้นที่ผลิตและประกอบชิ้นส่วนอาวุธตามกระบวนการผลิตที่ได้รับอนุญาต",
+            status: "ก่อสร้างใหม่",
           },
           {
-            title: "อาคาร B — คลังสินค้า",
-            fields: [
-              { label: "พื้นที่ใช้สอย", value: "3,100 ตารางเมตร" },
-              { label: "จำนวนชั้น", value: "1 ชั้น" },
-              { label: "ปีที่ก่อสร้าง", value: "2564" },
-            ],
+            no: "2",
+            name: "อาคารคลังเก็บวัตถุดิบ",
+            type: "คลังเก็บวัตถุดิบ",
+            purpose:
+              "ใช้สำหรับจัดเก็บวัตถุดิบ ชิ้นส่วน และอุปกรณ์ที่เกี่ยวข้องกับการผลิต",
+            status: "ใช้งานปกติ",
           },
           {
-            title: "อาคาร C — สำนักงาน",
-            fields: [
-              { label: "พื้นที่ใช้สอย", value: "1,100 ตารางเมตร" },
-              { label: "จำนวนชั้น", value: "3 ชั้น" },
-              { label: "ปีที่ก่อสร้าง", value: "2565" },
-            ],
+            no: "3",
+            name: "อาคารคลังสินค้าสำเร็จรูป",
+            type: "คลังสินค้า",
+            purpose: "ใช้สำหรับจัดเก็บผลิตภัณฑ์สำเร็จรูปก่อนส่งมอบหรือจำหน่าย",
+            status: "ใช้งานปกติ",
           },
         ],
       },
 
       permits: {
         kind: "table",
+        heading: "รายการที่ขออนุญาต",
         columns: [
-          { key: "no", label: "ลำดับ", width: "w-16" },
-          { key: "name", label: "รายการ", width: "min-w-[320px]" },
-          { key: "category", label: "ประเภท", width: "min-w-[160px]" },
-          { key: "quantity", label: "จำนวน", width: "min-w-[120px]" },
-          { key: "unit", label: "หน่วย", width: "min-w-[100px]" },
+          { key: "no", label: "", width: "w-12" },
+          { key: "code", label: "รหัส", width: "min-w-[100px]", strong: true },
+          { key: "group", label: "กลุ่ม", width: "min-w-[120px]" },
+          { key: "name", label: "ชื่ออาวุธ&วัตถุดิบ", width: "min-w-[160px]" },
+          { key: "detail", label: "รายละเอียด", width: "min-w-[220px]" },
+          {
+            key: "capacityUnit",
+            label: "กำลังการผลิต/ปี (หน่วยนับ)",
+            width: "min-w-[180px]",
+          },
+          {
+            key: "capacityWeight",
+            label: "กำลังการผลิต/ปี (น้ำหนัก)",
+            width: "min-w-[180px]",
+          },
         ],
         rows: [
           {
             no: "1",
-            name: "ชิ้นส่วนโลหะสำหรับประกอบ",
-            category: "วัตถุดิบ",
-            quantity: "12,000",
-            unit: "ชิ้น/ปี",
+            code: "P-0026",
+            group: "กระสุนปืน",
+            name: ".32 นิ้ว",
+            detail: "กระสุนปืน .32 นิ้ว (จริง)",
+            capacityUnit: "1,500 นัด",
+            capacityWeight: "25,000",
           },
           {
             no: "2",
-            name: "ดินขับเชื้อเพลิงแข็ง",
-            category: "วัตถุอันตราย",
-            quantity: "850",
-            unit: "กิโลกรัม/ปี",
+            code: "P-0032",
+            group: "กระสุนปืน",
+            name: ".44 นิ้ว",
+            detail: "กระสุนปืน .44 นิ้ว (จริง)",
+            capacityUnit: "1,000 นัด",
+            capacityWeight: "2,000",
           },
           {
             no: "3",
-            name: "เครื่องจักร CNC 5 แกน",
-            category: "เครื่องจักร",
-            quantity: "4",
-            unit: "เครื่อง",
+            code: "P-0032",
+            group: "กระสุนปืน",
+            name: ".44 นิ้ว ซ้อม",
+            detail: "กระสุนปืน .44 นิ้ว (ซ้อม)",
+            capacityUnit: "2,000 นัด",
+            capacityWeight: "3,000",
           },
         ],
       },
 
       project: {
-        kind: "fields",
-        sections: [
-          {
-            title: "ข้อมูลโครงการ",
-            fields: [
-              { label: "ชื่อโครงการ", value: "โครงการขยายกำลังการผลิต ระยะที่ 2" },
-              { label: "มูลค่าการลงทุน", value: "125,000,000 บาท" },
-              { label: "ระยะเวลาดำเนินการ", value: "18 เดือน" },
-              { label: "แหล่งเงินทุน", value: "เงินทุนหมุนเวียนของบริษัท" },
-            ],
-          },
-        ],
+        kind: "documents",
+        heading: "เอกสารโครงการ",
+        compact: true,
+        documents: buildProjectDocuments(),
       },
 
       docs: {
-        kind: "fields",
-        sections: [
-          {
-            title: "เอกสารแนบอื่นๆ",
-            fields: [
-              { label: "จำนวนเอกสารแนบ", value: "4 รายการ" },
-              { label: "อัปโหลดล่าสุด", value: "โดย " + item.applicantName },
-            ],
-          },
-        ],
-        documents: buildDocuments(item),
+        kind: "documents",
+        heading: "ข้อมูลเอกสารหลักฐาน",
+        documents: buildOtherDocuments(),
       },
 
       history: {

@@ -1,12 +1,13 @@
 "use client";
 
 import { Timeline } from "@/components/common";
-import { cn } from "@/lib/utils";
 import type {
   DetailPanel,
   DetailSection,
   DocumentItem,
 } from "@/types/app/applications";
+import { AuthorizedPeoplePanel } from "./AuthorizedPeoplePanel";
+import { DataTablePanel } from "./DataTablePanel";
 import { DocumentTable } from "./DocumentTable";
 
 /** label : value row — Figma 43:98 */
@@ -55,6 +56,31 @@ export function DetailPanelView({
     );
   }
 
+  if (panel.kind === "documents") {
+    return (
+      <div className="flex flex-col gap-4 rounded-lg bg-card px-6 pt-1 pb-6">
+        <h3 className="text-base font-bold text-brand-navy-mid">
+          {panel.heading}
+        </h3>
+        <DocumentTable
+          documents={panel.documents}
+          onOpen={onOpenDocument}
+          compact={panel.compact}
+        />
+      </div>
+    );
+  }
+
+  if (panel.kind === "people") {
+    return (
+      <AuthorizedPeoplePanel
+        heading={panel.heading}
+        people={panel.people}
+        onOpenDocument={onOpenDocument}
+      />
+    );
+  }
+
   if (panel.kind === "cards") {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -69,46 +95,11 @@ export function DetailPanelView({
 
   if (panel.kind === "table") {
     return (
-      <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full border-collapse text-left">
-          <thead className="border-b bg-[#f8fafc]">
-            <tr>
-              {panel.columns.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={cn(
-                    "border-r px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
-                    column.width,
-                  )}
-                >
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {panel.rows.map((row, index) => (
-              <tr
-                key={index}
-                className={cn(
-                  "border-b",
-                  index % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]",
-                )}
-              >
-                {panel.columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className="border-r px-3 py-3 text-sm text-muted-foreground"
-                  >
-                    {row[column.key] ?? "-"}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTablePanel
+        heading={panel.heading}
+        columns={panel.columns}
+        rows={panel.rows}
+      />
     );
   }
 
@@ -118,7 +109,12 @@ export function DetailPanelView({
         <SectionBlock key={section.title} section={section} />
       ))}
       {panel.documents && (
-        <DocumentTable documents={panel.documents} onOpen={onOpenDocument} />
+        <div className="flex flex-col gap-2.5">
+          <h3 className="text-base font-bold text-brand-navy-mid">
+            ข้อมูลเอกสารหลักฐาน
+          </h3>
+          <DocumentTable documents={panel.documents} onOpen={onOpenDocument} />
+        </div>
       )}
     </div>
   );

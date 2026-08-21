@@ -90,10 +90,23 @@ export interface DetailSection {
   fields: ApplicationField[];
 }
 
+/** One authorised signer on the บุคคลและผู้มีอำนาจ tab (Figma 49:491). */
+export interface AuthorizedPerson {
+  id: string;
+  name: string;
+  /** ตำแหน่ง — e.g. กรรมการผู้จัดการ, ผู้ถือหุ้น */
+  role: string;
+  /** เลขที่บัตรประจำตัวประชาชน */
+  nationalId: string;
+  documents: DocumentItem[];
+}
+
 export interface DetailTableColumn {
   key: string;
   label: string;
   width?: string;
+  /** render this column's cells bold navy (e.g. the name column) */
+  strong?: boolean;
 }
 
 /**
@@ -104,8 +117,21 @@ export interface DetailTableColumn {
  */
 export type DetailPanel =
   | { kind: "fields"; sections: DetailSection[]; documents?: DocumentItem[] }
-  | { kind: "table"; columns: DetailTableColumn[]; rows: Record<string, string>[] }
+  | {
+      kind: "table";
+      heading?: string;
+      columns: DetailTableColumn[];
+      rows: Record<string, string>[];
+    }
   | { kind: "cards"; cards: DetailSection[] }
+  | { kind: "people"; heading: string; people: AuthorizedPerson[] }
+  | {
+      kind: "documents";
+      heading: string;
+      /** name + file only, no date/place columns */
+      compact?: boolean;
+      documents: DocumentItem[];
+    }
   | { kind: "timeline"; events: TimelineEvent[] };
 
 /**
