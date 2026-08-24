@@ -5,15 +5,23 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constant/routes";
+import { IS_SSO_ENABLED, SSO_ERROR_MESSAGE, SSO_PROVIDER_ID } from "@/constant/sso";
 import { LOGIN_ERROR_MESSAGE } from "./Login.config";
 import { LoginForm, type LoginFormValues } from "./LoginForm";
 import { LoginHero } from "./LoginHero";
 
-export default function LoginContent() {
+interface LoginContentProps {
+  /** true when NextAuth redirected back here with `?error=` from the SSO flow */
+  hasSsoError?: boolean;
+}
+
+export default function LoginContent({ hasSsoError = false }: LoginContentProps) {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    hasSsoError ? SSO_ERROR_MESSAGE : null,
+  );
 
   const handleSubmit = async ({ username, pwd }: LoginFormValues) => {
     setIsSubmitting(true);
@@ -39,9 +47,15 @@ export default function LoginContent() {
   };
 
   const handleSso = () => {
-    // The Figma `login-page-SSO` frame is a screenshot of the external
-    // provider — there is nothing to build here until the SSO endpoint exists.
-    toast.info("ยังไม่ได้เชื่อมต่อระบบ SSO");
+    if (!IS_SSO_ENABLED) {
+      // no client_id registered for this environment yet
+      toast.info("ยังไม่ได้เชื่อมต่อระบบ SSO");
+      return;
+    }
+    // Full-page redirect into the SSO Auth Server's Authorization Code flow;
+    // NextAuth handles state/nonce/PKCE and the /api/auth/callback/sso return.
+    setIsSubmitting(true);
+    void signIn(SSO_PROVIDER_ID, { callbackUrl: ROUTES.applications });
   };
 
   return (

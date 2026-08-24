@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useApplicationList } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
@@ -22,8 +22,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // never leave the drawer covering a page the user just navigated to
-  useEffect(() => setMenuOpen(false), [pathname]);
+  // never leave the drawer covering a page the user just navigated to.
+  // Adjusted during render rather than in an effect so the drawer is already
+  // closed on the first paint of the new route (React docs: "adjusting state
+  // when a prop changes").
+  const [renderedPath, setRenderedPath] = useState(pathname);
+  if (renderedPath !== pathname) {
+    setRenderedPath(pathname);
+    setMenuOpen(false);
+  }
 
   return (
     <div className="flex min-h-screen">

@@ -1,11 +1,17 @@
-import type { AxiosInstance } from "axios";
-import { getSession, signOut } from "next-auth/react";
+import axios, { type AxiosInstance } from "axios";
+import { getSession } from "next-auth/react";
+import { logoutEverywhere } from "@/lib/logout";
 
 export function attachInterceptors(client: AxiosInstance) {
   client.interceptors.request.use(async (config) => {
     if (typeof window !== "undefined") {
       const session = await getSession();
-      const token = (session as { accessToken?: string } | null)?.accessToken;
+      // a failed SSO refresh leaves a session object with no usable token
+      if (session?.error === "RefreshAccessTokenError") {
+        void logoutEverywhere();
+        throw new axios.CanceledError("session expired");
+      }
+      const token = session?.accessToken;
       if (token) config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -15,7 +21,7 @@ export function attachInterceptors(client: AxiosInstance) {
     (response) => response,
     (error) => {
       if (error?.response?.status === 401 && typeof window !== "undefined") {
-        void signOut({ callbackUrl: "/login" });
+        void logoutEverywhere();
       }
       return Promise.reject(error);
     },

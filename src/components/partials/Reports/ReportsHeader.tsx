@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Table } from "lucide-react";
 import { FILTER_TRIGGER, LabeledSelect } from "@/components/common";
 import {
@@ -23,7 +23,14 @@ export function ReportsHeader({
   onExport,
 }: ReportsHeaderProps) {
   const [draft, setDraft] = useState(filters);
-  useEffect(() => setDraft(filters), [filters]);
+
+  // Same pattern as ApplicationListHeader: re-sync the draft during render
+  // when the applied filters change from the outside, never in an effect.
+  const [appliedFilters, setAppliedFilters] = useState(filters);
+  if (appliedFilters !== filters) {
+    setAppliedFilters(filters);
+    setDraft(filters);
+  }
 
   return (
     <form

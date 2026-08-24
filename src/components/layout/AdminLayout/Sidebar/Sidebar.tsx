@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, ShieldCheck, X } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { logoutEverywhere } from "@/lib/logout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserProfile } from "@/types/app/profile";
 import { cn } from "@/lib/utils";
@@ -200,7 +200,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
 
           <button
             type="button"
-            onClick={() => void signOut({ callbackUrl: "/login" })}
+            onClick={() => void logoutEverywhere()}
             title={isCollapsed ? "ออกจากระบบ" : undefined}
             className={cn(
               "flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white hover:bg-sidebar-accent/30",

@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { formatRelative, formatThaiShortDate } from "@/lib/format";
+
+/** "now" never changes for our purposes, so the store never notifies. */
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 /**
  * Relative timestamps depend on "now", which differs between the server render
@@ -15,8 +20,11 @@ export function RelativeTime({
   iso: string;
   className?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   return (
     <time dateTime={iso} className={className}>

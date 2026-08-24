@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored, minified pdf.js worker copied from react-pdf — not ours to lint
+    // (it alone accounted for 1460 of the 1465 reported problems).
+    "public/pdf.worker.min.mjs",
   ]),
 ]);
 

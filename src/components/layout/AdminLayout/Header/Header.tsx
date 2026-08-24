@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { logoutEverywhere } from "@/lib/logout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -140,7 +140,7 @@ export function Header({
             <DropdownMenuItem
               variant="destructive"
               className="gap-3 rounded-none px-4 py-3 text-sm"
-              onClick={() => void signOut({ callbackUrl: "/login" })}
+              onClick={() => void logoutEverywhere()}
             >
               <LogOut className="size-5" aria-hidden />
               ออกจากระบบ

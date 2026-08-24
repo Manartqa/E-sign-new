@@ -61,10 +61,6 @@ export default function ProfileContent() {
   const { profile, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
   const [form, setForm] = useState<EditableFields | null>(null);
-  // saveEditing reads this instead of the closured `form` so it always acts
-  // on the value from the render that's actually on screen when clicked
-  const formRef = useRef(form);
-  formRef.current = form;
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   if (isError) return <ErrorState />;
@@ -101,8 +97,10 @@ export default function ProfileContent() {
     reader.readAsDataURL(file);
   };
 
+  // `form` is read straight from this render — the save button is rendered in
+  // the same pass, so its handler can never close over a stale draft.
   const saveEditing = async () => {
-    const current = formRef.current;
+    const current = form;
     if (!current) return;
     try {
       await updateProfile.mutateAsync({

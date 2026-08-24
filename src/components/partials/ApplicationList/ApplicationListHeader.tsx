@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import {
   DateRangePicker,
@@ -34,7 +34,14 @@ export function ApplicationListHeader({
 }: ApplicationListHeaderProps) {
   const [draft, setDraft] = useState(filters);
 
-  useEffect(() => setDraft(filters), [filters]);
+  // Reset the unsubmitted draft whenever the applied filters change from the
+  // outside (stat-card click, ล้างค่า). Done during render, not in an effect,
+  // so the inputs never paint one frame of stale values.
+  const [appliedFilters, setAppliedFilters] = useState(filters);
+  if (appliedFilters !== filters) {
+    setAppliedFilters(filters);
+    setDraft(filters);
+  }
 
   const typeOptions = useMemo(
     () => [{ value: "all", label: "ทุกประเภท" }, ...APPLICATION_TYPE_OPTIONS],
