@@ -48,6 +48,7 @@ function toItem(raw: ApplicationResponse): ApplicationItem {
     submittedAt: raw.submittedAt,
     updatedAt: raw.updatedAt,
     assignedOfficer: raw.assignedOfficer,
+    isFinalSigner: raw.isFinalSigner,
   };
 }
 

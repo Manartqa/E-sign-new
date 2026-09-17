@@ -68,7 +68,11 @@ export function Sparkline({ data, className }: SparklineProps) {
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className={cn("h-9 w-full", className)}
+      // not in Figma: the trend wipes in from the left on first paint
+      className={cn(
+        "h-9 w-full animate-reveal-x motion-reduce:animate-none",
+        className,
+      )}
       preserveAspectRatio="none"
       aria-hidden
     >

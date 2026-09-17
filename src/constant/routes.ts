@@ -6,4 +6,10 @@ export const ROUTES = {
   applicationDetail: (id: string) => `/applications/${id}`,
   profile: "/profile",
   settings: "/settings",
+  signingWorkflows: "/settings/signing-workflows",
+  signingWorkflowNew: "/settings/signing-workflows/new",
+  signingWorkflowEdit: (id: string) => `/settings/signing-workflows/${id}`,
+  signers: "/settings/signers",
+  signerNew: "/settings/signers/new",
+  signerEdit: (id: string) => `/settings/signers/${id}`,
 } as const;

@@ -1,12 +1,21 @@
 import {
   BarChart3,
   Clock,
+  FileCheck,
+  FilePen,
   FileText,
+  ListOrdered,
   Settings,
+  ShieldAlert,
   User,
+  UserPen,
   type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/constant/routes";
+import {
+  NOTIFICATION_TYPE,
+  type NotificationType,
+} from "@/types/app/notifications";
 
 export interface NavItem {
   href: string;
@@ -14,6 +23,11 @@ export interface NavItem {
   icon: LucideIcon;
   /** key into the counts map passed to <Sidebar/>, renders an amber pill */
   badgeKey?: "pending";
+  /**
+   * sub menu — the item becomes a toggle instead of a link, and `href` is only
+   * the path prefix its children share
+   */
+  children?: Omit<NavItem, "badgeKey" | "children">[];
 }
 
 /**
@@ -34,16 +48,19 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { href: ROUTES.reports, label: "รายงานภาพรวม", icon: BarChart3 },
   { href: ROUTES.profile, label: "โปรไฟล์ผู้ใช้งาน", icon: User },
-  { href: ROUTES.settings, label: "ตั้งค่าระบบ", icon: Settings },
+  {
+    href: ROUTES.settings,
+    label: "ตั้งค่าระบบ",
+    icon: Settings,
+    children: [
+      { href: ROUTES.signers, label: "ผู้มีอำนาจลงนาม", icon: UserPen },
+      { href: ROUTES.signingWorkflows, label: "กระบวนการลงนาม", icon: ListOrdered },
+    ],
+  },
 ];
 
+/** shown on one line — the sidebar is sized to fit it (see Sidebar.tsx) */
 export const APP_NAME = "ระบบการลงนามอนุมัติดิจิทัล";
-/**
- * Curated wrap points for the sidebar's ~150px name column. Without them,
- * the browser's automatic Thai line-breaking picks whatever syllable
- * boundary fits tightest, which can land mid-word (e.g. "อนุ" / "มัติ").
- */
-export const APP_NAME_LINES = ["ระบบการลงนามอนุมัติ", "ดิจิทัล"];
 export const APP_SUBTITLE = "E-Signature";
 /**
  * Full system name shown above the TopBar breadcrumb — Figma login-hero
@@ -60,7 +77,34 @@ export const BREADCRUMBS: Record<string, string[]> = {
   [ROUTES.applicationsPending]: ["หน้าหลัก", "รอการอนุมัติ"],
   [ROUTES.profile]: ["หน้าหลัก", "โปรไฟล์ผู้ใช้งาน"],
   [ROUTES.settings]: ["หน้าหลัก", "ตั้งค่าระบบ"],
+  [ROUTES.signingWorkflows]: ["หน้าหลัก", "ตั้งค่าระบบ", "กระบวนการลงนาม"],
+  [ROUTES.signingWorkflowNew]: [
+    "หน้าหลัก",
+    "ตั้งค่าระบบ",
+    "กระบวนการลงนาม",
+    "เพิ่มกระบวนการลงนาม",
+  ],
+  [ROUTES.signers]: ["หน้าหลัก", "ตั้งค่าระบบ", "ผู้มีอำนาจลงนาม"],
+  [ROUTES.signerNew]: [
+    "หน้าหลัก",
+    "ตั้งค่าระบบ",
+    "ผู้มีอำนาจลงนาม",
+    "เพิ่มผู้มีอำนาจลงนาม",
+  ],
 };
+
+/**
+ * The trail for `pathname`: an exact BREADCRUMBS entry, else the longest entry
+ * it sits under — so /settings/signing-workflows/SW-001 inherits the
+ * กระบวนการลงนาม trail instead of dropping to ตั้งค่าระบบ.
+ */
+export function getBreadcrumbs(pathname: string): string[] {
+  if (BREADCRUMBS[pathname]) return BREADCRUMBS[pathname];
+  const parent = Object.keys(BREADCRUMBS)
+    .filter((href) => href !== "/" && pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
+  return parent ? BREADCRUMBS[parent] : ["หน้าหลัก"];
+}
 
 export function getInitials(name: string): string {
   return name.trim().slice(0, 2);
@@ -75,9 +119,37 @@ export function getInitials(name: string): string {
  * route to its own entry.
  */
 export function getActiveNavHref(pathname: string): string | undefined {
-  return NAV_ITEMS.map((item) => item.href)
+  return NAV_ITEMS.flatMap((item) =>
+    item.children ? item.children.map((child) => child.href) : [item.href],
+  )
     .filter(
       (href) => pathname === href || pathname.startsWith(`${href}/`),
     )
     .sort((a, b) => b.length - a.length)[0];
 }
+
+/**
+ * Header notification panel — not in Figma. Icon + tint per kind, reusing the
+ * status palette so a "new request" reads amber like รอการอนุมัติ.
+ */
+export const NOTIFICATION_META: Record<
+  NotificationType,
+  { icon: LucideIcon; className: string }
+> = {
+  [NOTIFICATION_TYPE.NEW_REQUEST]: {
+    icon: FileText,
+    className: "bg-status-pending-approval-bg text-status-pending-approval-fg",
+  },
+  [NOTIFICATION_TYPE.RESUBMITTED]: {
+    icon: FilePen,
+    className: "bg-status-returned-bg text-status-returned-fg",
+  },
+  [NOTIFICATION_TYPE.SIGNED]: {
+    icon: FileCheck,
+    className: "bg-status-approved-bg text-status-approved-fg",
+  },
+  [NOTIFICATION_TYPE.CERTIFICATE_EXPIRING]: {
+    icon: ShieldAlert,
+    className: "bg-status-rejected-bg text-status-rejected-fg",
+  },
+};

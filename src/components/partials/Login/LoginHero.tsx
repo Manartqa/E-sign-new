@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   HERO_DEPARTMENT,
@@ -9,13 +8,21 @@ import {
   HERO_SUBTITLE,
   HERO_TITLE_LINES,
 } from "./Login.config";
+import { LoginEmblem } from "./LoginEmblem";
 
-/** 120px grid, 5% white — Figma node 12:5 `grid-overlay` */
+/**
+ * Not in Figma: the hero's pieces arrive in sequence on load. The login page is
+ * seen once per session, so it can afford a slower entrance than the app.
+ */
+const ENTER =
+  "animate-in fade-in fill-mode-both duration-500 motion-reduce:animate-none";
+
+/** 120px grid, 5% white — Figma node 12:5 `grid-overlay` (the drift is ours) */
 function GridOverlay() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 opacity-5"
+      className="pointer-events-none absolute inset-0 animate-grid-drift opacity-5 motion-reduce:animate-none"
       style={{
         backgroundImage:
           "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
@@ -39,13 +46,22 @@ export function LoginHero({ variant = "full", className }: LoginHeroProps) {
     <div
       className={cn(
         "relative flex flex-col overflow-hidden bg-gradient-to-b from-brand-navy to-brand-navy-mid",
-        isCompact ? "gap-5 px-6 py-8" : "gap-8 px-16 py-14",
+        // phones get a tighter band so the whole sign-in card fits one screen
+        isCompact
+          ? "gap-3 px-6 py-4 sm:gap-5 sm:py-8"
+          : "gap-8 px-16 py-14",
         className,
       )}
     >
       <GridOverlay />
 
-      <div className="relative flex items-center gap-3">
+      <div
+        className={cn(
+          "relative flex items-center gap-3",
+          ENTER,
+          "slide-in-from-top-2",
+        )}
+      >
         <Image
           src="/brand/emblem.png"
           alt={HERO_DEPARTMENT}
@@ -53,7 +69,7 @@ export function LoginHero({ variant = "full", className }: LoginHeroProps) {
           height={80}
           className={cn(
             "shrink-0 rounded-full border-2 border-[#fffefc] object-contain",
-            isCompact ? "size-14" : "size-20",
+            isCompact ? "size-11 sm:size-14" : "size-20",
           )}
         />
         <div className="flex flex-col gap-1 text-xs text-white">
@@ -64,27 +80,32 @@ export function LoginHero({ variant = "full", className }: LoginHeroProps) {
 
       <div
         className={cn(
-          "relative flex flex-col items-center gap-5",
-          !isCompact && "flex-1 justify-center",
+          // flex-1 + justify-center keeps the emblem and title centred in
+          // whatever height the hero ends up with (the compact hero grows on
+          // tall phones — see LoginContent)
+          "relative flex flex-1 flex-col items-center justify-center",
+          isCompact ? "gap-2 sm:gap-5" : "gap-5",
         )}
       >
-        <span
+        <LoginEmblem
           className={cn(
-            "flex items-center justify-center rounded-[18px] border border-white/20 bg-white/10",
-            isCompact ? "size-14" : "size-18",
+            ENTER,
+            "delay-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] zoom-in-75",
+            isCompact ? "size-16 sm:size-28" : "size-44",
+          )}
+        />
+
+        <div
+          className={cn(
+            "flex flex-col gap-2 text-center",
+            ENTER,
+            "delay-300 slide-in-from-bottom-2",
           )}
         >
-          <FileSignature
-            className={cn("text-white", isCompact ? "size-7" : "size-[34px]")}
-            aria-hidden
-          />
-        </span>
-
-        <div className="flex flex-col gap-2 text-center">
           <h1
             className={cn(
               "font-bold text-[#fafcff]",
-              isCompact ? "text-xl" : "text-[32px]",
+              isCompact ? "text-lg sm:text-xl" : "text-[32px]",
             )}
           >
             {HERO_TITLE_LINES.map((line) => (
@@ -93,15 +114,31 @@ export function LoginHero({ variant = "full", className }: LoginHeroProps) {
               </span>
             ))}
           </h1>
-          <p className="text-xs text-brand-blue-muted">{HERO_SUBTITLE}</p>
+          {/* phones drop the English repeat of the title to save a row */}
+          <p
+            className={cn(
+              "text-xs text-brand-blue-muted",
+              isCompact && "max-sm:hidden",
+            )}
+          >
+            {HERO_SUBTITLE}
+          </p>
         </div>
 
         {!isCompact && (
           <>
-            <span className="h-px w-20 bg-white/20" />
+            <span className={cn("h-px w-20 bg-white/20", ENTER, "delay-500")} />
             <ul className="flex flex-col gap-3">
-              {HERO_FEATURES.map(({ icon: Icon, label }) => (
-                <li key={label} className="flex items-center gap-2.5">
+              {HERO_FEATURES.map(({ icon: Icon, label }, i) => (
+                <li
+                  key={label}
+                  className={cn(
+                    "flex items-center gap-2.5",
+                    ENTER,
+                    "slide-in-from-left-2",
+                  )}
+                  style={{ animationDelay: `${550 + i * 80}ms` }}
+                >
                   <Icon className="size-[18px] shrink-0 text-white" aria-hidden />
                   <span className="text-[13px] text-white opacity-90">
                     {label}
@@ -114,7 +151,15 @@ export function LoginHero({ variant = "full", className }: LoginHeroProps) {
       </div>
 
       {!isCompact && (
-        <p className="relative text-xs text-white opacity-75">{HERO_FOOTER}</p>
+        <p
+          className={cn(
+            "relative text-xs text-white opacity-75",
+            ENTER,
+            "delay-700",
+          )}
+        >
+          {HERO_FOOTER}
+        </p>
       )}
     </div>
   );

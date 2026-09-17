@@ -5,10 +5,10 @@ import Link from "next/link";
 import { Eye, Pencil, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   EmptyState,
   ErrorState,
-  LoadingState,
   Pagination,
   PdfIcon,
   StatusBadge,
@@ -20,6 +20,7 @@ import { useProfile } from "@/hooks/profile";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationItem, ReturnFormValues } from "@/types/app/applications";
+import type { TokenSignResult } from "@/types/app/signing";
 import {
   MOCK_CERTIFICATE,
   PDFViewer,
@@ -61,6 +62,68 @@ const STICKY_ACTIONS = "sticky right-0 shadow-[inset_1px_0_0_0_var(--border)]";
 
 /** the column just before the frozen one yields the seam to STICKY_ACTIONS */
 const NO_RIGHT = "border-r-0!";
+
+/** placeholder bar width per column, so the skeleton reads like real data */
+const SKELETON_BAR: Partial<Record<string, string>> = {
+  select: "size-4 rounded-[3px]",
+  status: "h-6 w-24 rounded-full",
+  actions: "ml-auto h-[18px] w-28",
+};
+
+/**
+ * Not in Figma: the loading state keeps the real header and column widths, so
+ * nothing shifts when the rows land.
+ */
+function TableSkeleton({ rows }: { rows: number }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border" aria-busy="true">
+      <table className="w-full border-collapse text-left">
+        <thead className="border-b bg-[#f8fafc]">
+          <tr>
+            {TABLE_COLUMNS.map((column) => (
+              <th
+                key={column.key}
+                scope="col"
+                className={cn(
+                  CELL,
+                  column.width,
+                  "text-base font-bold whitespace-nowrap text-brand-navy-mid",
+                  column.key === "assignedOfficer" && NO_RIGHT,
+                  column.key === "actions" &&
+                    cn(STICKY_ACTIONS, "z-20 bg-[#f8fafc]"),
+                )}
+              >
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: rows }, (_, i) => (
+            <tr key={i} className="border-b">
+              {TABLE_COLUMNS.map((column) => (
+                <td
+                  key={column.key}
+                  className={cn(
+                    CELL,
+                    "h-[53px]",
+                    column.key === "assignedOfficer" && NO_RIGHT,
+                    column.key === "actions" &&
+                      cn(STICKY_ACTIONS, "z-10 bg-white"),
+                  )}
+                >
+                  <Skeleton
+                    className={SKELETON_BAR[column.key] ?? "h-4 w-3/4"}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 /** Figma: app-list › table (171:1843) — 10 columns */
 export function ApplicationTable({
@@ -106,13 +169,13 @@ export function ApplicationTable({
     }
   };
 
-  const handleSign = async () => {
+  const handleSign = async (token?: TokenSignResult) => {
     if (!signTarget) return;
     try {
       await sign.mutateAsync({
-        certificateId: MOCK_CERTIFICATE.id,
-        certificateOwner: profile?.name ?? "",
-        signature: "base64_encoded_signature",
+        certificateId: token?.certificateId ?? MOCK_CERTIFICATE.id,
+        certificateOwner: token?.certificateOwner ?? profile?.name ?? "",
+        signature: token?.signature ?? "base64_encoded_signature",
         timestamp: new Date().toISOString(),
         applicationId: signTarget.id,
         officerId: profile?.id ?? "",
@@ -130,7 +193,7 @@ export function ApplicationTable({
       {isError ? (
         <ErrorState />
       ) : isLoading ? (
-        <LoadingState rows={limit} />
+        <TableSkeleton rows={limit} />
       ) : items.length === 0 ? (
         <EmptyState />
       ) : (
@@ -169,10 +232,14 @@ export function ApplicationTable({
               </thead>
 
               <tbody>
-                {items.map((item) => (
+                {items.map((item, index) => (
                   <tr
                     key={item.id}
-                    className="group border-b bg-white hover:bg-[#f8fafc]"
+                    // not in Figma: rows fade up in turn when a page of
+                    // results arrives; only the first 10 are staggered so a
+                    // 50-row page doesn't keep the user waiting
+                    className="group animate-in border-b bg-white fill-mode-both duration-200 fade-in slide-in-from-bottom-1 hover:bg-[#f8fafc] motion-reduce:animate-none"
+                    style={{ animationDelay: `${Math.min(index, 9) * 30}ms` }}
                   >
                     <td className={CELL}>
                       <Checkbox
@@ -365,10 +432,9 @@ export function ApplicationTable({
         <SignatureModal
           open
           detail={signTarget}
-          signer={profile}
           isSubmitting={sign.isPending}
           onClose={() => setSignTarget(null)}
-          onConfirm={() => void handleSign()}
+          onConfirm={(token) => void handleSign(token)}
         />
       )}
     </div>

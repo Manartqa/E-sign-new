@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { formatNumber } from "@/lib/format";
 import type { BreakdownItem } from "@/types/app/reports";
 
@@ -76,6 +76,8 @@ function LegendRow({
  */
 export function LicenseTypeDonut({ items, total }: LicenseTypeDonutProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  // stable, SSR-safe id; colons stripped so url(#…) references parse everywhere
+  const maskId = `donut-${useId().replace(/:/g, "")}`;
   const [active, setActive] = useState<{
     label: string;
     value: number;
@@ -113,38 +115,66 @@ export function LicenseTypeDonut({ items, total }: LicenseTypeDonutProps) {
           role="img"
           aria-label="สัดส่วนการขออนุญาต"
         >
-          {slices.map((slice) => {
-            const length = (slice.value / total) * CIRCUMFERENCE;
-            const dash = `${length} ${CIRCUMFERENCE - length}`;
-            const strokeOffset = -offset;
-            offset += length;
-
-            return (
+          {/* not in Figma: one ring stroke draws clockwise from 12 o'clock and
+              uncovers the slices beneath it as a single sweep */}
+          <defs>
+            {/* the default mask box is the group's fill bbox +10%, which
+                shaves the stroke flat at 12/3/6/9 o'clock — cover the whole
+                viewBox instead */}
+            <mask
+              id={maskId}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="0"
+              width="160"
+              height="160"
+            >
               <circle
-                key={slice.label}
                 cx="80"
                 cy="80"
                 r={RADIUS}
                 fill="none"
-                strokeWidth="28"
-                stroke={slice.color}
-                strokeDasharray={dash}
-                strokeDashoffset={strokeOffset}
-                className="cursor-pointer transition-opacity"
-                opacity={active && active.label !== slice.label ? 0.45 : 1}
-                onMouseMove={(e) => {
-                  const rect = wrapRef.current?.getBoundingClientRect();
-                  if (!rect) return;
-                  setActive({
-                    label: slice.label,
-                    value: slice.value,
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top,
-                  });
-                }}
+                stroke="white"
+                strokeWidth="30"
+                pathLength={1}
+                className="animate-sweep motion-reduce:animate-none"
               />
-            );
-          })}
+            </mask>
+          </defs>
+          <g mask={`url(#${maskId})`}>
+            {slices.map((slice) => {
+              const length = (slice.value / total) * CIRCUMFERENCE;
+              const dash = `${length} ${CIRCUMFERENCE - length}`;
+              const strokeOffset = -offset;
+              offset += length;
+
+              return (
+                <circle
+                  key={slice.label}
+                  cx="80"
+                  cy="80"
+                  r={RADIUS}
+                  fill="none"
+                  strokeWidth="28"
+                  stroke={slice.color}
+                  strokeDasharray={dash}
+                  strokeDashoffset={strokeOffset}
+                  className="cursor-pointer transition-opacity"
+                  opacity={active && active.label !== slice.label ? 0.45 : 1}
+                  onMouseMove={(e) => {
+                    const rect = wrapRef.current?.getBoundingClientRect();
+                    if (!rect) return;
+                    setActive({
+                      label: slice.label,
+                      value: slice.value,
+                      x: e.clientX - rect.left,
+                      y: e.clientY - rect.top,
+                    });
+                  }}
+                />
+              );
+            })}
+          </g>
         </svg>
 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">

@@ -25,6 +25,8 @@ export interface ApplicationResponse {
   submittedAt: string;
   updatedAt: string;
   assignedOfficer: string;
+  /** not in the handoff — see ApplicationItem.isFinalSigner */
+  isFinalSigner: boolean;
 }
 
 /**

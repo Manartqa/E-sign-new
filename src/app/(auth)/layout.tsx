@@ -1,3 +1,3 @@
 export default function AuthLayout({ children }: LayoutProps<"/">) {
-  return <div className="min-h-screen">{children}</div>;
+  return <div className="min-h-dvh">{children}</div>;
 }

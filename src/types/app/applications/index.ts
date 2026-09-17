@@ -35,6 +35,12 @@ export interface ApplicationItem {
   updatedAt: string;
   /** เจ้าหน้าที่รับเรื่อง */
   assignedOfficer: string;
+  /**
+   * Whether the signed-in officer is the LAST signer on this request. The
+   * final signature must be made with a USB token; earlier signers confirm
+   * with a button. Decided by the backend, which owns the approval chain.
+   */
+  isFinalSigner: boolean;
 }
 
 export interface ApplicationStats {

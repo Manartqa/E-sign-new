@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApplicationStats } from "@/hooks/applications";
 import { formatNumber } from "@/lib/format";
@@ -13,6 +14,36 @@ interface ApplicationStatCardsProps {
   onSelectStatus: (status: NonNullable<ApplicationListParams["status"]>) => void;
   /** the pending route's status is always pinned, so a ring there would just sit on รอการอนุมัติ forever — turn it off */
   showActiveRing?: boolean;
+}
+
+const COUNT_UP_MS = 600;
+
+/**
+ * Not in Figma: counts from 0 to `value` once, when the number first shows.
+ * Later changes jump straight to the new value, and reduced motion skips it.
+ */
+function CountUp({ value }: { value: number }) {
+  // null once the intro is over — from then on the live value renders as-is
+  const [shown, setShown] = useState<number | null>(0);
+
+  useEffect(() => {
+    let frame = 0;
+    let start: number | undefined;
+    const tick = (now: number) => {
+      start ??= now;
+      const t = (now - start) / COUNT_UP_MS;
+      if (t >= 1) return setShown(null);
+      // ease-out cubic: fast start, settles onto the real number
+      setShown(Math.round(value * (1 - (1 - t) ** 3)));
+      frame = requestAnimationFrame(tick);
+    };
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    frame = requestAnimationFrame(reduce ? () => setShown(null) : tick);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intro runs once, on mount
+  }, []);
+
+  return <>{formatNumber(shown ?? value)}</>;
 }
 
 /** Figma: app-list › stat-card row (6:293) */
@@ -37,7 +68,8 @@ export function ApplicationStatCards({
               onClick={() => onSelectStatus(statusFilter)}
               aria-pressed={isActive}
               className={cn(
-                "flex items-center gap-4 rounded-2xl bg-card p-6 text-left shadow-[0_4px_6px_rgba(0,0,0,0.03)] transition-shadow hover:shadow-md",
+                // not in Figma: lift on hover, press back down on click
+                "flex items-center gap-4 rounded-2xl bg-card p-6 text-left shadow-[0_4px_6px_rgba(0,0,0,0.03)] transition-[box-shadow,translate] duration-200 hover:shadow-md motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
                 isActive && "ring-2 ring-brand-navy-mid ring-offset-2",
               )}
             >
@@ -55,7 +87,7 @@ export function ApplicationStatCards({
                   <Skeleton className="mt-0.5 h-8 w-16" />
                 ) : (
                   <span className="text-[28px] leading-tight font-bold text-brand-navy-mid">
-                    {formatNumber(stats[key])}
+                    <CountUp value={stats[key]} />
                   </span>
                 )}
               </div>

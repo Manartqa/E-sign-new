@@ -7,6 +7,7 @@ import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState, LoadingState, TabNav } from "@/components/common";
 import { ROUTES } from "@/constant/routes";
+import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationActions, useApplicationDetail } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
 import {
@@ -16,6 +17,7 @@ import {
   type DocumentItem,
   type ReturnFormValues,
 } from "@/types/app/applications";
+import type { TokenSignResult } from "@/types/app/signing";
 import { ApplicationDetailSummary } from "./ApplicationDetailSummary";
 import { DetailPanelView } from "./DetailPanelView";
 import { MOCK_CERTIFICATE } from "./ApplicationDetail.config";
@@ -58,12 +60,14 @@ export default function ApplicationDetailContent({
       />
     );
 
-  const handleSign = async () => {
+  // `token` comes from a USB-token signature (final signer); a button
+  // signature still uses the stand-in certificate
+  const handleSign = async (token?: TokenSignResult) => {
     try {
       await sign.mutateAsync({
-        certificateId: MOCK_CERTIFICATE.id,
-        certificateOwner: profile?.name ?? "",
-        signature: "base64_encoded_signature",
+        certificateId: token?.certificateId ?? MOCK_CERTIFICATE.id,
+        certificateOwner: token?.certificateOwner ?? profile?.name ?? "",
+        signature: token?.signature ?? "base64_encoded_signature",
         timestamp: new Date().toISOString(),
         applicationId: detail.id,
         officerId: profile?.id ?? "",
@@ -96,7 +100,12 @@ export default function ApplicationDetailContent({
   return (
     <div className="flex flex-col gap-4">
       <Link
-        href={ROUTES.applications}
+        // a request still รอการอนุมัติ goes back to that menu's list instead
+        href={
+          detail.summary.status === APPLICATION_STATUS.PENDING_APPROVAL
+            ? ROUTES.applicationsPending
+            : ROUTES.applications
+        }
         className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy-mid"
       >
         <ChevronLeft className="size-4" aria-hidden />
@@ -121,7 +130,11 @@ export default function ApplicationDetailContent({
           onChange={(key) => setActiveTab(key as DetailTabKey)}
           className="px-2"
         />
-        <div className="p-2">
+        {/* not in Figma: keyed by tab so each switch remounts and fades in */}
+        <div
+          key={activeTab}
+          className="animate-in p-2 duration-200 fade-in motion-reduce:animate-none"
+        >
           <DetailPanelView
             panel={detail.panels[activeTab]}
             onOpenDocument={openDocument}
@@ -129,14 +142,16 @@ export default function ApplicationDetailContent({
         </div>
       </div>
 
-      <SignatureModal
-        open={action === "approve"}
-        detail={detail}
-        signer={profile}
-        isSubmitting={sign.isPending}
-        onClose={() => setAction(null)}
-        onConfirm={() => void handleSign()}
-      />
+      {/* mounted only while open so the token PIN never survives a close */}
+      {action === "approve" && (
+        <SignatureModal
+          open
+          detail={detail}
+          isSubmitting={sign.isPending}
+          onClose={() => setAction(null)}
+          onConfirm={(token) => void handleSign(token)}
+        />
+      )}
 
       <ReturnForEditModal
         open={action === "return" || action === "reject"}

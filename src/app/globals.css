@@ -42,8 +42,85 @@
   --color-viewer-border: #4a5568;
   --color-viewer-muted: #a0aec0;
 
+  /* --- Login emblem (not in Figma — from the user's reference image) - */
+  --color-emblem-cyan: #27eeff;       /* rings, crosshair, signal arcs */
+  --color-emblem-ink: #fff200;        /* text lines + signature        */
+
   /* --- Layout metrics ------------------------------------------------ */
   --spacing-topbar: 83px;
+
+  /* --- Motion (not in Figma — added in-house) ------------------------ */
+  /* strokes an SVG path in; the path needs pathLength="1" */
+  --animate-draw: draw 450ms ease-out both;
+  @keyframes draw {
+    from {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+  /* same stroke draw, slower, for the reports donut's ring mask */
+  --animate-sweep: draw 800ms cubic-bezier(0.65, 0, 0.35, 1) both;
+
+  /* bar chart columns rise from their baseline (pair with origin-bottom) */
+  --animate-grow-up: grow-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  @keyframes grow-up {
+    from {
+      transform: scaleY(0);
+    }
+  }
+
+  /* wipes an element in from the left — the KPI sparklines */
+  --animate-reveal-x: reveal-x 700ms ease-out both;
+  @keyframes reveal-x {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  /* login error banner shakes in, like a rejected password field */
+  --animate-shake: shake 400ms ease-in-out both;
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-6px);
+    }
+    40% {
+      transform: translateX(6px);
+    }
+    60% {
+      transform: translateX(-4px);
+    }
+    80% {
+      transform: translateX(4px);
+    }
+  }
+
+  /* login emblem's dashed rings, after hub.mnre.go.th's icon-category rings */
+  --animate-orbit: orbit 7s linear infinite;
+  --animate-orbit-reverse: orbit 5s linear infinite reverse;
+  @keyframes orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* login hero grid drifts one 120px cell diagonally, looping seamlessly */
+  --animate-grid-drift: grid-drift 24s linear infinite;
+  @keyframes grid-drift {
+    to {
+      background-position: 120px 120px;
+    }
+  }
 }
 
 @theme inline {

@@ -32,6 +32,8 @@ interface LabeledSelectProps {
   required?: boolean;
   className?: string;
   triggerClassName?: string;
+  /** the popup list, e.g. to cap its height */
+  contentClassName?: string;
   labelClassName?: string;
 }
 
@@ -53,6 +55,7 @@ export function LabeledSelect({
   required,
   className,
   triggerClassName,
+  contentClassName,
   labelClassName,
 }: LabeledSelectProps) {
   const labelId = useId();
@@ -72,7 +75,7 @@ export function LabeledSelect({
         >
           <SelectValue>{selected?.label ?? label}</SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className={contentClassName}>
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}

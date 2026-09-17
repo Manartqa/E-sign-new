@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
+import { ChevronDown, LogOut, Menu, User } from "lucide-react";
 import { logoutEverywhere } from "@/lib/logout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,30 +15,23 @@ import {
 import { ROUTES } from "@/constant/routes";
 import type { UserProfile } from "@/types/app/profile";
 import {
-  BREADCRUMBS,
   SYSTEM_TITLE,
   SYSTEM_TITLE_SUFFIX,
+  getBreadcrumbs,
   getInitials,
 } from "../AdminLayout.config";
+import { NotificationMenu } from "./NotificationMenu";
 
 interface HeaderProps {
   user: UserProfile | null;
-  hasNotification?: boolean;
   /** opens the sidebar drawer; the trigger only shows below lg */
   onOpenMenu?: () => void;
 }
 
 /** Figma: 🧩 Components › TopBar/detail (5 states) + Profile Dropdown Card */
-export function Header({
-  user,
-  hasNotification = true,
-  onOpenMenu,
-}: HeaderProps) {
+export function Header({ user, onOpenMenu }: HeaderProps) {
   const pathname = usePathname();
-  const trail =
-    BREADCRUMBS[pathname] ??
-    BREADCRUMBS[`/${pathname.split("/")[1] ?? ""}`] ??
-    ["หน้าหลัก"];
+  const trail = getBreadcrumbs(pathname);
 
   return (
     <header className="flex min-h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-4 sm:px-8">
@@ -72,16 +65,7 @@ export function Header({
       </div>
 
       <div className="flex shrink-0 items-center gap-3 sm:gap-5">
-        <button
-          type="button"
-          aria-label="การแจ้งเตือน"
-          className="relative flex size-6 items-center justify-center"
-        >
-          <Bell className="size-6 text-muted-foreground" aria-hidden />
-          {hasNotification && (
-            <span className="absolute top-0 right-0 size-2 rounded border-2 border-white bg-destructive" />
-          )}
-        </button>
+        <NotificationMenu />
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full border py-1.5 pr-3 pl-2">

@@ -63,8 +63,10 @@ export function MonthlyBarChart({ points }: MonthlyBarChartProps) {
           ))}
 
           <div className="absolute inset-0 flex items-end gap-2">
-            {points.map((point) => {
+            {points.map((point, index) => {
               const pct = (point.value / niceMax) * 100;
+              // not in Figma: bars rise left to right, 40ms apart
+              const riseDelay = index * 40;
 
               return (
                 <div
@@ -73,8 +75,12 @@ export function MonthlyBarChart({ points }: MonthlyBarChartProps) {
                 >
                   {point.highlighted && (
                     <div
-                      className="absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border bg-white px-3 py-1.5 text-center whitespace-nowrap shadow-md"
-                      style={{ bottom: `calc(${pct}% + 12px)` }}
+                      // shows up once its bar has finished rising
+                      className="absolute left-1/2 z-10 -translate-x-1/2 animate-in rounded-lg border bg-white px-3 py-1.5 text-center whitespace-nowrap shadow-md fill-mode-both duration-300 fade-in slide-in-from-bottom-1 motion-reduce:animate-none"
+                      style={{
+                        bottom: `calc(${pct}% + 12px)`,
+                        animationDelay: `${riseDelay + 450}ms`,
+                      }}
                     >
                       <div className="text-[11px] text-muted-foreground">
                         {FULL_MONTH[point.label] ?? point.label}
@@ -90,9 +96,12 @@ export function MonthlyBarChart({ points }: MonthlyBarChartProps) {
                     role="img"
                     aria-label={`${point.label} ${point.value} คำขอ`}
                     title={`${point.label}: ${point.value}`}
-                    style={{ height: `${pct}%` }}
+                    style={{
+                      height: `${pct}%`,
+                      animationDelay: `${riseDelay}ms`,
+                    }}
                     className={cn(
-                      "w-full rounded-t",
+                      "w-full origin-bottom animate-grow-up rounded-t motion-reduce:animate-none",
                       point.highlighted
                         ? "bg-action-return"
                         : "bg-brand-navy-mid",

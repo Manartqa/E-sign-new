@@ -3,13 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, ShieldCheck, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
+import { ROUTES } from "@/constant/routes";
+import { APPLICATION_STATUS } from "@/constant/status";
+import { useApplicationDetail } from "@/hooks/applications";
 import { logoutEverywhere } from "@/lib/logout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserProfile } from "@/types/app/profile";
 import { cn } from "@/lib/utils";
 import {
-  APP_NAME_LINES,
+  APP_NAME,
   APP_SUBTITLE,
   NAV_ITEMS,
   getActiveNavHref,
@@ -55,7 +58,37 @@ function useIsDesktop() {
  */
 export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const activeHref = getActiveNavHref(pathname);
+  // an application detail page (/applications/:id) belongs to รอการอนุมัติ
+  // while the request is still pending — the same rule as its back link —
+  // so opening one from a notification doesn't light up คำขอทั้งหมด. The
+  // detail query is shared with the page, so this adds no extra request.
+  const detailId = pathname.match(/^\/applications\/(?!pending$)([^/]+)$/)?.[1];
+  const { detail } = useApplicationDetail(detailId ?? "");
+  const activeHref =
+    detailId && detail?.summary.status === APPLICATION_STATUS.PENDING_APPROVAL
+      ? ROUTES.applicationsPending
+      : getActiveNavHref(pathname);
+  // the group owning the active page opens on arrival; after that the user
+  // can fold it (adjusting state during render, not in an effect)
+  const activeGroup = NAV_ITEMS.find(
+    (item) => item.children && activeHref?.startsWith(`${item.href}/`),
+  )?.href;
+  const [openGroup, setOpenGroup] = useState(activeGroup);
+  const [prevActiveGroup, setPrevActiveGroup] = useState(activeGroup);
+  if (activeGroup !== prevActiveGroup) {
+    setPrevActiveGroup(activeGroup);
+    if (activeGroup) setOpenGroup(activeGroup);
+  }
+  // every visible row, in order, for the sliding highlight; a folded group's
+  // row stands in for its active child
+  const rows = NAV_ITEMS.flatMap((item) =>
+    item.children && openGroup === item.href
+      ? [item.href, ...item.children.map((child) => child.href)]
+      : [item.href],
+  );
+  const activeIndex = rows.indexOf(
+    activeGroup && openGroup !== activeGroup ? activeGroup : (activeHref ?? ""),
+  );
   const isDesktop = useIsDesktop();
   const [collapsedPref, setCollapsedPref] = useState(false);
   const isCollapsed = isDesktop && collapsedPref;
@@ -73,7 +106,11 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
       <aside
         className={cn(
           "flex shrink-0 flex-col gap-10 bg-sidebar p-5 transition-[width]",
-          isCollapsed ? "w-20 px-3" : "w-60",
+          // 272px, not Figma's 240: fits APP_NAME on one line (163px bold at
+          // 14px + 40px padding + 40px logo + 12px gap = 255px, plus slack)
+          isCollapsed ? "w-20 px-3" : "w-68",
+          // on desktop it fills the viewport-high shell (AdminLayout), which
+          // keeps the user block below pinned to the bottom
           "fixed inset-y-0 left-0 z-50 overflow-y-auto max-lg:transition-transform lg:static",
           // only the drawer (below lg) is ever translated, so there is no
           // desktop utility left to override it
@@ -92,12 +129,8 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
             </span>
             {!isCollapsed && (
               <div className="flex min-w-0 flex-col">
-                <div className="text-xs font-bold text-brand-on-navy lg:text-sm">
-                  {APP_NAME_LINES.map((line) => (
-                    <span key={line} className="block">
-                      {line}
-                    </span>
-                  ))}
+                <div className="text-xs font-bold whitespace-nowrap text-brand-on-navy lg:text-sm">
+                  {APP_NAME}
                 </div>
                 <span className="text-[11px] text-brand-blue-muted">
                   {APP_SUBTITLE}
@@ -128,11 +161,86 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map(({ href, label, icon: Icon, badgeKey }) => {
-            const isActive = href === activeHref;
+        <nav className="relative flex flex-col gap-1">
+          {/* not in Figma: one shared highlight that glides to the active item
+              instead of each item swapping its own background. Every item is
+              44px tall (py-3 + 20px row), so the pill is h-11 and steps by its
+              own height plus the gap-1 between items. */}
+          {activeIndex >= 0 && (
+            <span
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-11 rounded-lg bg-sidebar-accent transition-transform duration-300 ease-out motion-reduce:transition-none"
+              style={{
+                transform: `translateY(calc(${activeIndex} * (100% + 0.25rem)))`,
+              }}
+            />
+          )}
+          {NAV_ITEMS.map(({ href, label, icon: Icon, badgeKey, children }) => {
             const badge = badgeKey ? counts?.[badgeKey] : undefined;
 
+            if (children) {
+              const isOpen = openGroup === href;
+              return (
+                <div key={href} className="contents">
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroup(isOpen ? undefined : href)}
+                    aria-expanded={isOpen}
+                    title={isCollapsed ? label : undefined}
+                    className={cn(
+                      "group relative flex items-center gap-3 rounded-lg px-4 py-3 text-left text-sm transition-colors",
+                      isCollapsed && "justify-center px-2",
+                      activeGroup === href
+                        ? "font-semibold text-sidebar-accent-foreground"
+                        : "font-medium text-sidebar-foreground hover:bg-sidebar-accent/30",
+                    )}
+                  >
+                    <Icon
+                      className="size-5 shrink-0 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                    {!isCollapsed && <span className="flex-1">{label}</span>}
+                    <ChevronDown
+                      className={cn(
+                        "size-4 shrink-0 transition-transform duration-200",
+                        isOpen && "rotate-180",
+                        isCollapsed && "absolute right-0.5 size-3",
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                  {isOpen &&
+                    children.map((child) => {
+                      const isChildActive = child.href === activeHref;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onClose}
+                          aria-current={isChildActive ? "page" : undefined}
+                          title={isCollapsed ? child.label : undefined}
+                          className={cn(
+                            // h-11 like the top-level rows, which the sliding highlight relies on
+                            "group relative flex h-11 items-center gap-3 rounded-lg pr-4 pl-12 text-sm transition-colors",
+                            isCollapsed && "justify-center px-2",
+                            isChildActive
+                              ? "font-semibold text-sidebar-accent-foreground"
+                              : "font-medium text-sidebar-foreground hover:bg-sidebar-accent/30",
+                          )}
+                        >
+                          <child.icon
+                            className="size-4 shrink-0 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
+                            aria-hidden
+                          />
+                          {!isCollapsed && <span className="flex-1">{child.label}</span>}
+                        </Link>
+                      );
+                    })}
+                </div>
+              );
+            }
+
+            const isActive = href === activeHref;
             return (
               <Link
                 key={href}
@@ -141,14 +249,18 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
                 aria-current={isActive ? "page" : undefined}
                 title={isCollapsed ? label : undefined}
                 className={cn(
-                  "relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors",
+                  "group relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors",
                   isCollapsed && "justify-center px-2",
                   isActive
-                    ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                    ? "font-semibold text-sidebar-accent-foreground"
                     : "font-medium text-sidebar-foreground hover:bg-sidebar-accent/30",
                 )}
               >
-                <Icon className="size-5 shrink-0" aria-hidden />
+                {/* not in Figma: the icon nudges right on hover */}
+                <Icon
+                  className="size-5 shrink-0 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
+                  aria-hidden
+                />
                 {!isCollapsed && (
                   <>
                     <span className="flex-1">{label}</span>
@@ -171,7 +283,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <div className="flex flex-col gap-4 border-t border-sidebar-border pt-5">
+        <div className="mt-auto flex flex-col gap-4 border-t border-sidebar-border pt-5">
           <div
             className={cn(
               "flex items-center gap-3",

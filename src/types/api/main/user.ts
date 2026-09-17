@@ -6,6 +6,16 @@ import type { UserProfile } from "@/types/app/profile";
  */
 export type UserResponse = UserProfile;
 
+/**
+ * POST /api/me/password — not in the handoff. A wrong `currentPwd` should come
+ * back as 400/422 with `{ message }`, never 401: the axios interceptor treats
+ * any 401 as an expired session and logs the user out.
+ */
+export interface ChangePasswordRequest {
+  currentPwd: string;
+  newPwd: string;
+}
+
 export interface LoginRequest {
   username: string;
   pwd: string;

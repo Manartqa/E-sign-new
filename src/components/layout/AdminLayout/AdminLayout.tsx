@@ -33,7 +33,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen">
+    // the shell fills the viewport and only <main> scrolls, so the header
+    // and sidebar stay put (dvh: phone browser bars don't hide the bottom)
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar
         user={profile}
         counts={{ pending: pendingCount }}
@@ -42,7 +44,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header user={profile} onOpenMenu={() => setMenuOpen(true)} />
-        <main className="min-w-0 flex-1 p-4 pt-1 sm:p-8 sm:pt-2">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 pt-1 sm:p-8 sm:pt-2">{children}</main>
       </div>
     </div>
   );

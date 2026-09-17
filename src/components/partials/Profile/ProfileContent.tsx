@@ -27,6 +27,7 @@ import {
   maskPhone,
 } from "@/lib/format";
 import { PREFIX_OPTIONS, type UserProfile } from "@/types/app/profile";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 import { ProfileField } from "./ProfileField";
 
 type EditableFields = Pick<
@@ -62,6 +63,7 @@ export default function ProfileContent() {
   const updateProfile = useUpdateProfile();
   const [form, setForm] = useState<EditableFields | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   if (isError) return <ErrorState />;
   if (isLoading || !profile) return <LoadingState rows={6} />;
@@ -178,20 +180,24 @@ export default function ProfileContent() {
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <p className="text-lg font-bold text-foreground">{profile.name}</p>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {/* phones stack position over department — the dot separator would
+              otherwise dangle at the end of the first line once it wraps */}
+          <div className="flex flex-col gap-0.5 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
             <span>{profile.position}</span>
-            <span className="size-1 rounded-[2px] bg-slate-300" />
+            <span className="hidden size-1 rounded-[2px] bg-slate-300 sm:block" />
             <span>{profile.department}</span>
           </div>
         </div>
 
+        {/* below sm the actions take their own full-width row, otherwise they
+            squeeze the name column until Thai wraps a syllable per line */}
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() => setForm(null)}
               disabled={updateProfile.isPending}
-              className="flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50 sm:flex-none"
             >
               <X className="size-3.5" aria-hidden />
               ยกเลิก
@@ -200,7 +206,7 @@ export default function ProfileContent() {
               type="button"
               onClick={() => void saveEditing()}
               disabled={updateProfile.isPending}
-              className="flex items-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover disabled:opacity-60"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover disabled:opacity-60 sm:flex-none"
             >
               {updateProfile.isPending ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
             </button>
@@ -209,7 +215,7 @@ export default function ProfileContent() {
           <button
             type="button"
             onClick={startEditing}
-            className="flex items-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover sm:w-auto"
           >
             <Pencil className="size-3.5" aria-hidden />
             แก้ไขข้อมูล
@@ -291,7 +297,7 @@ export default function ProfileContent() {
             </div>
             <button
               type="button"
-              onClick={() => notImplemented("เปลี่ยนรหัสผ่าน")}
+              onClick={() => setChangingPassword(true)}
               className="rounded-lg border border-brand-navy-mid bg-white px-4 py-2 text-[13px] font-semibold text-brand-navy-mid hover:bg-secondary"
             >
               เปลี่ยนรหัสผ่าน
@@ -364,6 +370,17 @@ export default function ProfileContent() {
           </div>
         </div>
       </Card>
+
+      {changingPassword && (
+        <ChangePasswordModal
+          open
+          onClose={() => setChangingPassword(false)}
+          onSuccess={() => {
+            setChangingPassword(false);
+            toast.success("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
+          }}
+        />
+      )}
     </div>
   );
 }

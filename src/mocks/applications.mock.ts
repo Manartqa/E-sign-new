@@ -103,6 +103,8 @@ export const MOCK_APPLICATIONS: ApplicationItem[] = Array.from(
       // spread backwards over the last few days
       updatedAt: new Date(NOW - (i + 1) * 2 * 3_600_000).toISOString(),
       assignedOfficer: OFFICERS[i % OFFICERS.length],
+      // every third request has this officer as the last signer (USB token)
+      isFinalSigner: i % 3 === 0,
     };
   },
 );

@@ -5,8 +5,20 @@ import type {
   ApproveRequest,
   SignRequest,
 } from "@/types/api/main/application";
-import type { UserResponse } from "@/types/api/main/user";
+import type {
+  ChangePasswordRequest,
+  UserResponse,
+} from "@/types/api/main/user";
+import type { NotificationResponse } from "@/types/api/main/notification";
 import type { ReportSummaryResponse } from "@/types/api/main/report";
+import type {
+  SigningWorkflowRequest,
+  SigningWorkflowResponse,
+} from "@/types/api/main/signingWorkflow";
+import type {
+  CertificateCheckResponse,
+  SignerResponse,
+} from "@/types/api/main/signer";
 import { mainClient } from "./client";
 
 /* Endpoints mirror the `API Endpoints` table in the Figma developer-handoff. */
@@ -43,3 +55,77 @@ export const getProfileApi = () =>
 
 export const updateProfileApi = (body: Partial<UserResponse>) =>
   mainClient.patch<ApiResponse<UserResponse>>("/api/me", body);
+
+export const changePasswordApi = (body: ChangePasswordRequest) =>
+  mainClient.post<ApiResponse<null>>("/api/me/password", body);
+
+/* Notifications — not in the handoff's endpoint table; names are ours. */
+
+export const getNotificationsApi = () =>
+  mainClient.get<ApiResponse<NotificationResponse[]>>("/api/notifications");
+
+export const markNotificationReadApi = (id: string) =>
+  mainClient.patch<ApiResponse<null>>(`/api/notifications/${id}/read`);
+
+export const markAllNotificationsReadApi = () =>
+  mainClient.patch<ApiResponse<null>>("/api/notifications/read-all");
+
+/* Signing workflows (ตั้งค่าระบบ) — not in the handoff; names are ours. */
+
+export const getSigningWorkflowsApi = (params?: Record<string, unknown>) =>
+  mainClient.get<PagedResponse<SigningWorkflowResponse>>(
+    "/api/signing-workflows",
+    { params },
+  );
+
+export const getSigningWorkflowApi = (id: string) =>
+  mainClient.get<ApiResponse<SigningWorkflowResponse>>(
+    `/api/signing-workflows/${id}`,
+  );
+
+export const createSigningWorkflowApi = (body: SigningWorkflowRequest) =>
+  mainClient.post<ApiResponse<SigningWorkflowResponse>>(
+    "/api/signing-workflows",
+    body,
+  );
+
+export const updateSigningWorkflowApi = (
+  id: string,
+  body: SigningWorkflowRequest,
+) =>
+  mainClient.put<ApiResponse<SigningWorkflowResponse>>(
+    `/api/signing-workflows/${id}`,
+    body,
+  );
+
+export const deleteSigningWorkflowApi = (id: string) =>
+  mainClient.delete<ApiResponse<null>>(`/api/signing-workflows/${id}`);
+
+/* Signers — ผู้มีอำนาจลงนาม (ตั้งค่าระบบ); not in the handoff; names are ours. */
+
+export const getSignersApi = (params?: Record<string, unknown>) =>
+  mainClient.get<PagedResponse<SignerResponse>>("/api/signers", { params });
+
+export const getSignerApi = (id: string) =>
+  mainClient.get<ApiResponse<SignerResponse>>(`/api/signers/${id}`);
+
+/** ตำแหน่ง master list for the signer form */
+export const getPositionsApi = () =>
+  mainClient.get<ApiResponse<string[]>>("/api/positions");
+
+/* create / update / certificate check send multipart/form-data */
+
+export const createSignerApi = (body: FormData) =>
+  mainClient.post<ApiResponse<SignerResponse>>("/api/signers", body);
+
+export const updateSignerApi = (id: string, body: FormData) =>
+  mainClient.put<ApiResponse<SignerResponse>>(`/api/signers/${id}`, body);
+
+export const checkSignerCertificateApi = (body: FormData) =>
+  mainClient.post<ApiResponse<CertificateCheckResponse>>(
+    "/api/signers/certificate-check",
+    body,
+  );
+
+export const deleteSignerApi = (id: string) =>
+  mainClient.delete<ApiResponse<null>>(`/api/signers/${id}`);

@@ -6,7 +6,7 @@ import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constant/routes";
 import { IS_SSO_ENABLED, SSO_ERROR_MESSAGE, SSO_PROVIDER_ID } from "@/constant/sso";
-import { LOGIN_ERROR_MESSAGE } from "./Login.config";
+import { LOGIN_ERROR_MESSAGE, writeRememberedUsername } from "./Login.config";
 import { LoginForm, type LoginFormValues } from "./LoginForm";
 import { LoginHero } from "./LoginHero";
 
@@ -23,7 +23,7 @@ export default function LoginContent({ hasSsoError = false }: LoginContentProps)
     hasSsoError ? SSO_ERROR_MESSAGE : null,
   );
 
-  const handleSubmit = async ({ username, pwd }: LoginFormValues) => {
+  const handleSubmit = async ({ username, pwd, remember }: LoginFormValues) => {
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -39,6 +39,8 @@ export default function LoginContent({ hasSsoError = false }: LoginContentProps)
       setErrorMessage(LOGIN_ERROR_MESSAGE);
       return;
     }
+    // only a username that actually signed in is worth remembering
+    writeRememberedUsername(remember ? username.trim() : null);
     // Always land on the application list. The proxy appends a `callbackUrl`
     // when it bounces an unauthenticated request, but that value is
     // attacker-controllable (/login?callbackUrl=https://evil.com), so it is
@@ -59,17 +61,25 @@ export default function LoginContent({ hasSsoError = false }: LoginContentProps)
   };
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      <LoginHero variant="compact" className="lg:hidden" />
+    // dvh, not vh: on a phone 100vh includes the strip under the browser's
+    // address bar, which would push the card's bottom off the visible screen
+    <div className="flex min-h-dvh flex-col lg:flex-row">
+      {/* stacked (below lg) the hero takes any spare height on a tall phone,
+          so the card sits right under it and ends at the bottom of the screen
+          instead of leaving an empty band either above or below it */}
+      <LoginHero variant="compact" className="flex-1 lg:hidden" />
       <LoginHero className="hidden w-[55%] shrink-0 lg:flex" />
 
-      <div className="flex flex-1 items-center justify-center bg-[#fafafa] px-4 py-10 sm:px-16 sm:py-14">
-        <LoginForm
-          onSubmit={(values) => void handleSubmit(values)}
-          isSubmitting={isSubmitting}
-          errorMessage={errorMessage}
-          onSso={handleSso}
-        />
+      <div className="flex items-center justify-center bg-[#fafafa] px-4 pt-4 pb-4 sm:px-16 sm:py-14 lg:flex-1">
+        {/* not in Figma: the form rises in just behind the hero's title */}
+        <div className="flex w-full animate-in justify-center fill-mode-both delay-200 duration-500 fade-in slide-in-from-bottom-4 motion-reduce:animate-none">
+          <LoginForm
+            onSubmit={(values) => void handleSubmit(values)}
+            isSubmitting={isSubmitting}
+            errorMessage={errorMessage}
+            onSso={handleSso}
+          />
+        </div>
       </div>
     </div>
   );
