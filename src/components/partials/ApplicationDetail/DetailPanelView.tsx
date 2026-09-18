@@ -1,6 +1,6 @@
 "use client";
 
-import { Timeline } from "@/components/common";
+import { EmptyState, Timeline } from "@/components/common";
 import type {
   DetailPanel,
   DetailSection,
@@ -50,18 +50,33 @@ function SectionBlock({ section }: { section: DetailSection }) {
 }
 
 interface DetailPanelViewProps {
-  panel: DetailPanel;
+  /** undefined when the backend sends no panel for this tab */
+  panel: DetailPanel | undefined;
   onOpenDocument?: (document: DocumentItem) => void;
 }
+
+const NoPanel = () => (
+  <EmptyState
+    title="ไม่มีข้อมูลในหัวข้อนี้"
+    description="คำขอนี้ไม่มีข้อมูลส่วนนี้ หรือระบบยังไม่ได้รับข้อมูลจากต้นทาง"
+  />
+);
 
 /** Renders one tab panel. Figma: tabs-content (106:7034) */
 export function DetailPanelView({
   panel,
   onOpenDocument,
 }: DetailPanelViewProps) {
+  if (!panel) return <NoPanel />;
+
   if (panel.kind === "timeline") {
     return (
-      <div className="rounded-lg bg-card px-6 py-6">
+      <div className="flex flex-col gap-4 rounded-lg bg-card px-6 py-6">
+        {panel.heading && (
+          <h3 className="text-base font-bold text-brand-navy-mid">
+            {panel.heading}
+          </h3>
+        )}
         <Timeline events={panel.events} />
       </div>
     );
@@ -113,6 +128,10 @@ export function DetailPanelView({
       />
     );
   }
+
+  // the union is closed, so `fields` is all that is left at compile time — but
+  // a backend sending a kind this build doesn't know would land here too
+  if (panel.kind !== "fields") return <NoPanel />;
 
   return (
     <div className="flex flex-col gap-4 rounded-lg bg-card px-6 pt-1 pb-6">

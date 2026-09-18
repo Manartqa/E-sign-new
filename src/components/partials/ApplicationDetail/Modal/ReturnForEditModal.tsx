@@ -14,7 +14,7 @@ interface ReturnForEditModalProps {
   /**
    * Figma only designs the `ส่งคืนเพื่อแก้ไข` modal (8:490). `reject` reuses
    * the same layout with its own wording and amber→red accent, since the
-   * ปฏิเสธคำขอ button has no modal of its own in the file.
+   * ไม่อนุมัติ button has no modal of its own in the file.
    */
   mode: "return" | "reject";
   isSubmitting: boolean;
@@ -48,7 +48,7 @@ export function ReturnForEditModal({
           <div className="flex items-center gap-3">
             <Icon className="size-5 text-brand-navy-mid" aria-hidden />
             <DialogTitle className="text-lg font-bold text-brand-navy-mid">
-              {isReject ? "ปฏิเสธคำขอ" : "ส่งคืนเพื่อแก้ไข"}
+              {isReject ? "ไม่อนุมัติคำขอ" : "ส่งคืนเพื่อแก้ไข"}
             </DialogTitle>
           </div>
           <button type="button" onClick={onClose} aria-label="ปิด">
@@ -58,7 +58,7 @@ export function ReturnForEditModal({
 
         <div className="flex flex-col gap-5 p-6">
           <LabeledSelect
-            label={isReject ? "ระบุสาเหตุที่ปฏิเสธ" : "ระบุสาเหตุที่ส่งคืน"}
+            label={isReject ? "ระบุสาเหตุที่ไม่อนุมัติ" : "ระบุสาเหตุที่ส่งคืน"}
             labelClassName="text-sm font-semibold text-black"
             triggerClassName="p-3"
             value={reason}
@@ -95,7 +95,7 @@ export function ReturnForEditModal({
             {isSubmitting
               ? "กำลังบันทึก..."
               : isReject
-                ? "ยืนยันการปฏิเสธ"
+                ? "ยืนยันการไม่อนุมัติ"
                 : "ยืนยันการส่งคืน"}
           </button>
         </footer>

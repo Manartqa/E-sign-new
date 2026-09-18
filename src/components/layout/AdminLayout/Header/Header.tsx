@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ChevronDown, KeyRound, LogOut, Menu, User } from "lucide-react";
 import { toast } from "sonner";
 import { logoutEverywhere } from "@/lib/logout";
@@ -20,7 +19,6 @@ import type { UserProfile } from "@/types/app/profile";
 import {
   SYSTEM_TITLE,
   SYSTEM_TITLE_SUFFIX,
-  getBreadcrumbs,
   getInitials,
 } from "../AdminLayout.config";
 import { NotificationMenu } from "./NotificationMenu";
@@ -33,12 +31,10 @@ interface HeaderProps {
 
 /** Figma: 🧩 Components › TopBar/detail (5 states) + Profile Dropdown Card */
 export function Header({ user, onOpenMenu }: HeaderProps) {
-  const pathname = usePathname();
-  const trail = getBreadcrumbs(pathname);
   const [changingPassword, setChangingPassword] = useState(false);
 
   return (
-    <header className="flex min-h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-4 sm:px-8">
+    <header className="flex min-h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-2 sm:px-8">
       <button
         type="button"
         onClick={onOpenMenu}
@@ -48,27 +44,16 @@ export function Header({ user, onOpenMenu }: HeaderProps) {
         <Menu className="size-6" aria-hidden />
       </button>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-sm font-bold text-brand-navy-mid">
-          {SYSTEM_TITLE}{" "}
-          <span className="hidden sm:inline">{SYSTEM_TITLE_SUFFIX}</span>
-        </span>
-        <nav
-          aria-label="breadcrumb"
-          className="flex min-w-0 items-center gap-1 text-sm"
-        >
-          {trail.map((crumb, index) => (
-            <span key={crumb} className="flex items-center gap-1">
-              {index > 0 && (
-                <span className="font-bold text-slate-400">/</span>
-              )}
-              <span className="text-muted-foreground">{crumb}</span>
-            </span>
-          ))}
-        </nav>
-      </div>
+      {/* the sidebar carries the system name from `lg` up, so the bar only
+          shows it while the sidebar is an off-canvas drawer */}
+      <span className="min-w-0 flex-1 truncate text-sm font-bold text-brand-navy-mid lg:hidden">
+        {SYSTEM_TITLE}{" "}
+        <span className="hidden sm:inline">{SYSTEM_TITLE_SUFFIX}</span>
+      </span>
 
-      <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+      {/* ml-auto: from `lg` up this is the bar's only child, and justify-between
+          alone would leave it at the start */}
+      <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
         <NotificationMenu />
 
         <DropdownMenu>

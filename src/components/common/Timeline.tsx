@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, RotateCcw, X, type LucideIcon } from "lucide-react";
 import type { TimelineEvent } from "@/types/app/applications";
 import { formatThaiDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,21 @@ interface TimelineProps {
   className?: string;
 }
 
+/**
+ * Figma draws Completed (green tick) and Pending (plain amber dot) only. A
+ * chain that stopped at a signer gets its own marker so the outcome reads at a
+ * glance: the icon carries the meaning, since RETURNED shares Pending's amber.
+ */
+const MARKER: Record<
+  TimelineEvent["status"],
+  { className: string; Icon?: LucideIcon }
+> = {
+  COMPLETED: { className: "bg-action-approve", Icon: Check },
+  PENDING: { className: "bg-action-return" },
+  REJECTED: { className: "bg-action-reject", Icon: X },
+  RETURNED: { className: "bg-action-return", Icon: RotateCcw },
+};
+
 /** Figma: 🧩 Components › Timeline Item (Completed / Pending / Last) — node 67:660 */
 export function Timeline({ events, className }: TimelineProps) {
   return (
@@ -15,6 +30,7 @@ export function Timeline({ events, className }: TimelineProps) {
       {events.map((event, index) => {
         const isLast = index === events.length - 1;
         const isPending = event.status === "PENDING";
+        const { className: markerClassName, Icon } = MARKER[event.status];
 
         return (
           <li key={event.id} className="flex items-start gap-3">
@@ -22,11 +38,11 @@ export function Timeline({ events, className }: TimelineProps) {
               <span
                 className={cn(
                   "flex size-5 items-center justify-center rounded-full",
-                  isPending ? "bg-action-return" : "bg-action-approve",
+                  markerClassName,
                 )}
               >
-                {!isPending && (
-                  <Check className="size-3 text-white" strokeWidth={3} aria-hidden />
+                {Icon && (
+                  <Icon className="size-3 text-white" strokeWidth={3} aria-hidden />
                 )}
               </span>
               {!isLast && <span className="h-7 w-0.5 rounded-[1px] bg-border" />}

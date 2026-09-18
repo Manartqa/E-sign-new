@@ -1,8 +1,11 @@
+import { APPLICATION_STATUS } from "@/constant/status";
 import type {
   ApplicationDetail,
   ApplicationItem,
   DocumentItem,
+  TimelineEvent,
 } from "@/types/app/applications";
+import { MOCK_SIGNING_WORKFLOWS } from "@/mocks/signingWorkflows.mock";
 
 /** ตัวอย่างใบอนุญาต — a preview of the license, shown regardless of status. */
 const LICENSE_PREVIEW_URL = "/mock/license-approved.pdf";
@@ -164,6 +167,103 @@ function buildOtherDocuments(): DocumentItem[] {
 }
 
 /**
+ * ประวัติการดำเนินการ — the intake steps, then the signing chain of the
+ * กระบวนการลงนาม that covers this request, in the workflow's own order.
+ *
+ * The real backend owns all of this: which workflow a request runs on, who has
+ * signed, when, and where a chain stopped. The mock stands in for it —
+ *
+ *   อนุมัติ            every signer signed
+ *   รอการอนุมัติ       signed up to the current signer, the rest still waiting
+ *   ไม่อนุมัติ         signed up to the signer who rejected; the chain ends there
+ *   ส่งกลับแก้ไข       same, but that signer sent it back
+ *
+ * — with the stopping point derived from the request id so a given request
+ * always tells the same story.
+ */
+function buildHistory(item: ApplicationItem): {
+  workflowName: string;
+  events: TimelineEvent[];
+} {
+  const hour = 3_600_000;
+  const received = Date.parse(item.receivedAt);
+  const workflow =
+    MOCK_SIGNING_WORKFLOWS.find(
+      (w) => w.licenseType === item.type || w.licenseType === "all",
+    ) ?? MOCK_SIGNING_WORKFLOWS[0];
+  const { steps } = workflow;
+  const seed = Number(item.id.replace(/\D/g, "").slice(-3));
+  const signedAt = (index: number) =>
+    new Date(received + (6 + index) * 24 * hour).toISOString();
+
+  /** where the chain stands: how many signed, and what the next one did */
+  const { signed, decision } = {
+    [APPLICATION_STATUS.APPROVED]: {
+      signed: steps.length,
+      decision: undefined,
+    },
+    [APPLICATION_STATUS.PENDING_APPROVAL]: {
+      signed: seed % steps.length,
+      decision: undefined,
+    },
+    [APPLICATION_STATUS.REJECTED]: {
+      signed: seed % steps.length,
+      decision: "REJECTED" as const,
+    },
+    [APPLICATION_STATUS.RETURNED]: {
+      signed: seed % steps.length,
+      decision: "RETURNED" as const,
+    },
+  }[item.status];
+
+  const chain: TimelineEvent[] = steps.map((step, index) => {
+    const isDecision = decision !== undefined && index === signed;
+    return {
+      id: `TL-SIGN-${step.id}`,
+      title: `${
+        isDecision
+          ? decision === "REJECTED"
+            ? "ไม่อนุมัติโดย"
+            : "ส่งกลับแก้ไขโดย"
+          : "ลงนามโดย"
+      } ${step.position}`,
+      actor: step.signerName,
+      at: signedAt(index),
+      status: isDecision ? decision : index < signed ? "COMPLETED" : "PENDING",
+    };
+  });
+
+  return {
+    workflowName: workflow.name,
+    events: [
+      {
+        id: "TL-1",
+        title: "ยื่นคำขอเข้าระบบ",
+        actor: item.applicantName,
+        at: item.submittedAt,
+        status: "COMPLETED",
+      },
+      {
+        id: "TL-2",
+        title: "เจ้าหน้าที่รับเรื่องและตรวจสอบเอกสาร",
+        actor: item.assignedOfficer,
+        at: item.receivedAt,
+        status: "COMPLETED",
+      },
+      {
+        id: "TL-3",
+        title: "นำเรียนผู้มีอำนาจพิจารณา",
+        actor: item.assignedOfficer,
+        at: new Date(received + 5 * 24 * hour).toISOString(),
+        status: "COMPLETED",
+      },
+      // a chain that stopped has nothing after the decision to show
+      ...(decision === undefined ? chain : chain.slice(0, signed + 1)),
+    ],
+  };
+}
+
+/**
  * Builds the detail payload for one application.
  *
  * Panel content mirrors the shapes in Figma `tabs-content` (106:7034):
@@ -173,6 +273,7 @@ function buildOtherDocuments(): DocumentItem[] {
 export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
   const hour = 3_600_000;
   const received = Date.parse(item.receivedAt);
+  const history = buildHistory(item);
 
   return {
     ...item,
@@ -398,36 +499,8 @@ export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
 
       history: {
         kind: "timeline",
-        events: [
-          {
-            id: "TL-1",
-            title: "ยื่นคำขอเข้าระบบ",
-            actor: item.applicantName,
-            at: item.submittedAt,
-            status: "COMPLETED",
-          },
-          {
-            id: "TL-2",
-            title: "เจ้าหน้าที่รับเรื่องและตรวจสอบเอกสาร",
-            actor: item.assignedOfficer,
-            at: item.receivedAt,
-            status: "COMPLETED",
-          },
-          {
-            id: "TL-3",
-            title: "นำเรียนผู้มีอำนาจพิจารณา",
-            actor: item.assignedOfficer,
-            at: new Date(received + 5 * 24 * hour).toISOString(),
-            status: "COMPLETED",
-          },
-          {
-            id: "TL-4",
-            title: "รอการอนุมัติและลงนาม",
-            actor: "ผู้ช่วยหัวหน้าส่วนงาน",
-            at: item.updatedAt,
-            status: "PENDING",
-          },
-        ],
+        heading: `กระบวนการลงนาม: ${history.workflowName}`,
+        events: history.events,
       },
     },
   };

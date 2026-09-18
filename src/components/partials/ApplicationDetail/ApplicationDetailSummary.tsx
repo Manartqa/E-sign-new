@@ -27,10 +27,12 @@ export function ApplicationDetailSummary({
   onAction,
   onPreviewLicense,
 }: ApplicationDetailSummaryProps) {
-  // an approved application is signed and closed — nothing left to approve,
-  // reject or send back, so the whole action group goes away
   const isApproved = summary.status === APPLICATION_STATUS.APPROVED;
-  const canAct = !isApproved;
+  // only a request still รอการอนุมัติ can be acted on: อนุมัติ, ไม่อนุมัติ and
+  // ส่งกลับแก้ไข have all been decided already, so the whole action group goes
+  // away for them (user's call, 2026-09-18 — ไม่อนุมัติ / ส่งกลับแก้ไข used to
+  // keep the buttons)
+  const canAct = summary.status === APPLICATION_STATUS.PENDING_APPROVAL;
   // once approved there's a real license to open, not just a preview of one
   const licenseLabel = isApproved
     ? "ใบอนุญาต/หนังสืออนุญาต"

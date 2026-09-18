@@ -47,7 +47,10 @@
   --color-emblem-ink: #fff200;        /* text lines + signature        */
 
   /* --- Layout metrics ------------------------------------------------ */
-  --spacing-topbar: 83px;
+  /* one row: the profile chip (name over email) plus the bar's py-2 — also
+     the floor that keeps the bar the same height on a phone, where the chip
+     is just the avatar */
+  --spacing-topbar: 68px;
 
   /* --- Motion (not in Figma — added in-house) ------------------------ */
   /* strokes an SVG path in; the path needs pathLength="1" */

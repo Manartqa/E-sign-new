@@ -38,7 +38,8 @@ export interface ApplicationResponse {
  */
 export interface ApplicationDetailResponse extends ApplicationResponse {
   summary: ApplicationSummary;
-  panels: Record<DetailTabKey, DetailPanel>;
+  /** keyed by DETAIL_TABS; a tab the request has no data for is left out */
+  panels: Partial<Record<DetailTabKey, DetailPanel>>;
 }
 
 export interface ApproveRequest {

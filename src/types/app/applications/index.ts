@@ -76,7 +76,12 @@ export interface TimelineEvent {
   title: string;
   actor: string;
   at: string;
-  status: "COMPLETED" | "PENDING";
+  /**
+   * COMPLETED and PENDING are the two states Figma draws. REJECTED and
+   * RETURNED are ours: a signing chain can stop at a signer who did not
+   * approve, and a green tick would read as if they had.
+   */
+  status: "COMPLETED" | "PENDING" | "REJECTED" | "RETURNED";
 }
 
 export interface ApplicationField {
@@ -144,7 +149,7 @@ export type DetailPanel =
       compact?: boolean;
       documents: DocumentItem[];
     }
-  | { kind: "timeline"; events: TimelineEvent[] };
+  | { kind: "timeline"; heading?: string; events: TimelineEvent[] };
 
 /**
  * Tab labels are taken from the tab bar itself, not the frame names — they
@@ -189,7 +194,12 @@ export interface ApplicationSummary {
 
 export interface ApplicationDetail extends ApplicationItem {
   summary: ApplicationSummary;
-  panels: Record<DetailTabKey, DetailPanel>;
+  /**
+   * One panel per tab, keyed by DETAIL_TABS. Partial on purpose: a request
+   * type that has no factory or project section simply omits that key, and
+   * the tab renders an empty state instead of breaking.
+   */
+  panels: Partial<Record<DetailTabKey, DetailPanel>>;
 }
 
 export type ActionMode = "approve" | "reject" | "return";

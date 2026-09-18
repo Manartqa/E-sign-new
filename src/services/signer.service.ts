@@ -9,6 +9,7 @@ import {
   getSignersApi,
   updateSignerApi,
 } from "@/lib/api/api-main";
+import { readCertificate } from "@/lib/pkcs12";
 import { MOCK_PROFILE } from "@/mocks/profile.mock";
 import { MOCK_POSITIONS, MOCK_SIGNERS } from "@/mocks/signers.mock";
 import { MOCK_SIGNING_WORKFLOWS } from "@/mocks/signingWorkflows.mock";
@@ -149,18 +150,8 @@ export async function checkSignerCertificate(
   file: File,
   pin: string,
 ): Promise<CertificateCheckResult> {
-  if (USE_MOCK) {
-    // mock rule: a .p12 / .pfx file with a PIN of 4+ characters is valid
-    const valid = /\.(p12|pfx)$/i.test(file.name) && pin.length >= 4;
-    if (!valid) return { valid };
-    const validTo = new Date();
-    validTo.setFullYear(validTo.getFullYear() + 1);
-    return {
-      valid,
-      subject: file.name.replace(/\.(p12|pfx)$/i, ""),
-      validTo: validTo.toISOString(),
-    };
-  }
+  // no stand-in: the uploaded file is opened with the PIN right here
+  if (USE_MOCK) return readCertificate(file, pin);
   const body = new FormData();
   body.append("certificateFile", file);
   body.append("certificatePin", pin);

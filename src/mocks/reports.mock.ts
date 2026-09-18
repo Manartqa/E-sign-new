@@ -33,7 +33,7 @@ export const MOCK_REPORT_SUMMARY: ReportSummary = {
     },
     {
       key: "rejected",
-      label: "ปฏิเสธ/ส่งคืน",
+      label: "ไม่อนุมัติ/ส่งคืน",
       value: 42,
       deltaPercent: 2,
       spark: [40, 45, 38, 49, 43, 51, 46, 53, 48, 55],

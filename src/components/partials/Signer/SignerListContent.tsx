@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -10,12 +8,13 @@ import {
   ErrorState,
   LoadingState,
   Pagination,
+  SideDrawer,
 } from "@/components/common";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ROUTES } from "@/constant/routes";
 import { useSignerActions, useSignerList } from "@/hooks/signers";
 import { formatThaiDateTime } from "@/lib/format";
 import { SignerInUseError, type Signer } from "@/types/app/signers";
+import SignerFormContent from "./SignerFormContent";
 
 const TH = "px-4 py-3 text-left text-sm font-bold whitespace-nowrap text-brand-navy-mid";
 const TD = "px-4 py-3 align-top text-sm text-muted-foreground";
@@ -34,12 +33,13 @@ function Audit({ by, at }: { by: string; at: string }) {
  * ผู้ตรวจสอบ list, styled like กระบวนการลงนาม.
  */
 export default function SignerListContent() {
-  const router = useRouter();
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [deleting, setDeleting] = useState<Signer | null>(null);
+  /** the drawer's subject: null = closed, "" = a new signer, an id = that one */
+  const [editing, setEditing] = useState<string | null>(null);
 
   const { items, total, isLoading, isError } = useSignerList({
     keyword,
@@ -80,13 +80,14 @@ export default function SignerListContent() {
             รายชื่อผู้มีอำนาจลงนามที่เลือกใส่ในกระบวนการลงนามได้
           </p>
         </div>
-        <Link
-          href={ROUTES.signerNew}
+        <button
+          type="button"
+          onClick={() => setEditing("")}
           className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
         >
           <Plus className="size-4" aria-hidden />
           เพิ่มผู้มีอำนาจลงนาม
-        </Link>
+        </button>
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -168,7 +169,7 @@ export default function SignerListContent() {
                   {items.map((signer) => (
                     <tr
                       key={signer.id}
-                      onClick={() => router.push(ROUTES.signerEdit(signer.id))}
+                      onClick={() => setEditing(signer.id)}
                       className="cursor-pointer bg-white transition-colors hover:bg-[#f8fafc]"
                     >
                       <td className={TD}>
@@ -198,14 +199,15 @@ export default function SignerListContent() {
                           className="flex items-center justify-end gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Link
-                            href={ROUTES.signerEdit(signer.id)}
+                          <button
+                            type="button"
+                            onClick={() => setEditing(signer.id)}
                             aria-label={`แก้ไข ${signer.name}`}
                             title="แก้ไข"
                             className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
                           >
                             <Pencil className="size-4" aria-hidden />
-                          </Link>
+                          </button>
                           <button
                             type="button"
                             onClick={() => setDeleting(signer)}
@@ -236,6 +238,28 @@ export default function SignerListContent() {
           </>
         )}
       </div>
+
+      {/* mounted only while open so every visit starts on a fresh form */}
+      {editing !== null && (
+        <SideDrawer
+          open
+          onClose={() => setEditing(null)}
+          title={editing ? "แก้ไขผู้มีอำนาจลงนาม" : "เพิ่มผู้มีอำนาจลงนาม"}
+          description={
+            editing
+              ? "แก้ไขข้อมูลผู้มีอำนาจลงนามรายนี้"
+              : "กรอกข้อมูลเพื่อเพิ่มผู้มีอำนาจลงนามรายใหม่"
+          }
+          // wider than the drawer's default: this form runs three fields
+          // across and carries the signature upload
+          className="sm:w-[min(720px,92vw)] xl:w-[880px]"
+        >
+          <SignerFormContent
+            id={editing || undefined}
+            onDone={() => setEditing(null)}
+          />
+        </SideDrawer>
+      )}
 
       <Dialog
         open={!!deleting}

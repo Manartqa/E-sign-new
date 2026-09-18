@@ -65,55 +65,12 @@ export const NAV_ITEMS: NavItem[] = [
 export const APP_NAME = "ระบบการลงนามอนุมัติดิจิทัล";
 export const APP_SUBTITLE = "E-Signature";
 /**
- * Full system name shown above the TopBar breadcrumb — Figma login-hero
- * title. The "(E-Signature)" suffix is dropped below `sm`, where there's no
+ * Full system name shown in the TopBar — Figma login-hero title. The
+ * "(E-Signature)" suffix is dropped below `sm`, where there's no
  * room for it and it would otherwise just get truncated with an ellipsis.
  */
 export const SYSTEM_TITLE = "ระบบการลงนามอนุมัติด้วยลายมือชื่อดิจิทัล";
 export const SYSTEM_TITLE_SUFFIX = "(E-Signature)";
-
-/** Breadcrumb trail per route, rendered in the TopBar. */
-export const BREADCRUMBS: Record<string, string[]> = {
-  [ROUTES.reports]: ["หน้าหลัก", "รายงานภาพรวม"],
-  [ROUTES.applications]: ["หน้าหลัก", "คำขอทั้งหมด"],
-  [ROUTES.applicationsPending]: ["หน้าหลัก", "รอการอนุมัติ"],
-  [ROUTES.profile]: ["หน้าหลัก", "โปรไฟล์ผู้ใช้งาน"],
-  [ROUTES.settings]: ["หน้าหลัก", "ตั้งค่าระบบ"],
-  [ROUTES.signingWorkflows]: ["หน้าหลัก", "ตั้งค่าระบบ", "กระบวนการลงนาม"],
-  [ROUTES.signingWorkflowNew]: [
-    "หน้าหลัก",
-    "ตั้งค่าระบบ",
-    "กระบวนการลงนาม",
-    "เพิ่มกระบวนการลงนาม",
-  ],
-  [ROUTES.signers]: ["หน้าหลัก", "ตั้งค่าระบบ", "ผู้มีอำนาจลงนาม"],
-  [ROUTES.signerNew]: [
-    "หน้าหลัก",
-    "ตั้งค่าระบบ",
-    "ผู้มีอำนาจลงนาม",
-    "เพิ่มผู้มีอำนาจลงนาม",
-  ],
-  [ROUTES.roles]: ["หน้าหลัก", "ตั้งค่าระบบ", "บทบาทและสิทธิ์"],
-  [ROUTES.roleNew]: [
-    "หน้าหลัก",
-    "ตั้งค่าระบบ",
-    "บทบาทและสิทธิ์",
-    "เพิ่มบทบาท",
-  ],
-};
-
-/**
- * The trail for `pathname`: an exact BREADCRUMBS entry, else the longest entry
- * it sits under — so /settings/signing-workflows/SW-001 inherits the
- * กระบวนการลงนาม trail instead of dropping to ตั้งค่าระบบ.
- */
-export function getBreadcrumbs(pathname: string): string[] {
-  if (BREADCRUMBS[pathname]) return BREADCRUMBS[pathname];
-  const parent = Object.keys(BREADCRUMBS)
-    .filter((href) => href !== "/" && pathname.startsWith(`${href}/`))
-    .sort((a, b) => b.length - a.length)[0];
-  return parent ? BREADCRUMBS[parent] : ["หน้าหลัก"];
-}
 
 export function getInitials(name: string): string {
   return name.trim().slice(0, 2);

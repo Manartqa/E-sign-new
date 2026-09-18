@@ -77,6 +77,8 @@ export interface SignerInput
 
 export interface CertificateCheckResult {
   valid: boolean;
+  /** why it failed, when the checker can tell PIN from file */
+  reason?: "PIN" | "FILE";
   /** the certificate's subject (holder) name when valid */
   subject?: string;
   /** ISO date the certificate expires when valid */

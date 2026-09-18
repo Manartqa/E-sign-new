@@ -14,8 +14,8 @@ const CONFIRM_COPY = {
     confirmClassName: "bg-action-approve text-white",
   },
   reject: {
-    title: "ปฏิเสธคำขอหลายรายการ",
-    verb: "ปฏิเสธ",
+    title: "ไม่อนุมัติหลายรายการ",
+    verb: "ไม่อนุมัติ",
     Icon: XCircle,
     accent: "text-action-reject",
     confirmClassName: "bg-action-reject text-white",

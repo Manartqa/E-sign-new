@@ -88,7 +88,7 @@ export default function ApplicationDetailContent({
         officerId: profile?.id ?? "",
       });
       setAction(null);
-      toast.success(isReject ? "ปฏิเสธคำขอแล้ว" : "ส่งคืนคำขอเพื่อแก้ไขแล้ว");
+      toast.success(isReject ? "ไม่อนุมัติคำขอแล้ว" : "ส่งคืนคำขอเพื่อแก้ไขแล้ว");
     } catch {
       toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
@@ -153,13 +153,18 @@ export default function ApplicationDetailContent({
         />
       )}
 
-      <ReturnForEditModal
-        open={action === "return" || action === "reject"}
-        mode={action === "reject" ? "reject" : "return"}
-        isSubmitting={approve.isPending}
-        onClose={() => setAction(null)}
-        onConfirm={(values) => void handleReturnOrReject(values)}
-      />
+      {/* mounted only while open, like SignatureModal above: the reason select
+          seeds its state from the mode's own list, which a modal kept mounted
+          across both modes would keep from the mode it first rendered in */}
+      {(action === "return" || action === "reject") && (
+        <ReturnForEditModal
+          open
+          mode={action}
+          isSubmitting={approve.isPending}
+          onClose={() => setAction(null)}
+          onConfirm={(values) => void handleReturnOrReject(values)}
+        />
+      )}
 
       <SuccessModal
         open={showSuccess}

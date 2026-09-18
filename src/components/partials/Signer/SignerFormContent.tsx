@@ -1,11 +1,8 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
-  ChevronLeft,
   FileKey2,
   ImagePlus,
   Loader2,
@@ -22,7 +19,6 @@ import {
   LoadingState,
   SearchableSelect,
 } from "@/components/common";
-import { ROUTES } from "@/constant/routes";
 import { usePositions, useSigner, useSignerActions } from "@/hooks/signers";
 import { formatThaiDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -94,8 +90,17 @@ function Field({
  * ตั้งค่าระบบ › เพิ่ม / แก้ไขผู้มีอำนาจลงนาม — not in Figma; the legacy
  * ผู้ตรวจสอบ form's fields regrouped into cards. Loads the signer first (edit),
  * then mounts the form with it as initial state.
+ *
+ * Lives inside the list's SideDrawer, which carries the title and the way
+ * back: the form has no heading of its own and closes through `onDone`.
  */
-export default function SignerFormContent({ id }: { id?: string }) {
+export default function SignerFormContent({
+  id,
+  onDone,
+}: {
+  id?: string;
+  onDone: () => void;
+}) {
   const { signer, isLoading, isError } = useSigner(id ?? "");
 
   if (id && isError) return <ErrorState />;
@@ -108,11 +113,18 @@ export default function SignerFormContent({ id }: { id?: string }) {
       />
     );
 
-  return <SignerForm key={id ?? "new"} signer={signer ?? undefined} />;
+  return (
+    <SignerForm key={id ?? "new"} signer={signer ?? undefined} onDone={onDone} />
+  );
 }
 
-function SignerForm({ signer }: { signer?: Signer }) {
-  const router = useRouter();
+function SignerForm({
+  signer,
+  onDone,
+}: {
+  signer?: Signer;
+  onDone: () => void;
+}) {
   const { create, update, checkCertificate } = useSignerActions();
   const { positions, isLoading: positionsLoading } = usePositions();
   const [form, setForm] = useState<Fields>(() => {
@@ -217,7 +229,7 @@ function SignerForm({ signer }: { signer?: Signer }) {
       if (signer) await update.mutateAsync({ id: signer.id, input });
       else await create.mutateAsync(input);
       toast.success(isEdit ? "บันทึกการแก้ไขแล้ว" : "เพิ่มผู้มีอำนาจลงนามแล้ว");
-      router.push(ROUTES.signers);
+      onDone();
     } catch {
       toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
@@ -225,18 +237,6 @@ function SignerForm({ signer }: { signer?: Signer }) {
 
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4" noValidate>
-      <Link
-        href={ROUTES.signers}
-        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy-mid"
-      >
-        <ChevronLeft className="size-4" aria-hidden />
-        กลับไปรายการผู้มีอำนาจลงนาม
-      </Link>
-
-      <h1 className="text-xl font-bold text-foreground">
-        {isEdit ? "แก้ไขผู้มีอำนาจลงนาม" : "เพิ่มผู้มีอำนาจลงนาม"}
-      </h1>
-
       <FormSection title="การใช้งาน">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <LabeledSelect
@@ -416,7 +416,7 @@ function SignerForm({ signer }: { signer?: Signer }) {
                 <span className="text-xs text-muted-foreground">(อัปโหลดไฟล์ใหม่เพื่อแทนที่)</span>
               </p>
             )}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_240px_auto] md:items-end">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_240px_auto] md:items-start">
               <Field id="signer-cert-file" label="Certificate File" required={!signer?.certificateFileName}>
                 <input
                   ref={certInput}
@@ -449,19 +449,26 @@ function SignerForm({ signer }: { signer?: Signer }) {
                   className={cn(FIELD, "disabled:bg-secondary")}
                 />
               </Field>
-              <button
-                type="button"
-                onClick={() => void runCertificateCheck()}
-                disabled={!certFile || !certPin || checkCertificate.isPending}
-                className="flex h-11 items-center justify-center gap-2 rounded-lg border border-brand-navy-mid px-4 text-sm font-semibold whitespace-nowrap text-brand-navy-mid hover:bg-white disabled:opacity-50"
-              >
-                {checkCertificate.isPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <ShieldCheck className="size-4" aria-hidden />
-                )}
-                ตรวจสอบ Certificate
-              </button>
+              {/* the spacer label keeps this cell the same shape as the two
+                  beside it, so the row stays on one line whatever grows */}
+              <div className="flex flex-col gap-1.5">
+                <span className="hidden text-sm font-medium md:block" aria-hidden>
+                  &nbsp;
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void runCertificateCheck()}
+                  disabled={!certFile || !certPin || checkCertificate.isPending}
+                  className="flex h-11 items-center justify-center gap-2 rounded-lg border border-brand-navy-mid px-4 text-sm font-semibold whitespace-nowrap text-brand-navy-mid hover:bg-white disabled:opacity-50"
+                >
+                  {checkCertificate.isPending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <ShieldCheck className="size-4" aria-hidden />
+                  )}
+                  ตรวจสอบ Certificate
+                </button>
+              </div>
             </div>
             {certCheck && (
               <p
@@ -478,7 +485,11 @@ function SignerForm({ signer }: { signer?: Signer }) {
                 )}
                 {certCheck.valid
                   ? `ใบรับรองถูกต้อง — ${certCheck.subject} · หมดอายุ ${formatThaiDate(certCheck.validTo!)}`
-                  : "ไม่สามารถเปิดใบรับรองได้ ตรวจสอบไฟล์หรือ PIN อีกครั้ง"}
+                  : certCheck.reason === "PIN"
+                    ? "PIN ไม่ถูกต้อง กรุณากรอกใหม่อีกครั้ง"
+                    : certCheck.reason === "FILE"
+                      ? "ไฟล์ใบรับรองไม่ถูกต้องหรือเสียหาย กรุณาเลือกไฟล์ใหม่"
+                      : "ไม่สามารถเปิดใบรับรองได้ ตรวจสอบไฟล์หรือ PIN อีกครั้ง"}
               </p>
             )}
             {show(errors.certificate) && (
@@ -546,13 +557,15 @@ function SignerForm({ signer }: { signer?: Signer }) {
         </div>
       </FormSection>
 
-      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-        <Link
-          href={ROUTES.signers}
-          className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary"
+      <div className="sticky bottom-0 z-10 -mx-5 flex justify-end gap-2 border-t bg-background/95 px-5 py-3 backdrop-blur">
+        <button
+          type="button"
+          onClick={onDone}
+          disabled={saving}
+          className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-60"
         >
           ยกเลิก
-        </Link>
+        </button>
         <button
           type="submit"
           disabled={saving}

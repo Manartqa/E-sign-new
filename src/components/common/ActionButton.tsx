@@ -21,7 +21,7 @@ const ACTION_CONFIG = {
     arc: "stroke-action-approve",
   },
   reject: {
-    label: "ปฏิเสธคำขอ",
+    label: "ไม่อนุมัติ",
     Icon: X,
     skin: "border-action-reject",
     text: "text-action-reject",

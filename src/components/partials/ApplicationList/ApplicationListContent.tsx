@@ -75,7 +75,7 @@ export default function ApplicationListContent({
       bulkAction === "approve"
         ? "อนุมัติและลงนาม"
         : bulkAction === "reject"
-          ? "ปฏิเสธ"
+          ? "ไม่อนุมัติ"
           : "ส่งคืนเพื่อแก้ไข";
 
     try {
