@@ -8,7 +8,6 @@ import {
 } from "@/lib/api/api-main";
 import { MOCK_PROFILE } from "@/mocks/profile.mock";
 import { MOCK_SIGNERS } from "@/mocks/signers.mock";
-import { approvalLevelRank } from "@/types/app/signers";
 import { MOCK_SIGNING_WORKFLOWS } from "@/mocks/signingWorkflows.mock";
 import type {
   SigningWorkflow,
@@ -26,27 +25,22 @@ const DEFAULT_LIMIT = 10;
  */
 
 /**
- * mock stand-in for the server resolving each step's signer on read and
- * returning them in approval-level order
+ * mock stand-in for the server resolving each step's signer on read. The stored
+ * order is the signing order, so it is left alone.
  */
 const withCurrentSigners = (workflow: SigningWorkflow): SigningWorkflow => ({
   ...workflow,
-  steps: workflow.steps
-    .map((step) => {
-      const signer = MOCK_SIGNERS.find((s) => s.id === step.signerId);
-      return signer
-        ? {
-            ...step,
-            signerName: signer.name,
-            position: signer.position,
-            approvalLevel: signer.approvalLevel,
-          }
-        : step;
-    })
-    .sort(
-      (a, b) =>
-        approvalLevelRank(a.approvalLevel) - approvalLevelRank(b.approvalLevel),
-    ),
+  steps: workflow.steps.map((step) => {
+    const signer = MOCK_SIGNERS.find((s) => s.id === step.signerId);
+    return signer
+      ? {
+          ...step,
+          signerName: signer.name,
+          position: signer.position,
+          approvalLevel: signer.approvalLevel,
+        }
+      : step;
+  }),
 });
 
 export async function getSigningWorkflows(

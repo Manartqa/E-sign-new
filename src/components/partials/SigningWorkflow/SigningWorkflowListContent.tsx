@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Copy,
+  FilePen,
+  FilePlus2,
   Flag,
   ListOrdered,
   Pencil,
@@ -19,9 +19,9 @@ import {
   ErrorState,
   LoadingState,
   Pagination,
+  SideDrawer,
 } from "@/components/common";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ROUTES } from "@/constant/routes";
 import {
   useSigningWorkflowActions,
   useSigningWorkflowList,
@@ -35,6 +35,7 @@ import {
   WEAPON_CATEGORY_OPTIONS,
   optionLabel,
 } from "./SigningWorkflow.config";
+import SigningWorkflowFormContent from "./SigningWorkflowFormContent";
 import { approvalLevelLabel } from "@/components/partials/Signer/Signer.config";
 
 const TH = "px-4 py-3 text-left text-sm font-bold whitespace-nowrap text-brand-navy-mid";
@@ -55,12 +56,19 @@ function Audit({ by, at }: { by: string; at: string }) {
  * select-then-toolbar flow). Copy opens the add form prefilled from the row.
  */
 export default function SigningWorkflowListContent() {
-  const router = useRouter();
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [deleting, setDeleting] = useState<SigningWorkflow | null>(null);
+  /**
+   * the drawer's subject: null = closed, {} = a new workflow, `id` = edit that
+   * one, `copyFrom` = a new one prefilled from that one
+   */
+  const [editing, setEditing] = useState<{
+    id?: string;
+    copyFrom?: string;
+  } | null>(null);
 
   const { items, total, isLoading, isError } = useSigningWorkflowList({
     keyword,
@@ -97,13 +105,14 @@ export default function SigningWorkflowListContent() {
             เรียงตามระดับการอนุมัติ
           </p>
         </div>
-        <Link
-          href={ROUTES.signingWorkflowNew}
+        <button
+          type="button"
+          onClick={() => setEditing({})}
           className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
         >
           <Plus className="size-4" aria-hidden />
           เพิ่มกระบวนการลงนาม
-        </Link>
+        </button>
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -190,9 +199,7 @@ export default function SigningWorkflowListContent() {
                     return (
                       <tr
                         key={workflow.id}
-                        onClick={() =>
-                          router.push(ROUTES.signingWorkflowEdit(workflow.id))
-                        }
+                        onClick={() => setEditing({ id: workflow.id })}
                         className="cursor-pointer bg-white transition-colors hover:bg-[#f8fafc]"
                       >
                         <td className={TD}>
@@ -244,22 +251,24 @@ export default function SigningWorkflowListContent() {
                             className="flex items-center justify-end gap-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <Link
-                              href={ROUTES.signingWorkflowEdit(workflow.id)}
+                            <button
+                              type="button"
+                              onClick={() => setEditing({ id: workflow.id })}
                               aria-label={`แก้ไข ${workflow.name}`}
                               title="แก้ไข"
                               className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
                             >
                               <Pencil className="size-4" aria-hidden />
-                            </Link>
-                            <Link
-                              href={`${ROUTES.signingWorkflowNew}?copyFrom=${workflow.id}`}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditing({ copyFrom: workflow.id })}
                               aria-label={`สำเนา ${workflow.name}`}
                               title="สำเนา"
                               className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
                             >
                               <Copy className="size-4" aria-hidden />
-                            </Link>
+                            </button>
                             <button
                               type="button"
                               onClick={() => setDeleting(workflow)}
@@ -291,6 +300,38 @@ export default function SigningWorkflowListContent() {
           </>
         )}
       </div>
+
+      {/* mounted only while open so every visit starts on a fresh form */}
+      {editing !== null && (
+        <SideDrawer
+          open
+          onClose={() => setEditing(null)}
+          title={
+            editing.id ? "แก้ไขกระบวนการลงนาม" : "เพิ่มกระบวนการลงนาม"
+          }
+          icon={
+            editing.id ? (
+              <FilePen className="size-5" aria-hidden />
+            ) : (
+              <FilePlus2 className="size-5" aria-hidden />
+            )
+          }
+          description={
+            editing.copyFrom
+              ? "คัดลอกข้อมูลจากกระบวนการที่เลือกมาเป็นค่าเริ่มต้น"
+              : "กำหนดข้อมูลกระบวนการและลำดับผู้ลงนาม"
+          }
+          // wider than the drawer's default: the signer chain runs the
+          // checklist and the chain side by side
+          className="sm:w-[min(960px,94vw)] xl:w-[1100px]"
+        >
+          <SigningWorkflowFormContent
+            id={editing.id}
+            copyFromId={editing.copyFrom}
+            onDone={() => setEditing(null)}
+          />
+        </SideDrawer>
+      )}
 
       <Dialog
         open={!!deleting}

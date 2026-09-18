@@ -30,6 +30,9 @@ interface LabeledSelectProps {
   options: readonly SelectOption[];
   onChange: (value: string) => void;
   required?: boolean;
+  /** shown greyed while nothing is selected; falls back to the label */
+  placeholder?: string;
+  invalid?: boolean;
   className?: string;
   triggerClassName?: string;
   /** the popup list, e.g. to cap its height */
@@ -53,6 +56,8 @@ export function LabeledSelect({
   options,
   onChange,
   required,
+  placeholder,
+  invalid,
   className,
   triggerClassName,
   contentClassName,
@@ -71,9 +76,17 @@ export function LabeledSelect({
       <Select value={value} onValueChange={(next) => onChange(next ?? value)}>
         <SelectTrigger
           aria-labelledby={labelId}
-          className={cn("w-full rounded-lg border", triggerClassName)}
+          aria-invalid={invalid || undefined}
+          className={cn(
+            "w-full rounded-lg border aria-invalid:border-destructive",
+            triggerClassName,
+          )}
         >
-          <SelectValue>{selected?.label ?? label}</SelectValue>
+          <SelectValue>
+            {selected?.label ?? (
+              <span className="text-slate-400">{placeholder ?? label}</span>
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className={contentClassName}>
           {options.map((option) => (

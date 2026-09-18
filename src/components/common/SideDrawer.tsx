@@ -8,6 +8,8 @@ interface SideDrawerProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  /** a lucide icon, shown in a badge beside the title */
+  icon?: React.ReactNode;
   description?: string;
   /** panel width from `sm` up; full width on a phone */
   className?: string;
@@ -27,6 +29,7 @@ export function SideDrawer({
   open,
   onClose,
   title,
+  icon,
   description,
   className,
   children,
@@ -47,15 +50,22 @@ export function SideDrawer({
           )}
         >
           <header className="flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4">
-            <div className="flex min-w-0 flex-col gap-1">
-              <DialogPrimitive.Title className="text-lg font-bold text-foreground">
-                {title}
-              </DialogPrimitive.Title>
-              {description && (
-                <DialogPrimitive.Description className="text-sm text-muted-foreground">
-                  {description}
-                </DialogPrimitive.Description>
+            <div className="flex min-w-0 items-start gap-3">
+              {icon && (
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-navy-mid/10 text-brand-navy-mid">
+                  {icon}
+                </span>
               )}
+              <div className="flex min-w-0 flex-col gap-1">
+                <DialogPrimitive.Title className="text-lg font-bold text-foreground">
+                  {title}
+                </DialogPrimitive.Title>
+                {description && (
+                  <DialogPrimitive.Description className="text-sm text-muted-foreground">
+                    {description}
+                  </DialogPrimitive.Description>
+                )}
+              </div>
             </div>
             <DialogPrimitive.Close
               aria-label="ปิด"

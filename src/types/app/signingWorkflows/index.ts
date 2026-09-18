@@ -1,9 +1,8 @@
 /**
  * ตั้งค่าระบบ › กระบวนการลงนาม — not in Figma or the handoff. Fields follow the
- * legacy system's list screen. `steps` are the workflow's signers; their order is
- * never chosen by hand — it follows each signer's ระดับการอนุมัติ. Signers who
- * share a level form one stage: the first of them to approve moves the request
- * to the next level, the rest can still view it but not approve again.
+ * legacy system's list screen. `steps` are the workflow's signers in signing
+ * order: the form seeds that order from each signer's ระดับการอนุมัติ, and the
+ * user is free to rearrange it by hand.
  */
 
 export const REQUEST_USAGE = {
@@ -45,7 +44,7 @@ export interface SigningWorkflow {
   requestUsage: RequestUsage;
   /** การใช้กับคำขอใบแทน */
   replacementUsage: ReplacementUsage;
-  /** each signer once, sorted by approvalLevel */
+  /** each signer once, in signing order */
   steps: SigningWorkflowStep[];
   createdBy: string;
   createdAt: string;

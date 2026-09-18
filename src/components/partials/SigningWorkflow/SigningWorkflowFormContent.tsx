@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { FileText, ListOrdered } from "lucide-react";
 import { toast } from "sonner";
 import {
   ErrorState,
@@ -11,14 +9,11 @@ import {
   LabeledSelect,
   LoadingState,
 } from "@/components/common";
-import { ROUTES } from "@/constant/routes";
 import {
   useSigningWorkflow,
   useSigningWorkflowActions,
 } from "@/hooks/signingWorkflows";
 import {
-  REPLACEMENT_USAGE,
-  REQUEST_USAGE,
   type ReplacementUsage,
   type RequestUsage,
   type SigningWorkflowInput,
@@ -31,33 +26,49 @@ import {
 } from "./SigningWorkflow.config";
 import { SignerChainEditor, newStepId } from "./SignerChainEditor";
 
-const EMPTY_INPUT: SigningWorkflowInput = {
+/** every select starts unpicked, so the form state holds "" until one is */
+type Fields = Omit<
+  SigningWorkflowInput,
+  "requestUsage" | "replacementUsage"
+> & {
+  requestUsage: RequestUsage | "";
+  replacementUsage: ReplacementUsage | "";
+};
+
+const EMPTY_INPUT: Fields = {
   name: "",
-  weaponCategory: "all",
-  licenseType: "all",
-  requestUsage: REQUEST_USAGE.NEW_AND_RENEW,
-  replacementUsage: REPLACEMENT_USAGE.NORMAL_AND_REPLACEMENT,
+  weaponCategory: "",
+  licenseType: "",
+  requestUsage: "",
+  replacementUsage: "",
   steps: [],
 };
 
 const FIELD =
   "h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-brand-navy-mid aria-invalid:border-destructive";
+const SELECT_TRIGGER = "bg-white data-[size=default]:h-11";
 
 interface SigningWorkflowFormContentProps {
   /** edit this workflow; omit to add a new one */
   id?: string;
   /** add mode only — prefill from an existing workflow (สำเนา) */
   copyFromId?: string;
+  /** close the drawer — on save, and on ยกเลิก */
+  onDone: () => void;
 }
 
 /**
  * ตั้งค่าระบบ › เพิ่ม / แก้ไขกระบวนการลงนาม — not in Figma. Loads the source
  * workflow (edit or copy) first, then mounts the form with it as initial state,
  * so the fields never need syncing from an effect.
+ *
+ * Lives inside the list's SideDrawer, which carries the title and the way
+ * back: the form has no heading of its own and closes through `onDone`.
  */
 export default function SigningWorkflowFormContent({
   id,
   copyFromId,
+  onDone,
 }: SigningWorkflowFormContentProps) {
   const sourceId = id ?? copyFromId ?? "";
   const { workflow, isLoading, isError } = useSigningWorkflow(sourceId);
@@ -72,7 +83,7 @@ export default function SigningWorkflowFormContent({
       />
     );
 
-  const initial: SigningWorkflowInput = workflow
+  const initial: Fields = workflow
     ? {
         name: id ? workflow.name : `${workflow.name} (สำเนา)`,
         weaponCategory: workflow.weaponCategory,
@@ -86,17 +97,25 @@ export default function SigningWorkflowFormContent({
       }
     : EMPTY_INPUT;
 
-  return <WorkflowForm key={sourceId || "new"} id={id} initial={initial} />;
+  return (
+    <WorkflowForm
+      key={sourceId || "new"}
+      id={id}
+      initial={initial}
+      onDone={onDone}
+    />
+  );
 }
 
 function WorkflowForm({
   id,
   initial,
+  onDone,
 }: {
   id?: string;
-  initial: SigningWorkflowInput;
+  initial: Fields;
+  onDone: () => void;
 }) {
-  const router = useRouter();
   const { create, update } = useSigningWorkflowActions();
   const [form, setForm] = useState(initial);
   const [submitted, setSubmitted] = useState(false);
@@ -104,17 +123,22 @@ function WorkflowForm({
   const isEdit = Boolean(id);
   const saving = create.isPending || update.isPending;
   const nameMissing = form.name.trim() === "";
+  const missing = {
+    weaponCategory: !form.weaponCategory,
+    licenseType: !form.licenseType,
+    requestUsage: !form.requestUsage,
+    replacementUsage: !form.replacementUsage,
+  };
   const stepsError =
     form.steps.length === 0
       ? "กรุณาเลือกผู้ลงนามอย่างน้อย 1 คน"
       : form.steps.some((step) => !step.approvalLevel) &&
         "มีผู้ลงนามที่ยังไม่กำหนดระดับการอนุมัติ";
-  const invalid = nameMissing || Boolean(stepsError);
+  const invalid =
+    nameMissing || Object.values(missing).some(Boolean) || Boolean(stepsError);
 
-  const set = <K extends keyof SigningWorkflowInput>(
-    key: K,
-    value: SigningWorkflowInput[K],
-  ) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof Fields>(key: K, value: Fields[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -123,12 +147,17 @@ function WorkflowForm({
       toast.error("กรุณากรอกข้อมูลที่จำเป็นให้ครบ");
       return;
     }
-    const input: SigningWorkflowInput = { ...form, name: form.name.trim() };
+    const input: SigningWorkflowInput = {
+      ...form,
+      name: form.name.trim(),
+      requestUsage: form.requestUsage as RequestUsage,
+      replacementUsage: form.replacementUsage as ReplacementUsage,
+    };
     try {
       if (id) await update.mutateAsync({ id, input });
       else await create.mutateAsync(input);
       toast.success(isEdit ? "บันทึกการแก้ไขแล้ว" : "เพิ่มกระบวนการลงนามแล้ว");
-      router.push(ROUTES.signingWorkflows);
+      onDone();
     } catch {
       toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
@@ -136,19 +165,11 @@ function WorkflowForm({
 
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4" noValidate>
-      <Link
-        href={ROUTES.signingWorkflows}
-        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy-mid"
+      <Section
+        icon={<FileText className="size-5" aria-hidden />}
+        title="ข้อมูลกระบวนการ"
+        description="กรอกข้อมูลรายละเอียดของกระบวนการลงนาม"
       >
-        <ChevronLeft className="size-4" aria-hidden />
-        กลับไปรายการกระบวนการลงนาม
-      </Link>
-
-      <h1 className="text-xl font-bold text-foreground">
-        {isEdit ? "แก้ไขกระบวนการลงนาม" : "เพิ่มกระบวนการลงนาม"}
-      </h1>
-
-      <Section title="ข้อมูลกระบวนการ">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="workflow-name" className="text-sm font-medium">
             ชื่อกระบวนการอนุมัติ
@@ -171,41 +192,50 @@ function WorkflowForm({
           <LabeledSelect
             label="ประเภทยุทธภัณฑ์"
             required
+            placeholder="กรุณาเลือกประเภทยุทธภัณฑ์"
+            invalid={submitted && missing.weaponCategory}
             value={form.weaponCategory}
             options={WEAPON_CATEGORY_OPTIONS}
             onChange={(v) => set("weaponCategory", v)}
-            triggerClassName="bg-white data-[size=default]:h-11"
+            triggerClassName={SELECT_TRIGGER}
           />
           <LabeledSelect
             label="ประเภทใบอนุญาต"
             required
+            placeholder="กรุณาเลือกประเภทใบอนุญาต"
+            invalid={submitted && missing.licenseType}
             value={form.licenseType}
             options={LICENSE_TYPE_OPTIONS}
             onChange={(v) => set("licenseType", v)}
-            triggerClassName="bg-white data-[size=default]:h-11"
+            triggerClassName={SELECT_TRIGGER}
           />
           <LabeledSelect
             label="การใช้กับคำขอใหม่หรือต่ออายุ"
             required
+            placeholder="กรุณาเลือกการใช้กับคำขอใหม่หรือต่ออายุ"
+            invalid={submitted && missing.requestUsage}
             value={form.requestUsage}
             options={REQUEST_USAGE_OPTIONS}
             onChange={(v) => set("requestUsage", v as RequestUsage)}
-            triggerClassName="bg-white data-[size=default]:h-11"
+            triggerClassName={SELECT_TRIGGER}
           />
           <LabeledSelect
             label="การใช้กับคำขอใบแทน"
             required
+            placeholder="กรุณาเลือกการใช้กับคำขอใบแทน"
+            invalid={submitted && missing.replacementUsage}
             value={form.replacementUsage}
             options={REPLACEMENT_USAGE_OPTIONS}
             onChange={(v) => set("replacementUsage", v as ReplacementUsage)}
-            triggerClassName="bg-white data-[size=default]:h-11"
+            triggerClassName={SELECT_TRIGGER}
           />
         </div>
       </Section>
 
       <Section
+        icon={<ListOrdered className="size-5" aria-hidden />}
         title="ลำดับผู้ลงนาม"
-        description="ลำดับเรียงตามระดับการอนุมัติของแต่ละคนโดยอัตโนมัติ ระดับที่มีหลายคน คนใดคนหนึ่งอนุมัติแล้วจะไประดับถัดไปทันที"
+        description="เลือกผู้มีอำนาจลงนามจากรายชื่อด้านซ้าย และจัดลำดับการลงนามด้านขวา ระบบจะจัดลำดับการอนุมัติโดยอัตโนมัติ หรือคุณสามารถจัดลำดับได้เอง"
       >
         <SignerChainEditor
           steps={form.steps}
@@ -214,13 +244,15 @@ function WorkflowForm({
         />
       </Section>
 
-      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-        <Link
-          href={ROUTES.signingWorkflows}
-          className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary"
+      <div className="sticky bottom-0 z-10 -mx-5 flex justify-end gap-2 border-t bg-background/95 px-5 py-3 backdrop-blur">
+        <button
+          type="button"
+          onClick={onDone}
+          disabled={saving}
+          className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-60"
         >
           ยกเลิก
-        </Link>
+        </button>
         <button
           type="submit"
           disabled={saving}
