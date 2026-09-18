@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
+import Image from "next/image";
 import {
   AlertTriangle,
   ArrowRight,
@@ -8,7 +9,6 @@ import {
   EyeOff,
   Loader2,
   Lock,
-  ShieldUser,
   User,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -235,9 +235,15 @@ export function LoginForm({
           RISE,
         )}
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#eff6ff]">
-          <ShieldUser className="size-[22px] text-brand-navy-mid" aria-hidden />
-        </span>
+        {/* the SSO mark itself, cropped from the logo the user supplied */}
+        <Image
+          src="/brand/sso-mark.png"
+          alt=""
+          width={256}
+          height={256}
+          className="size-10 shrink-0"
+          aria-hidden
+        />
         <span className="flex flex-col items-center gap-0.5">
           <span className="text-[15px] font-bold text-brand-navy-mid">
             เข้าสู่ระบบด้วย SSO
