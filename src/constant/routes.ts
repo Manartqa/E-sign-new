@@ -12,4 +12,7 @@ export const ROUTES = {
   signers: "/settings/signers",
   signerNew: "/settings/signers/new",
   signerEdit: (id: string) => `/settings/signers/${id}`,
+  roles: "/settings/roles",
+  roleNew: "/settings/roles/new",
+  roleEdit: (id: string) => `/settings/roles/${id}`,
 } as const;

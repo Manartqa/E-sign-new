@@ -19,6 +19,7 @@ import type {
   CertificateCheckResponse,
   SignerResponse,
 } from "@/types/api/main/signer";
+import type { RoleRequest, RoleResponse } from "@/types/api/main/role";
 import { mainClient } from "./client";
 
 /* Endpoints mirror the `API Endpoints` table in the Figma developer-handoff. */
@@ -129,3 +130,20 @@ export const checkSignerCertificateApi = (body: FormData) =>
 
 export const deleteSignerApi = (id: string) =>
   mainClient.delete<ApiResponse<null>>(`/api/signers/${id}`);
+
+/* Roles — บทบาทและสิทธิ์ (ตั้งค่าระบบ); not in the handoff; names are ours. */
+
+export const getRolesApi = (params?: Record<string, unknown>) =>
+  mainClient.get<PagedResponse<RoleResponse>>("/api/roles", { params });
+
+export const getRoleApi = (id: string) =>
+  mainClient.get<ApiResponse<RoleResponse>>(`/api/roles/${id}`);
+
+export const createRoleApi = (body: RoleRequest) =>
+  mainClient.post<ApiResponse<RoleResponse>>("/api/roles", body);
+
+export const updateRoleApi = (id: string, body: RoleRequest) =>
+  mainClient.put<ApiResponse<RoleResponse>>(`/api/roles/${id}`, body);
+
+export const deleteRoleApi = (id: string) =>
+  mainClient.delete<ApiResponse<null>>(`/api/roles/${id}`);

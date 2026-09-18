@@ -7,6 +7,7 @@ import {
   ListOrdered,
   Settings,
   ShieldAlert,
+  ShieldUser,
   User,
   UserPen,
   type LucideIcon,
@@ -55,6 +56,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { href: ROUTES.signers, label: "ผู้มีอำนาจลงนาม", icon: UserPen },
       { href: ROUTES.signingWorkflows, label: "กระบวนการลงนาม", icon: ListOrdered },
+      { href: ROUTES.roles, label: "บทบาทและสิทธิ์", icon: ShieldUser },
     ],
   },
 ];
@@ -90,6 +92,13 @@ export const BREADCRUMBS: Record<string, string[]> = {
     "ตั้งค่าระบบ",
     "ผู้มีอำนาจลงนาม",
     "เพิ่มผู้มีอำนาจลงนาม",
+  ],
+  [ROUTES.roles]: ["หน้าหลัก", "ตั้งค่าระบบ", "บทบาทและสิทธิ์"],
+  [ROUTES.roleNew]: [
+    "หน้าหลัก",
+    "ตั้งค่าระบบ",
+    "บทบาทและสิทธิ์",
+    "เพิ่มบทบาท",
   ],
 };
 
