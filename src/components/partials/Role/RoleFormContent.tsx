@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { FileText, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState, FormSection, LoadingState } from "@/components/common";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ROUTES } from "@/constant/routes";
 import { useRole, useRoleActions } from "@/hooks/roles";
 import { cn } from "@/lib/utils";
 import {
@@ -28,8 +25,17 @@ const TH = "px-4 py-3 text-sm font-bold whitespace-nowrap text-brand-navy-mid";
 /**
  * ตั้งค่าระบบ › เพิ่ม / แก้ไขบทบาท — not in Figma. A system role can be edited
  * but not deleted; nothing enforces the permissions yet.
+ *
+ * Lives inside the list's SideDrawer, which carries the title and the way
+ * back: the form has no heading of its own and closes through `onDone`.
  */
-export default function RoleFormContent({ id }: { id?: string }) {
+export default function RoleFormContent({
+  id,
+  onDone,
+}: {
+  id?: string;
+  onDone: () => void;
+}) {
   const { role, isLoading, isError } = useRole(id ?? "");
 
   if (id && isError) return <ErrorState />;
@@ -39,11 +45,12 @@ export default function RoleFormContent({ id }: { id?: string }) {
       <ErrorState title="ไม่พบบทบาทนี้" description={`ไม่พบรหัส ${id} ในระบบ`} />
     );
 
-  return <RoleForm key={id ?? "new"} role={role ?? undefined} />;
+  return (
+    <RoleForm key={id ?? "new"} role={role ?? undefined} onDone={onDone} />
+  );
 }
 
-function RoleForm({ role }: { role?: Role }) {
-  const router = useRouter();
+function RoleForm({ role, onDone }: { role?: Role; onDone: () => void }) {
   const { create, update } = useRoleActions();
   const [name, setName] = useState(role?.name ?? "");
   const [description, setDescription] = useState(role?.description ?? "");
@@ -95,7 +102,7 @@ function RoleForm({ role }: { role?: Role }) {
       if (role) await update.mutateAsync({ id: role.id, input });
       else await create.mutateAsync(input);
       toast.success(isEdit ? "บันทึกการแก้ไขแล้ว" : "เพิ่มบทบาทแล้ว");
-      router.push(ROUTES.roles);
+      onDone();
     } catch {
       toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
@@ -103,19 +110,11 @@ function RoleForm({ role }: { role?: Role }) {
 
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4" noValidate>
-      <Link
-        href={ROUTES.roles}
-        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy-mid"
+      <FormSection
+        icon={<FileText className="size-5" aria-hidden />}
+        title="ข้อมูลบทบาท"
+        description="ตั้งชื่อบทบาทและอธิบายว่าบทบาทนี้ใช้กับใคร"
       >
-        <ChevronLeft className="size-4" aria-hidden />
-        กลับไปรายการบทบาท
-      </Link>
-
-      <h1 className="text-xl font-bold text-foreground">
-        {isEdit ? "แก้ไขบทบาท" : "เพิ่มบทบาท"}
-      </h1>
-
-      <FormSection title="ข้อมูลบทบาท">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="role-name" className="text-sm font-medium">
             ชื่อบทบาท<span className="ml-1 text-destructive">*</span>
@@ -177,6 +176,7 @@ function RoleForm({ role }: { role?: Role }) {
       </FormSection>
 
       <FormSection
+        icon={<KeyRound className="size-5" aria-hidden />}
         title="สิทธิ์การใช้งาน"
         description="ติ๊กสิทธิ์ที่บทบาทนี้ทำได้ ช่องที่เป็นขีดคือเมนูนั้นไม่มีสิทธิ์ดังกล่าว"
       >
@@ -271,13 +271,15 @@ function RoleForm({ role }: { role?: Role }) {
         )}
       </FormSection>
 
-      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-        <Link
-          href={ROUTES.roles}
-          className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary"
+      <div className="sticky bottom-0 z-10 -mx-5 flex justify-end gap-2 border-t bg-background/95 px-5 py-3 backdrop-blur">
+        <button
+          type="button"
+          onClick={onDone}
+          disabled={saving}
+          className="rounded-lg border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-60"
         >
           ยกเลิก
-        </Link>
+        </button>
         <button
           type="submit"
           disabled={saving}

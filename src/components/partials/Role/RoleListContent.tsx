@@ -1,21 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  ShieldPlus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   EmptyState,
   ErrorState,
   LoadingState,
   Pagination,
+  SideDrawer,
 } from "@/components/common";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ROUTES } from "@/constant/routes";
 import { useRoleActions, useRoleList } from "@/hooks/roles";
 import { formatThaiDateTime } from "@/lib/format";
 import { ALL_PERMISSIONS, type Role } from "@/types/app/roles";
+import RoleFormContent from "./RoleFormContent";
 
 const TH = "px-4 py-3 text-left text-sm font-bold whitespace-nowrap text-brand-navy-mid";
 const TD = "px-4 py-3 align-top text-sm text-muted-foreground";
@@ -35,12 +42,13 @@ function Audit({ by, at }: { by: string; at: string }) {
  * The system role has no delete button (the service rejects it anyway).
  */
 export default function RoleListContent() {
-  const router = useRouter();
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [deleting, setDeleting] = useState<Role | null>(null);
+  /** the drawer's subject: null = closed, "" = a new role, an id = that one */
+  const [editing, setEditing] = useState<string | null>(null);
 
   const { items, total, isLoading, isError } = useRoleList({
     keyword,
@@ -77,13 +85,14 @@ export default function RoleListContent() {
             กำหนดว่าแต่ละบทบาททำอะไรได้บ้างในระบบ
           </p>
         </div>
-        <Link
-          href={ROUTES.roleNew}
+        <button
+          type="button"
+          onClick={() => setEditing("")}
           className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
         >
           <Plus className="size-4" aria-hidden />
           เพิ่มบทบาท
-        </Link>
+        </button>
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -168,7 +177,7 @@ export default function RoleListContent() {
                   {items.map((role) => (
                     <tr
                       key={role.id}
-                      onClick={() => router.push(ROUTES.roleEdit(role.id))}
+                      onClick={() => setEditing(role.id)}
                       className="cursor-pointer bg-white transition-colors hover:bg-[#f8fafc]"
                     >
                       <td className={TD}>
@@ -216,14 +225,15 @@ export default function RoleListContent() {
                           className="flex items-center justify-end gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Link
-                            href={ROUTES.roleEdit(role.id)}
+                          <button
+                            type="button"
+                            onClick={() => setEditing(role.id)}
                             aria-label={`แก้ไข ${role.name}`}
                             title="แก้ไข"
                             className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
                           >
                             <Pencil className="size-4" aria-hidden />
-                          </Link>
+                          </button>
                           {!role.isSystem && (
                             <button
                               type="button"
@@ -256,6 +266,31 @@ export default function RoleListContent() {
           </>
         )}
       </div>
+
+      {/* mounted only while open so every visit starts on a fresh form */}
+      {editing !== null && (
+        <SideDrawer
+          open
+          onClose={() => setEditing(null)}
+          title={editing ? "แก้ไขบทบาท" : "เพิ่มบทบาท"}
+          icon={
+            editing ? (
+              <ShieldCheck className="size-5" aria-hidden />
+            ) : (
+              <ShieldPlus className="size-5" aria-hidden />
+            )
+          }
+          description="กำหนดข้อมูลบทบาทและสิทธิ์การใช้งาน"
+          // wider than the drawer's default: the permission matrix runs six
+          // action columns beside the menu name
+          className="sm:w-[min(960px,94vw)] xl:w-[1100px]"
+        >
+          <RoleFormContent
+            id={editing || undefined}
+            onDone={() => setEditing(null)}
+          />
+        </SideDrawer>
+      )}
 
       <Dialog
         open={!!deleting}

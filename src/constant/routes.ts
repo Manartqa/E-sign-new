@@ -9,6 +9,4 @@ export const ROUTES = {
   signingWorkflows: "/settings/signing-workflows",
   signers: "/settings/signers",
   roles: "/settings/roles",
-  roleNew: "/settings/roles/new",
-  roleEdit: (id: string) => `/settings/roles/${id}`,
 } as const;
