@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { ExternalLink, MapPin } from "lucide-react";
 import { EmptyState, Timeline } from "@/components/common";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type {
   DetailPanel,
   DetailSection,
@@ -34,16 +37,106 @@ function FieldRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+const LATITUDE_LABEL = "ข้อมูลละติจูด";
+const LONGITUDE_LABEL = "ข้อมูลลองจิจูด";
+
+const isCoordinate = (value: string) =>
+  value.trim() !== "" && Number.isFinite(Number(value));
+
+/**
+ * แสดงแผนที่ — opens the coordinates in a dialog. The map is OpenStreetMap's
+ * own embed, which needs no API key; the ดูใน Google Maps link covers driving
+ * directions and street view, which the embed can't do.
+ */
+function MapButton({ lat, lng }: { lat: string; lng: string }) {
+  const [open, setOpen] = useState(false);
+
+  // a ~1km box around the point, so the marker opens at street level
+  const span = 0.01;
+  const bbox = [
+    Number(lng) - span,
+    Number(lat) - span,
+    Number(lng) + span,
+    Number(lat) + span,
+  ].join(",");
+  const point = encodeURIComponent(`${lat},${lng}`);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex shrink-0 items-center gap-2 self-center rounded-lg border border-brand-navy-mid px-4 py-2 text-sm font-semibold whitespace-nowrap text-brand-navy-mid hover:bg-secondary"
+      >
+        <MapPin className="size-4" aria-hidden />
+        แสดงแผนที่
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-[900px] max-w-[calc(100vw-2rem)] gap-3 rounded-2xl p-5 sm:max-w-[900px]">
+          <div className="flex flex-col gap-0.5 pr-8">
+            <DialogTitle className="text-base font-bold text-foreground">
+              แผนที่ที่ตั้ง
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              ละติจูด {lat} · ลองจิจูด {lng}
+            </p>
+          </div>
+
+          <iframe
+            title="แผนที่ที่ตั้ง"
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${point}`}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="h-[60vh] w-full rounded-xl border"
+          />
+
+          <a
+            href={`https://www.google.com/maps?q=${point}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-fit items-center gap-1.5 text-sm font-semibold text-brand-navy-mid hover:underline"
+          >
+            <ExternalLink className="size-4" aria-hidden />
+            ดูใน Google Maps
+          </a>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function SectionBlock({ section }: { section: DetailSection }) {
+  const lat = section.fields.find((f) => f.label === LATITUDE_LABEL);
+  const lng = section.fields.find((f) => f.label === LONGITUDE_LABEL);
+  const mapped =
+    lat && lng && isCoordinate(lat.value) && isCoordinate(lng.value);
+
   return (
     <div className="flex flex-col gap-2.5">
       <h3 className="text-base font-bold text-brand-navy-mid">
         {section.title}
       </h3>
       <div className="flex flex-col gap-2">
-        {section.fields.map((field) => (
-          <FieldRow key={field.label} {...field} />
-        ))}
+        {section.fields.map((field) => {
+          // the two coordinates keep their own rows; the button sits beside
+          // them, centred on the gap, so it costs no row of its own
+          if (mapped && field.label === LATITUDE_LABEL)
+            return (
+              <div key={field.label} className="flex items-stretch gap-6">
+                {/* no flex-1: the rows stay as wide as their values, which
+                    keeps the button next to the coordinates instead of out
+                    at the card's edge */}
+                <div className="flex min-w-0 flex-col gap-2">
+                  <FieldRow {...lat} />
+                  <FieldRow {...lng} />
+                </div>
+                <MapButton lat={lat.value} lng={lng.value} />
+              </div>
+            );
+          if (mapped && field.label === LONGITUDE_LABEL) return null;
+          return <FieldRow key={field.label} {...field} />;
+        })}
       </div>
     </div>
   );
