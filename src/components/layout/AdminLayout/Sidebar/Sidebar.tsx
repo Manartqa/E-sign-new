@@ -68,8 +68,9 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
     detailId && detail?.summary.status === APPLICATION_STATUS.PENDING_APPROVAL
       ? ROUTES.applicationsPending
       : getActiveNavHref(pathname);
-  // the group owning the active page opens on arrival; after that the user
-  // can fold it (adjusting state during render, not in an effect)
+  // the group owning the active page opens on arrival and folds again when the
+  // user leaves it for a page outside the group (adjusting state during render,
+  // not in an effect); in between, the toggle is theirs to fold and unfold
   const activeGroup = NAV_ITEMS.find(
     (item) => item.children && activeHref?.startsWith(`${item.href}/`),
   )?.href;
@@ -77,7 +78,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   const [prevActiveGroup, setPrevActiveGroup] = useState(activeGroup);
   if (activeGroup !== prevActiveGroup) {
     setPrevActiveGroup(activeGroup);
-    if (activeGroup) setOpenGroup(activeGroup);
+    setOpenGroup(activeGroup);
   }
   // every visible row, in order, for the sliding highlight; a folded group's
   // row stands in for its active child
@@ -245,7 +246,12 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
               <Link
                 key={href}
                 href={href}
-                onClick={onClose}
+                onClick={() => {
+                  // leaving for a page outside the group folds it, even when
+                  // the group was opened by hand from another page
+                  setOpenGroup(undefined);
+                  onClose?.();
+                }}
                 aria-current={isActive ? "page" : undefined}
                 title={isCollapsed ? label : undefined}
                 className={cn(
