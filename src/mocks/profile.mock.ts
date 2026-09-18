@@ -13,5 +13,4 @@ export const MOCK_PROFILE: UserProfile = {
   username: "manart.pa@smartalliance.co.th",
   createdAt: "2024-01-01T00:00:00Z",
   lastLoginAt: "2025-05-15T02:30:00Z",
-  twoFactorEnabled: false,
 };

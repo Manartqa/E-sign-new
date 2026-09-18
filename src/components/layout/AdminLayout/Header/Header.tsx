@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Menu, User } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Menu, User } from "lucide-react";
+import { toast } from "sonner";
 import { logoutEverywhere } from "@/lib/logout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -12,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ChangePasswordModal } from "@/components/partials/Profile";
 import { ROUTES } from "@/constant/routes";
 import type { UserProfile } from "@/types/app/profile";
 import {
@@ -32,6 +35,7 @@ interface HeaderProps {
 export function Header({ user, onOpenMenu }: HeaderProps) {
   const pathname = usePathname();
   const trail = getBreadcrumbs(pathname);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   return (
     <header className="flex min-h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-4 sm:px-8">
@@ -122,6 +126,13 @@ export function Header({ user, onOpenMenu }: HeaderProps) {
               โปรไฟล์
             </DropdownMenuItem>
             <DropdownMenuItem
+              className="gap-3 rounded-none px-4 py-3 text-sm"
+              onClick={() => setChangingPassword(true)}
+            >
+              <KeyRound className="size-5" aria-hidden />
+              เปลี่ยนรหัสผ่าน
+            </DropdownMenuItem>
+            <DropdownMenuItem
               variant="destructive"
               className="gap-3 rounded-none px-4 py-3 text-sm"
               onClick={() => void logoutEverywhere()}
@@ -132,6 +143,18 @@ export function Header({ user, onOpenMenu }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* outside the dropdown: its content unmounts as soon as the menu closes */}
+      {changingPassword && (
+        <ChangePasswordModal
+          open
+          onClose={() => setChangingPassword(false)}
+          onSuccess={() => {
+            setChangingPassword(false);
+            toast.success("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
+          }}
+        />
+      )}
     </header>
   );
 }

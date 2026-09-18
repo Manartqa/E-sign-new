@@ -17,7 +17,6 @@ export interface UserProfile {
   createdAt: string;
   /** เข้าสู่ระบบครั้งล่าสุด (ISO) */
   lastLoginAt: string;
-  twoFactorEnabled: boolean;
   avatarUrl?: string;
 }
 

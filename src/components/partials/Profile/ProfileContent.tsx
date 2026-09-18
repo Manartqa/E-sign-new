@@ -2,15 +2,12 @@
 
 import { useRef, useState } from "react";
 import {
-  AlertCircle,
   Calendar,
   Camera,
   Clock,
-  Lock,
   Mail,
   Pencil,
   Phone,
-  Shield,
   ShieldCheck,
   User,
   X,
@@ -27,7 +24,6 @@ import {
   maskPhone,
 } from "@/lib/format";
 import { PREFIX_OPTIONS, type UserProfile } from "@/types/app/profile";
-import { ChangePasswordModal } from "./ChangePasswordModal";
 import { ProfileField } from "./ProfileField";
 
 type EditableFields = Pick<
@@ -63,7 +59,6 @@ export default function ProfileContent() {
   const updateProfile = useUpdateProfile();
   const [form, setForm] = useState<EditableFields | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [changingPassword, setChangingPassword] = useState(false);
 
   if (isError) return <ErrorState />;
   if (isLoading || !profile) return <LoadingState rows={6} />;
@@ -115,9 +110,6 @@ export default function ProfileContent() {
       toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
   };
-
-  const notImplemented = (what: string) =>
-    toast.info(`${what} — ยังไม่มีแบบใน Figma`);
 
   return (
     <div className="flex flex-col gap-5">
@@ -284,63 +276,6 @@ export default function ProfileContent() {
       </Card>
 
       <Card
-        icon={<Lock className="size-4 text-foreground" aria-hidden />}
-        title="การตั้งค่าความปลอดภัย"
-      >
-        <div className="flex flex-col gap-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-foreground">รหัสผ่าน</p>
-              <p className="text-xs text-muted-foreground">
-                เปลี่ยนรหัสผ่านของบัญชีผู้ใช้งาน
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setChangingPassword(true)}
-              className="rounded-lg border border-brand-navy-mid bg-white px-4 py-2 text-[13px] font-semibold text-brand-navy-mid hover:bg-secondary"
-            >
-              เปลี่ยนรหัสผ่าน
-            </button>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border bg-[#f8fafc] px-3 py-2.5">
-            <Lock className="size-3.5 text-slate-400" aria-hidden />
-            <span className="text-[13px] text-slate-400">••••••••</span>
-          </div>
-        </div>
-
-        <div className="h-px w-full bg-[#f8fafc]" />
-
-        <div className="flex flex-col gap-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-foreground">2FA</p>
-              <p className="text-xs text-muted-foreground">
-                การยืนยันตัวตนแบบสองขั้นตอน
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => notImplemented("การตั้งค่า 2FA")}
-              className="flex items-center gap-2 rounded-lg border border-destructive px-4 py-2 text-[13px] font-semibold text-destructive hover:bg-destructive/5"
-            >
-              <Shield className="size-4" aria-hidden />
-              {profile.twoFactorEnabled ? "จัดการ 2FA" : "เปิดใช้งาน 2FA"}
-            </button>
-          </div>
-
-          {!profile.twoFactorEnabled && (
-            <div className="flex items-center gap-2 rounded-lg bg-[#fef2f2] px-3 py-2">
-              <AlertCircle className="size-3.5 text-destructive" aria-hidden />
-              <span className="text-xs text-destructive">
-                ยังไม่ได้เปิดใช้งาน 2FA กรุณาตั้งค่าเพื่อความปลอดภัย
-              </span>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      <Card
         icon={<ShieldCheck className="size-4 text-foreground" aria-hidden />}
         title="ข้อมูลบัญชี"
       >
@@ -370,17 +305,6 @@ export default function ProfileContent() {
           </div>
         </div>
       </Card>
-
-      {changingPassword && (
-        <ChangePasswordModal
-          open
-          onClose={() => setChangingPassword(false)}
-          onSuccess={() => {
-            setChangingPassword(false);
-            toast.success("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
-          }}
-        />
-      )}
     </div>
   );
 }
