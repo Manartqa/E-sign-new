@@ -23,7 +23,8 @@ import {
   maskEmail,
   maskPhone,
 } from "@/lib/format";
-import { PREFIX_OPTIONS, type UserProfile } from "@/types/app/profile";
+import { type UserProfile } from "@/types/app/profile";
+import { PREFIX_OPTIONS } from "@/components/partials/Signer/Signer.config";
 import { ProfileField } from "./ProfileField";
 
 type EditableFields = Pick<

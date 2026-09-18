@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { SearchableSelect, type SelectOption } from "@/components/common";
 import { cn } from "@/lib/utils";
 
 interface ProfileFieldProps {
@@ -19,8 +20,8 @@ interface ProfileFieldProps {
   /** renders an input (or, with `options`, a select) instead of static text */
   editable?: boolean;
   onChange?: (value: string) => void;
-  /** paired with `editable` to render a <select> instead of a text input */
-  options?: readonly string[];
+  /** paired with `editable` to render a searchable select instead of an input */
+  options?: readonly SelectOption[];
 }
 
 /**
@@ -40,6 +41,7 @@ export function ProfileField({
   onChange,
   options,
 }: ProfileFieldProps) {
+  const fieldId = useId();
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -65,18 +67,15 @@ export function ProfileField({
 
       {editable ? (
         options ? (
-          <select
+          <SearchableSelect
+            id={fieldId}
             value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            aria-label={label}
-            className="rounded-lg border bg-white px-3 py-2.5 text-[13px] text-foreground outline-none focus:border-brand-navy-mid"
-          >
-            {options.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+            options={options}
+            onChange={(next) => onChange?.(next)}
+            ariaLabel={label}
+            placeholder={`เลือก${label}`}
+            searchPlaceholder={`ค้นหา${label}`}
+          />
         ) : (
           <input
             value={value}

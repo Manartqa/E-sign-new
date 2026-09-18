@@ -19,13 +19,3 @@ export interface UserProfile {
   lastLoginAt: string;
   avatarUrl?: string;
 }
-
-export const PREFIX_OPTIONS = [
-  "นาย",
-  "นาง",
-  "นางสาว",
-  "ส.อ.",
-  "ส.อ.หญิง",
-  "ร.ท.",
-  "พ.ต.",
-];

@@ -19,6 +19,8 @@ interface SearchableSelectProps {
   searchPlaceholder?: string;
   isLoading?: boolean;
   invalid?: boolean;
+  /** for callers whose label isn't a <label htmlFor={id}> */
+  ariaLabel?: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export function SearchableSelect({
   searchPlaceholder = "ค้นหา",
   isLoading,
   invalid,
+  ariaLabel,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
@@ -55,6 +58,7 @@ export function SearchableSelect({
       <Popover open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
         <PopoverTrigger
           id={id}
+          aria-label={ariaLabel}
           aria-invalid={invalid || undefined}
           className="flex min-h-11 w-full items-center gap-2 rounded-lg border bg-white py-2 pr-9 pl-3 text-left text-sm outline-none focus-visible:border-brand-navy-mid aria-invalid:border-destructive"
         >
