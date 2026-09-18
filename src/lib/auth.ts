@@ -9,8 +9,7 @@ import {
   ssoConfig,
   wellKnownUrl,
 } from "@/lib/sso";
-import { MOCK_CREDENTIALS } from "@/mocks/auth.mock";
-import { MOCK_PROFILE } from "@/mocks/profile.mock";
+import { findMockAccount } from "@/mocks/auth.mock";
 
 /** Claims this app reads off the SSO id_token / userinfo response. */
 interface SsoProfile extends Profile {
@@ -60,7 +59,7 @@ const ssoProvider: OAuthConfig<SsoProfile> = {
 /**
  * Credentials flow against POST /api/auth/login (see the handoff API table).
  * While NEXT_PUBLIC_USE_MOCK is on, sign-in is checked against
- * MOCK_CREDENTIALS instead of the network.
+ * the mock accounts instead of the network.
  */
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -79,16 +78,12 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.pwd) return null;
 
         if (USE_MOCK) {
-          const usernameMatches =
-            credentials.username.trim().toLowerCase() ===
-            MOCK_CREDENTIALS.username;
-          if (!usernameMatches || credentials.pwd !== MOCK_CREDENTIALS.pwd) {
-            return null;
-          }
+          const account = findMockAccount(credentials.username);
+          if (!account || credentials.pwd !== account.pwd) return null;
           return {
-            id: MOCK_PROFILE.id,
-            name: MOCK_PROFILE.name,
-            email: MOCK_PROFILE.email,
+            id: account.profile.id,
+            name: account.profile.name,
+            email: account.profile.email,
             accessToken: "mock-access-token",
           };
         }

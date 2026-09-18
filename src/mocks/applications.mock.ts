@@ -1,5 +1,6 @@
 import { APPLICATION_STATUS, type ApplicationStatus } from "@/constant/status";
 import type { ApplicationItem } from "@/types/app/applications";
+import { MOCK_FINAL_SIGNER_PROFILE, MOCK_PROFILE } from "./profile.mock";
 
 const TYPES = [
   {
@@ -66,6 +67,11 @@ const OFFICERS = [
   "นางสุดา ทองดี",
 ];
 
+/** the list row plus the queue it belongs to — mock-only, never sent to a screen */
+export interface MockApplication extends ApplicationItem {
+  officerEmail: string;
+}
+
 const STATUSES: ApplicationStatus[] = [
   APPLICATION_STATUS.PENDING_APPROVAL,
   APPLICATION_STATUS.APPROVED,
@@ -81,7 +87,19 @@ const STATUSES: ApplicationStatus[] = [
  * SSR — the table renders its loading state on the server.
  */
 const NOW = Date.now();
-export const MOCK_APPLICATIONS: ApplicationItem[] = Array.from(
+/**
+ * Each request sits in exactly one officer's queue, and the two mock officers
+ * are there to show the two signing screens: every request waiting on
+ * MOCK_FINAL_SIGNER_PROFILE ends at their role, so signing it needs the USB
+ * token, while MOCK_PROFILE is mid-chain on theirs and signs with the button.
+ * Queues alternate by the status cycle, so each one keeps the same spread of
+ * สถานะ.
+ */
+const OWNERS = [MOCK_PROFILE, MOCK_FINAL_SIGNER_PROFILE];
+const ownerOf = (i: number) =>
+  OWNERS[Math.floor(i / STATUSES.length) % OWNERS.length];
+
+export const MOCK_APPLICATIONS: MockApplication[] = Array.from(
   { length: 47 },
   (_, i) => {
     const t = TYPES[i % TYPES.length];
@@ -103,8 +121,8 @@ export const MOCK_APPLICATIONS: ApplicationItem[] = Array.from(
       // spread backwards over the last few days
       updatedAt: new Date(NOW - (i + 1) * 2 * 3_600_000).toISOString(),
       assignedOfficer: OFFICERS[i % OFFICERS.length],
-      // every third request has this officer as the last signer (USB token)
-      isFinalSigner: i % 3 === 0,
+      officerEmail: ownerOf(i).email,
+      isFinalSigner: ownerOf(i) === MOCK_FINAL_SIGNER_PROFILE,
     };
   },
 );

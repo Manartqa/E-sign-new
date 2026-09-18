@@ -21,10 +21,21 @@ import {
   APPLICATION_STATUS,
   REJECTED_OR_RETURNED_FILTER,
 } from "@/constant/status";
+import { getSession } from "next-auth/react";
 import { MOCK_APPLICATIONS } from "@/mocks/applications.mock";
 import { buildMockDetail } from "@/mocks/applicationDetail.mock";
 
 const DEFAULT_LIMIT = 10;
+
+/**
+ * mock stand-in for the backend scoping the list to the caller's token: each
+ * request sits in one officer's queue, so signing in as the other officer
+ * shows a different set of requests.
+ */
+async function myMockApplications() {
+  const email = (await getSession())?.user?.email?.toLowerCase();
+  return MOCK_APPLICATIONS.filter((item) => item.officerEmail === email);
+}
 
 /**
  * ── Backend swap point ────────────────────────────────────────────────────
@@ -60,7 +71,7 @@ export async function getApplicationList(
 
   if (USE_MOCK) {
     const keyword = params.keyword?.trim().toLowerCase() ?? "";
-    const filtered = MOCK_APPLICATIONS.filter((item) => {
+    const filtered = (await myMockApplications()).filter((item) => {
       if (params.status === REJECTED_OR_RETURNED_FILTER) {
         if (
           item.status !== APPLICATION_STATUS.REJECTED &&
@@ -109,7 +120,7 @@ export async function getApplicationList(
 /** Feeds the four stat cards above the table (Figma 6:293). */
 export async function getApplicationStats(): Promise<ApplicationStats> {
   const list = USE_MOCK
-    ? MOCK_APPLICATIONS
+    ? await myMockApplications()
     : (await getApplicationsApi({ limit: 1000 })).data.data.map(toItem);
 
   const countBy = (status: ApplicationItem["status"]) =>
@@ -129,7 +140,7 @@ export async function getApplicationDetail(
   id: string,
 ): Promise<ApplicationDetail | null> {
   if (USE_MOCK) {
-    const item = MOCK_APPLICATIONS.find((a) => a.id === id);
+    const item = (await myMockApplications()).find((a) => a.id === id);
     return item ? buildMockDetail(item) : null;
   }
   const res = await getApplicationDetailApi(id);

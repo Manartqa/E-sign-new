@@ -30,7 +30,7 @@ const CONFIRM_COPY = {
 } as const satisfies Record<ActionMode, unknown>;
 
 interface BulkConfirmModalProps {
-  action: ActionMode | null;
+  action: ActionMode;
   count: number;
   isSubmitting: boolean;
   onClose: () => void;
@@ -38,9 +38,11 @@ interface BulkConfirmModalProps {
 }
 
 /**
- * Confirmation step for a batch action. The single-request flow collects a
- * reason in ReturnForEditModal; a batch cannot ask per request, so this only
- * confirms the count and sends the same (empty) note to each.
+ * Confirmation step for a batch ไม่อนุมัติ / ส่งคืนเพื่อแก้ไข. The
+ * single-request flow collects a reason in ReturnForEditModal; a batch cannot
+ * ask per request, so this only confirms the count and sends the same (empty)
+ * note to each. A batch อนุมัติและลงนาม goes through SignatureModal instead,
+ * the same screen the detail page signs on.
  */
 export function BulkConfirmModal({
   action,
@@ -49,8 +51,6 @@ export function BulkConfirmModal({
   onClose,
   onConfirm,
 }: BulkConfirmModalProps) {
-  if (!action) return null;
-
   const { title, verb, Icon, accent, confirmClassName } = CONFIRM_COPY[action];
 
   return (

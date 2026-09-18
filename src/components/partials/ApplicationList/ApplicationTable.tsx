@@ -16,11 +16,11 @@ import {
 import { ROUTES } from "@/constant/routes";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationActions } from "@/hooks/applications";
+import { useSigningToken } from "@/hooks/signing";
 import { useProfile } from "@/hooks/profile";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationItem, ReturnFormValues } from "@/types/app/applications";
-import type { TokenSignResult } from "@/types/app/signing";
 import {
   MOCK_CERTIFICATE,
   PDFViewer,
@@ -155,6 +155,8 @@ export function ApplicationTable({
   const { profile } = useProfile();
   const { approve } = useApplicationActions(returnTarget?.id ?? "");
   const { sign } = useApplicationActions(signTarget?.id ?? "");
+  // detection is the modal's job; this is only the signing half
+  const { sign: tokenSign } = useSigningToken(false);
 
   const handleReturn = async (values: ReturnFormValues) => {
     try {
@@ -169,8 +171,20 @@ export function ApplicationTable({
     }
   };
 
-  const handleSign = async (token?: TokenSignResult) => {
+  const handleSign = async (pin?: string) => {
     if (!signTarget) return;
+    let token;
+    if (pin) {
+      try {
+        token = await tokenSign.mutateAsync({
+          applicationId: signTarget.id,
+          pin,
+        });
+      } catch {
+        // the message goes back to the modal through `error`
+        return;
+      }
+    }
     try {
       await sign.mutateAsync({
         certificateId: token?.certificateId ?? MOCK_CERTIFICATE.id,
@@ -431,10 +445,11 @@ export function ApplicationTable({
       {signTarget && (
         <SignatureModal
           open
-          detail={signTarget}
-          isSubmitting={sign.isPending}
+          details={[signTarget]}
+          isSubmitting={sign.isPending || tokenSign.isPending}
+          error={tokenSign.error?.message}
           onClose={() => setSignTarget(null)}
-          onConfirm={(token) => void handleSign(token)}
+          onConfirm={(pin) => void handleSign(pin)}
         />
       )}
     </div>

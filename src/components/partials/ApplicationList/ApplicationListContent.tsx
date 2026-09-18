@@ -10,6 +10,7 @@ import {
 } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
 import { MOCK_CERTIFICATE } from "@/components/partials/ApplicationDetail/ApplicationDetail.config";
+import { SignatureModal } from "@/components/partials/ApplicationDetail/Modal";
 import type {
   ActionMode,
   ApplicationListParams,
@@ -47,6 +48,8 @@ export default function ApplicationListContent({
   const filters = filterValues as ApplicationListParams;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<ActionMode | null>(null);
+  /** the last batch's failure message, e.g. a wrong token PIN */
+  const [bulkError, setBulkError] = useState<string>();
 
   const { items, total, page, limit, isLoading, isError } =
     useApplicationList(filters);
@@ -67,10 +70,18 @@ export default function ApplicationListContent({
       prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
     );
 
-  const confirmBulk = async () => {
+  // selection never outlives a page change, so every selected id is on
+  // `items`; rows this officer signs last need the USB token
+  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
+  const finalSignerIds = selectedItems
+    .filter((item) => item.isFinalSigner)
+    .map((item) => item.id);
+
+  const confirmBulk = async (pin?: string) => {
     if (!bulkAction) return;
 
     const ids = selectedIds;
+    setBulkError(undefined);
     const verb =
       bulkAction === "approve"
         ? "อนุมัติและลงนาม"
@@ -79,16 +90,19 @@ export default function ApplicationListContent({
           : "ส่งคืนเพื่อแก้ไข";
 
     try {
-      const { succeeded, failed } = await bulkRun.mutateAsync({
+      const { succeeded, failed, error } = await bulkRun.mutateAsync({
         ids,
         action: bulkAction,
         officerId: profile?.id ?? "",
         certificate: { id: MOCK_CERTIFICATE.id, owner: profile?.name ?? "" },
+        finalSignerIds,
+        pin,
       });
 
       if (failed.length) {
         toast.warning(
-          `${verb}สำเร็จ ${succeeded.length} รายการ ไม่สำเร็จ ${failed.length} รายการ`,
+          `${verb}สำเร็จ ${succeeded.length} รายการ ไม่สำเร็จ ${failed.length} รายการ` +
+            (error ? ` — ${error}` : ""),
         );
       } else {
         toast.success(`${verb} ${succeeded.length} รายการเรียบร้อยแล้ว`);
@@ -96,9 +110,16 @@ export default function ApplicationListContent({
 
       // keep only the rows that could not be processed, so a retry is one click
       setSelectedIds(failed);
+
+      // nothing went through — a wrong PIN, most likely, so keep the modal up
+      // with the message instead of making them start the batch over
+      if (succeeded.length === 0 && error) {
+        setBulkError(error);
+        return;
+      }
+      setBulkAction(null);
     } catch {
       toast.error("ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
-    } finally {
       setBulkAction(null);
     }
   };
@@ -159,13 +180,28 @@ export default function ApplicationListContent({
         }
       />
 
-      <BulkConfirmModal
-        action={bulkAction}
-        count={selectedIds.length}
-        isSubmitting={bulkRun.isPending}
-        onClose={() => setBulkAction(null)}
-        onConfirm={() => void confirmBulk()}
-      />
+      {/* อนุมัติและลงนาม signs, so it uses the detail page's own signing
+          screen; mounted only while open so the PIN never survives a close */}
+      {bulkAction === "approve" && (
+        <SignatureModal
+          open
+          details={selectedItems}
+          isSubmitting={bulkRun.isPending}
+          error={bulkError}
+          onClose={() => setBulkAction(null)}
+          onConfirm={(pin) => void confirmBulk(pin)}
+        />
+      )}
+
+      {(bulkAction === "reject" || bulkAction === "return") && (
+        <BulkConfirmModal
+          action={bulkAction}
+          count={selectedIds.length}
+          isSubmitting={bulkRun.isPending}
+          onClose={() => setBulkAction(null)}
+          onConfirm={() => void confirmBulk()}
+        />
+      )}
     </div>
   );
 }

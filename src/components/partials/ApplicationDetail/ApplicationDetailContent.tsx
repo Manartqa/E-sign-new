@@ -10,6 +10,7 @@ import { ROUTES } from "@/constant/routes";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationActions, useApplicationDetail } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
+import { useSigningToken } from "@/hooks/signing";
 import {
   DETAIL_TABS,
   type ActionMode,
@@ -17,7 +18,6 @@ import {
   type DocumentItem,
   type ReturnFormValues,
 } from "@/types/app/applications";
-import type { TokenSignResult } from "@/types/app/signing";
 import { ApplicationDetailSummary } from "./ApplicationDetailSummary";
 import { DetailPanelView } from "./DetailPanelView";
 import { MOCK_CERTIFICATE } from "./ApplicationDetail.config";
@@ -44,6 +44,8 @@ export default function ApplicationDetailContent({
   const { detail, isLoading, isError } = useApplicationDetail(id);
   const { profile } = useProfile();
   const { sign, approve } = useApplicationActions(id);
+  // detection is the modal's job; this is only the signing half
+  const { sign: tokenSign } = useSigningToken(false);
 
   const [activeTab, setActiveTab] = useState<DetailTabKey>(DETAIL_TABS[0].key);
   const [action, setAction] = useState<ActionMode | null>(null);
@@ -60,9 +62,18 @@ export default function ApplicationDetailContent({
       />
     );
 
-  // `token` comes from a USB-token signature (final signer); a button
+  // a `pin` means the final signer's USB token makes the signature; a button
   // signature still uses the stand-in certificate
-  const handleSign = async (token?: TokenSignResult) => {
+  const handleSign = async (pin?: string) => {
+    let token;
+    if (pin) {
+      try {
+        token = await tokenSign.mutateAsync({ applicationId: detail.id, pin });
+      } catch {
+        // the message goes back to the modal through `error`
+        return;
+      }
+    }
     try {
       await sign.mutateAsync({
         certificateId: token?.certificateId ?? MOCK_CERTIFICATE.id,
@@ -146,10 +157,11 @@ export default function ApplicationDetailContent({
       {action === "approve" && (
         <SignatureModal
           open
-          detail={detail}
-          isSubmitting={sign.isPending}
+          details={[detail]}
+          isSubmitting={sign.isPending || tokenSign.isPending}
+          error={tokenSign.error?.message}
           onClose={() => setAction(null)}
-          onConfirm={(token) => void handleSign(token)}
+          onConfirm={(pin) => void handleSign(pin)}
         />
       )}
 

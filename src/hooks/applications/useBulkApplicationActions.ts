@@ -5,6 +5,7 @@ import {
   approveApplication,
   signApplication,
 } from "@/services/application.service";
+import { signWithToken } from "@/services/signingToken.service";
 import type { ActionMode } from "@/types/app/applications";
 import { APPLICATION_LIST_QUERY_KEY } from "./useApplicationList";
 
@@ -16,11 +17,17 @@ interface BulkActionInput {
   officerId: string;
   /** only needed by `approve`, which goes through the sign endpoint */
   certificate?: { id: string; owner: string };
+  /** the selected ids this officer signs last — they go through the token */
+  finalSignerIds?: string[];
+  /** USB token PIN, entered once for the whole batch */
+  pin?: string;
 }
 
 export interface BulkActionResult {
   succeeded: string[];
   failed: string[];
+  /** the first failure's message, e.g. a wrong token PIN */
+  error?: string;
 }
 
 /**
@@ -34,16 +41,31 @@ export const useBulkApplicationActions = () => {
   const queryClient = useQueryClient();
 
   const run = useMutation<BulkActionResult, Error, BulkActionInput>({
-    mutationFn: async ({ ids, action, notes, officerId, certificate }) => {
+    mutationFn: async ({
+      ids,
+      action,
+      notes,
+      officerId,
+      certificate,
+      finalSignerIds = [],
+      pin,
+    }) => {
       const result: BulkActionResult = { succeeded: [], failed: [] };
 
       for (const id of ids) {
         try {
           if (action === "approve") {
+            // rows this officer signs last go through the USB token, exactly
+            // as the detail page does; the rest keep the stand-in certificate
+            const token =
+              pin && finalSignerIds.includes(id)
+                ? await signWithToken({ applicationId: id, pin })
+                : undefined;
             await signApplication(id, {
-              certificateId: certificate?.id ?? "",
-              certificateOwner: certificate?.owner ?? "",
-              signature: "base64_encoded_signature",
+              certificateId: token?.certificateId ?? certificate?.id ?? "",
+              certificateOwner:
+                token?.certificateOwner ?? certificate?.owner ?? "",
+              signature: token?.signature ?? "base64_encoded_signature",
               timestamp: new Date().toISOString(),
               applicationId: id,
               officerId,
@@ -53,8 +75,10 @@ export const useBulkApplicationActions = () => {
             await approveApplication(id, { notes: notes ?? "", officerId });
           }
           result.succeeded.push(id);
-        } catch {
+        } catch (error) {
           result.failed.push(id);
+          result.error ??=
+            error instanceof Error ? error.message : undefined;
         }
       }
 
