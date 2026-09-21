@@ -21,7 +21,7 @@ import { BASE_PATH } from "@/lib/session-cookie";
 
 export { SSO_PROVIDER_ID } from "@/constant/sso";
 
-const DEFAULT_SCOPE = "openid profile email roles";
+const DEFAULT_SCOPE = "openid profile email";
 
 const issuer = (process.env.OIDC_ISSUER ?? "").replace(/\/+$/, "");
 
