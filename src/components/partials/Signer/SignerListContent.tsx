@@ -7,9 +7,15 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  DataTh,
   Pagination,
   SideDrawer,
+  useDataTable,
 } from "@/components/common";
+import { nextSort } from "@/lib/sort";
+import type { SortParams } from "@/types/app/common";
+import { usePermission } from "@/hooks/profile";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSignerActions, useSignerList } from "@/hooks/signers";
 import { formatThaiDateTime } from "@/lib/format";
@@ -33,9 +39,18 @@ function Audit({ by, at }: { by: string; at: string }) {
  * ผู้ตรวจสอบ list, styled like กระบวนการลงนาม.
  */
 export default function SignerListContent() {
+  const { can } = usePermission();
+  const canCreate = can("SIGNERS:CREATE");
+  const canUpdate = can("SIGNERS:UPDATE");
+  const canDelete = can("SIGNERS:DELETE");
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortParams>({});
+  const table = useDataTable(sort, (key) => {
+    setSort(nextSort(sort, key));
+    setPage(1);
+  });
   const [limit, setLimit] = useState(10);
   const [deleting, setDeleting] = useState<Signer | null>(null);
   /** the drawer's subject: null = closed, "" = a new signer, an id = that one */
@@ -43,6 +58,7 @@ export default function SignerListContent() {
 
   const { items, total, isLoading, isError } = useSignerList({
     keyword,
+    ...sort,
     page,
     limit,
   });
@@ -80,14 +96,16 @@ export default function SignerListContent() {
             รายชื่อผู้มีอำนาจลงนามที่เลือกใส่ในกระบวนการลงนามได้
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditing("")}
-          className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
-        >
-          <Plus className="size-4" aria-hidden />
-          เพิ่มผู้มีอำนาจลงนาม
-        </button>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => setEditing("")}
+            className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
+          >
+            <Plus className="size-4" aria-hidden />
+            เพิ่มผู้มีอำนาจลงนาม
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -145,32 +163,38 @@ export default function SignerListContent() {
         ) : (
           <>
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full border-collapse">
+              <table
+                className={cn("w-full border-collapse", table.tableClassName)}
+                style={table.tableStyle}
+              >
                 <thead className="border-b bg-[#f8fafc]">
                   <tr>
-                    <th scope="col" className={TH}>
+                    <DataTh {...table.th(0, "name")} className={TH}>
                       ชื่อ-นามสกุล
-                    </th>
-                    <th scope="col" className={`${TH} min-w-[280px]`}>
+                    </DataTh>
+                    <DataTh {...table.th(1, "position")} className={`${TH} min-w-[280px]`}>
                       ตำแหน่ง
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(2, "createdAt")} className={TH}>
                       สร้างโดย
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(3, "updatedAt")} className={TH}>
                       ปรับปรุงล่าสุด
-                    </th>
-                    <th scope="col" className={`${TH} text-right`}>
+                    </DataTh>
+                    <DataTh {...table.th(4)} className={`${TH} text-right`}>
                       การดำเนินการ
-                    </th>
+                    </DataTh>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {items.map((signer) => (
                     <tr
                       key={signer.id}
-                      onClick={() => setEditing(signer.id)}
-                      className="cursor-pointer bg-white transition-colors hover:bg-[#f8fafc]"
+                      onClick={canUpdate ? () => setEditing(signer.id) : undefined}
+                      className={cn(
+                        "bg-white transition-colors hover:bg-[#f8fafc]",
+                        canUpdate && "cursor-pointer",
+                      )}
                     >
                       <td className={TD}>
                         <div className="flex flex-col items-start gap-1">
@@ -199,24 +223,28 @@ export default function SignerListContent() {
                           className="flex items-center justify-end gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
-                            type="button"
-                            onClick={() => setEditing(signer.id)}
-                            aria-label={`แก้ไข ${signer.name}`}
-                            title="แก้ไข"
-                            className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
-                          >
-                            <Pencil className="size-4" aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleting(signer)}
-                            aria-label={`ลบ ${signer.name}`}
-                            title="ลบ"
-                            className="rounded-md p-2 text-action-reject hover:bg-action-reject/10"
-                          >
-                            <Trash2 className="size-4" aria-hidden />
-                          </button>
+                          {canUpdate && (
+                            <button
+                              type="button"
+                              onClick={() => setEditing(signer.id)}
+                              aria-label={`แก้ไข ${signer.name}`}
+                              title="แก้ไข"
+                              className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
+                            >
+                              <Pencil className="size-4" aria-hidden />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => setDeleting(signer)}
+                              aria-label={`ลบ ${signer.name}`}
+                              title="ลบ"
+                              className="rounded-md p-2 text-action-reject hover:bg-action-reject/10"
+                            >
+                              <Trash2 className="size-4" aria-hidden />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

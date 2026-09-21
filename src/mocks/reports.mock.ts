@@ -1,5 +1,5 @@
 import { APPLICATION_STATUS } from "@/constant/status";
-import type { ReportSummary } from "@/types/app/reports";
+import type { ReportOptions, ReportSummary } from "@/types/app/reports";
 
 const NOW = Date.now();
 const HOUR = 3_600_000;
@@ -144,16 +144,11 @@ export const MOCK_REPORT_SUMMARY: ReportSummary = {
   ],
 };
 
-export const FISCAL_YEAR_OPTIONS = ["2569", "2568", "2567"];
-export const QUARTER_OPTIONS = [
-  { value: "all", label: "ทั้งหมด" },
-  { value: "1", label: "ไตรมาส 1" },
-  { value: "2", label: "ไตรมาส 2" },
-  { value: "3", label: "ไตรมาส 3" },
-  { value: "4", label: "ไตรมาส 4" },
-];
-export const REPORT_TYPE_OPTIONS = [
-  { value: "summary", label: "สรุปยอดคำขอ" },
-  { value: "by-officer", label: "แยกตามเจ้าหน้าที่" },
-  { value: "by-type", label: "แยกตามประเภทใบอนุญาต" },
-];
+export const MOCK_REPORT_OPTIONS: ReportOptions = {
+  fiscalYears: ["2569", "2568", "2567"],
+  reportTypes: [
+    { value: "summary", label: "สรุปยอดคำขอ" },
+    { value: "by-officer", label: "แยกตามเจ้าหน้าที่" },
+    { value: "by-type", label: "แยกตามประเภทใบอนุญาต" },
+  ],
+};

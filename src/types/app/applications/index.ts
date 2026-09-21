@@ -1,3 +1,4 @@
+import type { SortParams } from "@/types/app/common";
 import type {
   ApplicationStatus,
   REJECTED_OR_RETURNED_FILTER,
@@ -57,7 +58,7 @@ export interface ApplicationListResult {
   limit: number;
 }
 
-export interface ApplicationListParams {
+export interface ApplicationListParams extends SortParams {
   keyword?: string;
   status?:
     | ApplicationStatus
@@ -210,7 +211,11 @@ export interface SignFormValues {
   notes: string;
 }
 
+/** ไม่อนุมัติ / ส่งคืนเพื่อแก้ไข — the two decisions that are not a signature */
+export type DecisionAction = "REJECT" | "RETURN";
+
 export interface ReturnFormValues {
-  reason: string;
+  /** a `value` from the decision-reason master list */
+  reasonCode: string;
   notes: string;
 }

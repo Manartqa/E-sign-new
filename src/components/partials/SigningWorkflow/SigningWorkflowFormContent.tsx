@@ -13,16 +13,17 @@ import {
   useSigningWorkflow,
   useSigningWorkflowActions,
 } from "@/hooks/signingWorkflows";
+import { useApplicationTypes, useWeaponCategories } from "@/hooks/master";
 import {
   type ReplacementUsage,
   type RequestUsage,
   type SigningWorkflowInput,
 } from "@/types/app/signingWorkflows";
 import {
-  LICENSE_TYPE_OPTIONS,
+  ALL_LICENSE_TYPES,
+  ALL_WEAPON_CATEGORIES,
   REPLACEMENT_USAGE_OPTIONS,
   REQUEST_USAGE_OPTIONS,
-  WEAPON_CATEGORY_OPTIONS,
 } from "./SigningWorkflow.config";
 import { SignerChainEditor, newStepId } from "./SignerChainEditor";
 
@@ -117,6 +118,10 @@ function WorkflowForm({
   onDone: () => void;
 }) {
   const { create, update } = useSigningWorkflowActions();
+  const { options: weaponCategories } = useWeaponCategories();
+  const { options: applicationTypes } = useApplicationTypes();
+  const weaponCategoryOptions = [ALL_WEAPON_CATEGORIES, ...weaponCategories];
+  const licenseTypeOptions = [ALL_LICENSE_TYPES, ...applicationTypes];
   const [form, setForm] = useState(initial);
   const [submitted, setSubmitted] = useState(false);
 
@@ -195,7 +200,7 @@ function WorkflowForm({
             placeholder="กรุณาเลือกประเภทยุทธภัณฑ์"
             invalid={submitted && missing.weaponCategory}
             value={form.weaponCategory}
-            options={WEAPON_CATEGORY_OPTIONS}
+            options={weaponCategoryOptions}
             onChange={(v) => set("weaponCategory", v)}
             triggerClassName={SELECT_TRIGGER}
           />
@@ -205,7 +210,7 @@ function WorkflowForm({
             placeholder="กรุณาเลือกประเภทใบอนุญาต"
             invalid={submitted && missing.licenseType}
             value={form.licenseType}
-            options={LICENSE_TYPE_OPTIONS}
+            options={licenseTypeOptions}
             onChange={(v) => set("licenseType", v)}
             triggerClassName={SELECT_TRIGGER}
           />

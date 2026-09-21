@@ -1,3 +1,4 @@
+import type { SortParams } from "@/types/app/common";
 /**
  * ตั้งค่าระบบ › ผู้มีอำนาจลงนาม — not in Figma or the handoff. Fields follow the
  * legacy ผู้ตรวจสอบ list and add / edit screens. Signing workflow steps pick
@@ -85,7 +86,7 @@ export interface CertificateCheckResult {
   validTo?: string;
 }
 
-export interface SignerListParams {
+export interface SignerListParams extends SortParams {
   keyword?: string;
   /** only signers marked ใช้งาน */
   activeOnly?: boolean;

@@ -8,7 +8,7 @@ import {
   LabeledSelect,
 } from "@/components/common";
 import { STATUS_OPTIONS } from "@/constant/status";
-import { APPLICATION_TYPE_OPTIONS } from "@/mocks/applications.mock";
+import { useApplicationTypes } from "@/hooks/master";
 import type { ApplicationListParams } from "@/types/app/applications";
 
 interface ApplicationListHeaderProps {
@@ -43,9 +43,10 @@ export function ApplicationListHeader({
     setDraft(filters);
   }
 
+  const { options: applicationTypes } = useApplicationTypes();
   const typeOptions = useMemo(
-    () => [{ value: "all", label: "ทุกประเภท" }, ...APPLICATION_TYPE_OPTIONS],
-    [],
+    () => [{ value: "all", label: "ทุกประเภท" }, ...applicationTypes],
+    [applicationTypes],
   );
   const statusOptions = useMemo(
     () => [{ value: "all", label: "ทั้งหมด" }, ...STATUS_OPTIONS],

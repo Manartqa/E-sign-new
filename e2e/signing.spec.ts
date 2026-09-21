@@ -1,0 +1,42 @@
+import { expect, test } from "@playwright/test";
+import { authFile, PENDING } from "./accounts";
+
+test.describe("final signer (sombat) signs with the USB token", () => {
+  test.use({ storageState: authFile("sombat") });
+
+  test("a wrong PIN is refused, the right one signs", async ({ page }) => {
+    await page.goto(`/applications/${PENDING.sombat.id}`);
+    await page
+      .getByRole("button", { name: "อนุมัติและลงนาม", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/ผู้ลงนามลำดับสุดท้าย/)).toBeVisible();
+    await expect(dialog.getByText("SafeNet eToken 5110")).toBeVisible();
+
+    const pin = dialog.getByLabel("รหัส PIN ของ USB Token");
+    const sign = dialog.getByRole("button", { name: "ลงนามด้วย USB Token" });
+
+    await pin.fill("000000");
+    await sign.click();
+    await expect(dialog.getByText("รหัส PIN ไม่ถูกต้อง")).toBeVisible();
+
+    await pin.fill("123456"); // MOCK_TOKEN_PIN
+    await sign.click();
+    await expect(page.getByText("ลงนามสำเร็จ!")).toBeVisible();
+  });
+});
+
+test.describe("mid-chain signer (manart) signs with a button", () => {
+  test.use({ storageState: authFile("manart") });
+
+  test("confirming signs without a token", async ({ page }) => {
+    await page.goto(`/applications/${PENDING.manart.id}`);
+    await page
+      .getByRole("button", { name: "อนุมัติและลงนาม", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel("รหัส PIN ของ USB Token")).toHaveCount(0);
+    await dialog.getByRole("button", { name: "ยืนยันการลงนาม" }).click();
+    await expect(page.getByText("ลงนามสำเร็จ!")).toBeVisible();
+  });
+});

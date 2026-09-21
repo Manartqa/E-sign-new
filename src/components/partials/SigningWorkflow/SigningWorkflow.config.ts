@@ -1,26 +1,22 @@
 import type { SelectOption } from "@/components/common";
-import { APPLICATION_TYPE_OPTIONS } from "@/mocks/applications.mock";
 import {
   REPLACEMENT_USAGE,
   REQUEST_USAGE,
 } from "@/types/app/signingWorkflows";
 
 /**
- * Only "ทุกประเภทยุทธภัณฑ์" is known from the legacy screen; the other
- * categories are placeholders until the backend supplies the real list.
+ * "all" is this app's value, not a master entry — the lists themselves come
+ * from the backend (useWeaponCategories / useApplicationTypes).
  */
-export const WEAPON_CATEGORY_OPTIONS: SelectOption[] = [
-  { value: "all", label: "ทุกประเภทยุทธภัณฑ์" },
-  { value: "firearm", label: "อาวุธปืนและส่วนประกอบ" },
-  { value: "ammunition", label: "กระสุนและวัตถุระเบิด" },
-  { value: "vehicle", label: "ยานพาหนะและอุปกรณ์ทางทหาร" },
-  { value: "other", label: "ยุทธภัณฑ์อื่น ๆ" },
-];
+export const ALL_WEAPON_CATEGORIES: SelectOption = {
+  value: "all",
+  label: "ทุกประเภทยุทธภัณฑ์",
+};
 
-export const LICENSE_TYPE_OPTIONS: SelectOption[] = [
-  { value: "all", label: "ทุกประเภทใบอนุญาต" },
-  ...APPLICATION_TYPE_OPTIONS,
-];
+export const ALL_LICENSE_TYPES: SelectOption = {
+  value: "all",
+  label: "ทุกประเภทใบอนุญาต",
+};
 
 export const REQUEST_USAGE_OPTIONS: SelectOption[] = [
   { value: REQUEST_USAGE.NEW_AND_RENEW, label: "ใช้กับคำขอใหม่และต่ออายุ" },

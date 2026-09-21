@@ -1,3 +1,5 @@
+import type { PermissionKey } from "@/types/app/roles";
+
 export interface UserProfile {
   id: string;
   /** ยศ/ตำแหน่ง — the prefix select (นาย / นาง / ส.อ. …) */
@@ -18,4 +20,9 @@ export interface UserProfile {
   /** เข้าสู่ระบบครั้งล่าสุด (ISO) */
   lastLoginAt: string;
   avatarUrl?: string;
+  /**
+   * What this user may do, from their role(s) — the UI hides what isn't here.
+   * Read-only: the backend decides it and must enforce it on every endpoint.
+   */
+  permissions: PermissionKey[];
 }

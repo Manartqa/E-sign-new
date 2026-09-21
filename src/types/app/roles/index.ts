@@ -1,3 +1,4 @@
+import type { SortParams } from "@/types/app/common";
 /**
  * ตั้งค่าระบบ › บทบาทและสิทธิ์ — not in Figma or the handoff. A role carries a
  * flat list of `MODULE:ACTION` permissions; nothing enforces them yet (the app
@@ -107,7 +108,7 @@ export type RoleInput = Pick<
   "name" | "description" | "isActive" | "permissions"
 >;
 
-export interface RoleListParams {
+export interface RoleListParams extends SortParams {
   keyword?: string;
   page?: number;
   limit?: number;

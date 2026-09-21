@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios";
 import { USE_MOCK } from "@/lib/env";
+import { sortRows } from "@/lib/sort";
 import {
   createRoleApi,
   deleteRoleApi,
@@ -33,12 +34,18 @@ export async function getRoles(
 
   if (USE_MOCK) {
     const keyword = params.keyword?.trim().toLowerCase() ?? "";
-    const filtered = MOCK_ROLES.filter(
+    // newest first unless a column is picked
+    const filtered = sortRows(
+      MOCK_ROLES.filter(
       (role) =>
         !keyword ||
         role.name.toLowerCase().includes(keyword) ||
         role.description.toLowerCase().includes(keyword),
-    ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      params,
+      (role, key) =>
+        key === "permissions" ? role.permissions.length : role[key as keyof Role],
+    );
     return {
       items: filtered.slice((page - 1) * limit, page * limit),
       total: filtered.length,

@@ -1,6 +1,8 @@
 import type { ApplicationStatus } from "@/constant/status";
 import type {
+  ApplicationStats,
   ApplicationSummary,
+  DecisionAction,
   DetailPanel,
   DetailTabKey,
 } from "@/types/app/applications";
@@ -42,10 +44,18 @@ export interface ApplicationDetailResponse extends ApplicationResponse {
   panels: Partial<Record<DetailTabKey, DetailPanel>>;
 }
 
-export interface ApproveRequest {
+/**
+ * PATCH /api/applications/:id/decision — not in the handoff. The officer is
+ * taken from the token, never from the body.
+ */
+export interface DecisionRequest {
+  action: DecisionAction;
+  reasonCode: string;
   notes: string;
-  officerId: string;
 }
+
+/** GET /api/applications/stats — scoped to the caller like the list */
+export type ApplicationStatsResponse = ApplicationStats;
 
 export interface SignRequest {
   certificateId: string;

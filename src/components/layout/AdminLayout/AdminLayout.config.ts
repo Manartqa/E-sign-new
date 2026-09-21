@@ -17,6 +17,7 @@ import {
   NOTIFICATION_TYPE,
   type NotificationType,
 } from "@/types/app/notifications";
+import type { PermissionKey } from "@/types/app/roles";
 
 export interface NavItem {
   href: string;
@@ -24,6 +25,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** key into the counts map passed to <Sidebar/>, renders an amber pill */
   badgeKey?: "pending";
+  /** needed to see the entry and open its pages; none = every user */
+  permission?: PermissionKey;
   /**
    * sub menu — the item becomes a toggle instead of a link, and `href` is only
    * the path prefix its children share
@@ -40,26 +43,79 @@ export interface NavItem {
  * route after sign-in.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { href: ROUTES.applications, label: "คำขอทั้งหมด", icon: FileText },
+  {
+    href: ROUTES.applications,
+    label: "คำขอทั้งหมด",
+    icon: FileText,
+    permission: "APPLICATIONS:VIEW",
+  },
   {
     href: ROUTES.applicationsPending,
     label: "รอการอนุมัติ",
     icon: Clock,
     badgeKey: "pending",
+    permission: "APPLICATIONS:VIEW",
   },
-  { href: ROUTES.reports, label: "รายงานภาพรวม", icon: BarChart3 },
+  {
+    href: ROUTES.reports,
+    label: "รายงานภาพรวม",
+    icon: BarChart3,
+    permission: "REPORTS:VIEW",
+  },
   { href: ROUTES.profile, label: "โปรไฟล์ผู้ใช้งาน", icon: User },
   {
     href: ROUTES.settings,
     label: "ตั้งค่าระบบ",
     icon: Settings,
     children: [
-      { href: ROUTES.signers, label: "ผู้มีอำนาจลงนาม", icon: UserPen },
-      { href: ROUTES.signingWorkflows, label: "กระบวนการลงนาม", icon: ListOrdered },
-      { href: ROUTES.roles, label: "บทบาทและสิทธิ์", icon: ShieldUser },
+      {
+        href: ROUTES.signers,
+        label: "ผู้มีอำนาจลงนาม",
+        icon: UserPen,
+        permission: "SIGNERS:VIEW",
+      },
+      {
+        href: ROUTES.signingWorkflows,
+        label: "กระบวนการลงนาม",
+        icon: ListOrdered,
+        permission: "SIGNING_WORKFLOWS:VIEW",
+      },
+      {
+        href: ROUTES.roles,
+        label: "บทบาทและสิทธิ์",
+        icon: ShieldUser,
+        permission: "ROLES:VIEW",
+      },
     ],
   },
 ];
+
+/**
+ * The entries this user may see: children they lack the permission for are
+ * dropped, and a group left with no children goes with them.
+ */
+export function getVisibleNavItems(
+  can: (key: PermissionKey) => boolean,
+): NavItem[] {
+  const allowed = (item: { permission?: PermissionKey }) =>
+    !item.permission || can(item.permission);
+
+  return NAV_ITEMS.filter(allowed).flatMap((item) => {
+    if (!item.children) return [item];
+    const children = item.children.filter(allowed);
+    return children.length ? [{ ...item, children }] : [];
+  });
+}
+
+/** the permission the page at `pathname` needs, if any */
+export function getRequiredPermission(
+  pathname: string,
+): PermissionKey | undefined {
+  const href = getActiveNavHref(pathname);
+  return NAV_ITEMS.flatMap((item) => [item, ...(item.children ?? [])]).find(
+    (item) => item.href === href,
+  )?.permission;
+}
 
 /** shown on one line — the sidebar is sized to fit it (see Sidebar.tsx) */
 export const APP_NAME = "ระบบการลงนามอนุมัติดิจิทัล";

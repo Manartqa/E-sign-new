@@ -43,7 +43,7 @@ export default function ApplicationDetailContent({
   const router = useRouter();
   const { detail, isLoading, isError } = useApplicationDetail(id);
   const { profile } = useProfile();
-  const { sign, approve } = useApplicationActions(id);
+  const { sign, decide } = useApplicationActions(id);
   // detection is the modal's job; this is only the signing half
   const { sign: tokenSign } = useSigningToken(false);
 
@@ -94,9 +94,10 @@ export default function ApplicationDetailContent({
   const handleReturnOrReject = async (values: ReturnFormValues) => {
     const isReject = action === "reject";
     try {
-      await approve.mutateAsync({
-        notes: values.reason + " — " + values.notes,
-        officerId: profile?.id ?? "",
+      await decide.mutateAsync({
+        action: isReject ? "REJECT" : "RETURN",
+        reasonCode: values.reasonCode,
+        notes: values.notes,
       });
       setAction(null);
       toast.success(isReject ? "ไม่อนุมัติคำขอแล้ว" : "ส่งคืนคำขอเพื่อแก้ไขแล้ว");
@@ -172,7 +173,7 @@ export default function ApplicationDetailContent({
         <ReturnForEditModal
           open
           mode={action}
-          isSubmitting={approve.isPending}
+          isSubmitting={decide.isPending}
           onClose={() => setAction(null)}
           onConfirm={(values) => void handleReturnOrReject(values)}
         />

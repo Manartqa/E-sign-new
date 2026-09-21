@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios";
 import { USE_MOCK } from "@/lib/env";
+import { sortRows } from "@/lib/sort";
 import {
   checkSignerCertificateApi,
   createSignerApi,
@@ -69,13 +70,18 @@ export async function getSigners(
 
   if (USE_MOCK) {
     const keyword = params.keyword?.trim().toLowerCase() ?? "";
-    const filtered = MOCK_SIGNERS.filter(
+    // newest first unless a column is picked
+    const filtered = sortRows(
+      MOCK_SIGNERS.filter(
       (s) =>
         (!params.activeOnly || s.isActive) &&
         (!keyword ||
           s.name.toLowerCase().includes(keyword) ||
           s.position.toLowerCase().includes(keyword)),
-    ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      params,
+      (signer, key) => signer[key as keyof Signer],
+    );
     return {
       items: filtered.slice((page - 1) * limit, page * limit),
       total: filtered.length,

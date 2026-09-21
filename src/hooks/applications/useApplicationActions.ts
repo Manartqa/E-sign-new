@@ -2,12 +2,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  approveApplication,
+  decideApplication,
   signApplication,
 } from "@/services/application.service";
-import type { ApproveRequest, SignRequest } from "@/types/api/main/application";
+import type { DecisionRequest, SignRequest } from "@/types/api/main/application";
 import { APPLICATION_DETAIL_QUERY_KEY } from "./useApplicationDetail";
 import { APPLICATION_LIST_QUERY_KEY } from "./useApplicationList";
+import { APPLICATION_STATS_QUERY_KEY } from "./useApplicationStats";
 
 export const useApplicationActions = (id: string) => {
   const queryClient = useQueryClient();
@@ -19,10 +20,13 @@ export const useApplicationActions = (id: string) => {
     void queryClient.invalidateQueries({
       queryKey: APPLICATION_LIST_QUERY_KEY,
     });
+    void queryClient.invalidateQueries({
+      queryKey: APPLICATION_STATS_QUERY_KEY,
+    });
   };
 
-  const approve = useMutation({
-    mutationFn: (body: ApproveRequest) => approveApplication(id, body),
+  const decide = useMutation({
+    mutationFn: (body: DecisionRequest) => decideApplication(id, body),
     onSuccess: invalidate,
   });
 
@@ -31,5 +35,5 @@ export const useApplicationActions = (id: string) => {
     onSuccess: invalidate,
   });
 
-  return { approve, sign };
+  return { decide, sign };
 };

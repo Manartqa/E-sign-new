@@ -5,9 +5,9 @@ import { RotateCcw, X, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LabeledSelect } from "@/components/common";
 import { Textarea } from "@/components/ui/textarea";
+import { useDecisionReasons } from "@/hooks/master";
 import { cn } from "@/lib/utils";
 import type { ReturnFormValues } from "@/types/app/applications";
-import { REJECT_REASONS, RETURN_REASONS } from "../ApplicationDetail.config";
 
 interface ReturnForEditModalProps {
   open: boolean;
@@ -30,12 +30,14 @@ export function ReturnForEditModal({
   onConfirm,
 }: ReturnForEditModalProps) {
   const isReject = mode === "reject";
-  const reasons = isReject ? REJECT_REASONS : RETURN_REASONS;
+  const { options: reasons } = useDecisionReasons(isReject ? "REJECT" : "RETURN");
 
-  const [reason, setReason] = useState<string>(reasons[0]);
+  // the list loads async, so the first reason is the default until one is picked
+  const [pickedReason, setPickedReason] = useState<string | null>(null);
+  const reasonCode = pickedReason ?? reasons[0]?.value ?? "";
   const [notes, setNotes] = useState("");
 
-  const canSubmit = notes.trim() !== "" && !isSubmitting;
+  const canSubmit = reasonCode !== "" && notes.trim() !== "" && !isSubmitting;
   const Icon = isReject ? XCircle : RotateCcw;
 
   return (
@@ -61,9 +63,9 @@ export function ReturnForEditModal({
             label={isReject ? "ระบุสาเหตุที่ไม่อนุมัติ" : "ระบุสาเหตุที่ส่งคืน"}
             labelClassName="text-sm font-semibold text-black"
             triggerClassName="p-3"
-            value={reason}
-            options={reasons.map((item) => ({ value: item, label: item }))}
-            onChange={setReason}
+            value={reasonCode}
+            options={reasons}
+            onChange={setPickedReason}
           />
 
           <div className="flex flex-col gap-2">
@@ -84,7 +86,7 @@ export function ReturnForEditModal({
           <button
             type="button"
             disabled={!canSubmit}
-            onClick={() => onConfirm({ reason, notes })}
+            onClick={() => onConfirm({ reasonCode, notes })}
             className={cn(
               "rounded-lg px-5 py-2.5 text-xs font-semibold text-white disabled:opacity-50",
               isReject

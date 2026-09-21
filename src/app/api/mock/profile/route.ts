@@ -41,7 +41,12 @@ export async function GET() {
   if (!USE_MOCK) return notFound();
   const profile = await currentProfile();
   const overrides = await readOverrides();
-  return Response.json({ ...profile, ...overrides[profile.id] });
+  // permissions come from the role, never from a saved edit
+  return Response.json({
+    ...profile,
+    ...overrides[profile.id],
+    permissions: profile.permissions,
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -57,5 +62,9 @@ export async function PATCH(request: Request) {
     STORE,
     JSON.stringify({ ...stored, [profile.id]: overrides }),
   );
-  return Response.json({ ...profile, ...overrides });
+  return Response.json({
+    ...profile,
+    ...overrides,
+    permissions: profile.permissions,
+  });
 }

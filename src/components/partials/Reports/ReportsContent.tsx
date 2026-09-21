@@ -13,8 +13,10 @@ import { toast } from "sonner";
 import {
   ErrorState,
   LoadingState,
+  DataTh,
   Pagination,
   StatusBadge,
+  useDataTable,
 } from "@/components/common";
 import {
   Select,
@@ -23,10 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { APPLICATION_STATUS } from "@/constant/status";
 import { useSearchPersist } from "@/hooks/common";
 import { useReportSummary } from "@/hooks/reports";
 import { formatNumber, formatThaiDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { nextSort, sortRows } from "@/lib/sort";
+import type { SortParams } from "@/types/app/common";
 import type {
   BreakdownDimension,
   RecentSignature,
@@ -75,7 +80,7 @@ function KpiCard({ kpi }: { kpi: ReportKpi }) {
   const up = kpi.deltaPercent >= 0;
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-[0_4px_6px_rgba(0,0,0,0.03)]">
+    <div className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-6 shadow-[0_4px_6px_rgba(0,0,0,0.03)]">
       <div className="flex items-center gap-4">
         <span
           className={cn(
@@ -93,7 +98,7 @@ function KpiCard({ kpi }: { kpi: ReportKpi }) {
         </div>
       </div>
 
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <span className="flex items-center gap-1 text-xs whitespace-nowrap">
           <span className="text-muted-foreground">
             {up ? "เพิ่มขึ้นจากเดือนก่อน" : "ลดลงจากเดือนก่อน"}
@@ -107,7 +112,8 @@ function KpiCard({ kpi }: { kpi: ReportKpi }) {
             {up ? "▲" : "▼"} {Math.abs(kpi.deltaPercent)}%
           </span>
         </span>
-        <div className="w-28 shrink-0 sm:w-36">
+        {/* fills what the caption leaves; drops under it when that is too little */}
+        <div className="ml-auto max-w-36 min-w-24 flex-1">
           <Sparkline data={kpi.spark} className={meta.spark} />
         </div>
       </div>
@@ -141,13 +147,23 @@ const RECENT_HEAD = "border-r border-white/15 p-4";
 function RecentSignaturesCard({ rows }: { rows: RecentSignature[] }) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [sort, setSort] = useState<SortParams>({});
+  const table = useDataTable(sort, (key) => {
+    setSort(nextSort(sort, key));
+    setPage(1);
+  });
 
   const total = rows.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   // clamp so a filter change that shrinks the list never strands us past the end
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * limit;
-  const pageRows = rows.slice(start, start + limit);
+  // every row is here, so the whole list is sorted, not just this page
+  const sorted = sortRows(rows, sort, (row, key) =>
+      key === "status"
+        ? Object.values(APPLICATION_STATUS).indexOf(row.status)
+        : row[key as keyof RecentSignature]);
+  const pageRows = sorted.slice(start, start + limit);
 
   return (
     <section className="overflow-hidden rounded-2xl border bg-card">
@@ -159,21 +175,24 @@ function RecentSignaturesCard({ rows }: { rows: RecentSignature[] }) {
 
       <div className="flex flex-col gap-4 p-4">
         <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full border-collapse text-left">
+          <table
+            className={cn("w-full border-collapse text-left", table.tableClassName)}
+            style={table.tableStyle}
+          >
             <thead className="bg-brand-navy-mid">
               <tr className="text-sm font-semibold text-white">
-                <th scope="col" className={RECENT_HEAD}>
+                <DataTh {...table.th(0, "licenseName")} className={RECENT_HEAD}>
                   รายการใบอนุญาต
-                </th>
-                <th scope="col" className={cn("w-50", RECENT_HEAD)}>
+                </DataTh>
+                <DataTh {...table.th(1, "officer")} className={cn("w-50", RECENT_HEAD)}>
                   เจ้าหน้าที่
-                </th>
-                <th scope="col" className={cn("w-35", RECENT_HEAD)}>
+                </DataTh>
+                <DataTh {...table.th(2, "status")} className={cn("w-35", RECENT_HEAD)}>
                   สถานะ
-                </th>
-                <th scope="col" className="w-40 p-4 text-right">
+                </DataTh>
+                <DataTh {...table.th(3, "at")} className="w-40 p-4 text-right">
                   วันเวลา
-                </th>
+                </DataTh>
               </tr>
             </thead>
             <tbody>

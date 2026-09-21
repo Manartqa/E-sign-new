@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getApplicationList } from "@/services/application.service";
 import type { ApplicationListParams } from "@/types/app/applications";
 
@@ -10,6 +10,8 @@ export const useApplicationList = (params?: ApplicationListParams) => {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [...APPLICATION_LIST_QUERY_KEY, params],
     queryFn: () => getApplicationList(params),
+    // keep the table on screen while a new sort / page loads
+    placeholderData: keepPreviousData,
   });
 
   return {

@@ -7,6 +7,7 @@ import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import { ROUTES } from "@/constant/routes";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationDetail } from "@/hooks/applications";
+import { usePermission } from "@/hooks/profile";
 import { logoutEverywhere } from "@/lib/logout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserProfile } from "@/types/app/profile";
@@ -14,9 +15,9 @@ import { cn } from "@/lib/utils";
 import {
   APP_NAME,
   APP_SUBTITLE,
-  NAV_ITEMS,
   getActiveNavHref,
   getInitials,
+  getVisibleNavItems,
 } from "../AdminLayout.config";
 
 interface SidebarProps {
@@ -58,6 +59,8 @@ function useIsDesktop() {
  */
 export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { can } = usePermission();
+  const navItems = getVisibleNavItems(can);
   // an application detail page (/applications/:id) belongs to รอการอนุมัติ
   // while the request is still pending — the same rule as its back link —
   // so opening one from a notification doesn't light up คำขอทั้งหมด. The
@@ -71,7 +74,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   // the group owning the active page opens on arrival and folds again when the
   // user leaves it for a page outside the group (adjusting state during render,
   // not in an effect); in between, the toggle is theirs to fold and unfold
-  const activeGroup = NAV_ITEMS.find(
+  const activeGroup = navItems.find(
     (item) => item.children && activeHref?.startsWith(`${item.href}/`),
   )?.href;
   const [openGroup, setOpenGroup] = useState(activeGroup);
@@ -82,7 +85,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   }
   // every visible row, in order, for the sliding highlight; a folded group's
   // row stands in for its active child
-  const rows = NAV_ITEMS.flatMap((item) =>
+  const rows = navItems.flatMap((item) =>
     item.children && openGroup === item.href
       ? [item.href, ...item.children.map((child) => child.href)]
       : [item.href],
@@ -176,7 +179,7 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
               }}
             />
           )}
-          {NAV_ITEMS.map(({ href, label, icon: Icon, badgeKey, children }) => {
+          {navItems.map(({ href, label, icon: Icon, badgeKey, children }) => {
             const badge = badgeKey ? counts?.[badgeKey] : undefined;
 
             if (children) {

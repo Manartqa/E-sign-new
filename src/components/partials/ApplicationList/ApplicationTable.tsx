@@ -2,25 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, Pencil, RotateCcw } from "lucide-react";
+import { Eye, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DataTh,
   EmptyState,
   ErrorState,
   Pagination,
   PdfIcon,
+  SignIcon,
   StatusBadge,
+  useDataTable,
 } from "@/components/common";
 import { ROUTES } from "@/constant/routes";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationActions } from "@/hooks/applications";
 import { useSigningToken } from "@/hooks/signing";
-import { useProfile } from "@/hooks/profile";
+import { usePermission, useProfile } from "@/hooks/profile";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ApplicationItem, ReturnFormValues } from "@/types/app/applications";
+import type { SortParams } from "@/types/app/common";
 import {
   MOCK_CERTIFICATE,
   PDFViewer,
@@ -44,7 +48,13 @@ interface ApplicationTableProps {
   onToggleSelectAll: () => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  /** sorts the whole list server-side, not just this page */
+  sort: SortParams;
+  onSort: (key: string) => void;
 }
+
+/** the checkbox and the row actions hold no data to order by */
+const UNSORTABLE = new Set(["select", "actions"]);
 
 const CELL = "border-r px-3 py-3 align-middle";
 
@@ -138,12 +148,22 @@ export function ApplicationTable({
   onToggleSelectAll,
   onPageChange,
   onLimitChange,
+  sort,
+  onSort,
 }: ApplicationTableProps) {
+  const table = useDataTable(sort, onSort);
   // only a pending request can be bulk-acted on, so selection is restricted
   // to รอการอนุมัติ rows — everything else's checkbox stays disabled
-  const pendingItems = items.filter(
-    (item) => item.status === APPLICATION_STATUS.PENDING_APPROVAL,
-  );
+  const { can } = usePermission();
+  const canDecide = can("APPLICATIONS:APPROVE");
+  const canSign = can("APPLICATIONS:SIGN");
+  // nothing to do with a selection without either permission
+  const pendingItems =
+    canDecide || canSign
+      ? items.filter(
+          (item) => item.status === APPLICATION_STATUS.PENDING_APPROVAL,
+        )
+      : [];
   const allSelected =
     pendingItems.length > 0 &&
     pendingItems.every((item) => selectedIds.includes(item.id));
@@ -153,16 +173,17 @@ export function ApplicationTable({
   );
   const [signTarget, setSignTarget] = useState<ApplicationItem | null>(null);
   const { profile } = useProfile();
-  const { approve } = useApplicationActions(returnTarget?.id ?? "");
+  const { decide } = useApplicationActions(returnTarget?.id ?? "");
   const { sign } = useApplicationActions(signTarget?.id ?? "");
   // detection is the modal's job; this is only the signing half
   const { sign: tokenSign } = useSigningToken(false);
 
   const handleReturn = async (values: ReturnFormValues) => {
     try {
-      await approve.mutateAsync({
-        notes: values.reason + " — " + values.notes,
-        officerId: profile?.id ?? "",
+      await decide.mutateAsync({
+        action: "RETURN",
+        reasonCode: values.reasonCode,
+        notes: values.notes,
       });
       setReturnTarget(null);
       toast.success("ส่งคืนคำขอเพื่อแก้ไขแล้ว");
@@ -213,13 +234,16 @@ export function ApplicationTable({
       ) : (
         <div className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-xl border">
-            <table className="w-full border-collapse text-left">
+            <table
+              className={cn("w-full border-collapse text-left", table.tableClassName)}
+              style={table.tableStyle}
+            >
               <thead className="border-b bg-[#f8fafc]">
                 <tr>
-                  {TABLE_COLUMNS.map((column) => (
-                    <th
+                  {TABLE_COLUMNS.map((column, index) => (
+                    <DataTh
                       key={column.key}
-                      scope="col"
+                      {...table.th(index, UNSORTABLE.has(column.key) ? undefined : column.key)}
                       className={cn(
                         CELL,
                         column.width,
@@ -240,7 +264,7 @@ export function ApplicationTable({
                       ) : (
                         column.label
                       )}
-                    </th>
+                    </DataTh>
                   ))}
                 </tr>
               </thead>
@@ -259,9 +283,7 @@ export function ApplicationTable({
                       <Checkbox
                         checked={selectedIds.includes(item.id)}
                         onCheckedChange={() => onToggleSelect(item.id)}
-                        disabled={
-                          item.status !== APPLICATION_STATUS.PENDING_APPROVAL
-                        }
+                        disabled={!pendingItems.includes(item)}
                         aria-label={"เลือกคำขอ " + item.requestNo}
                         className="size-4 rounded-[3px]"
                       />
@@ -346,44 +368,50 @@ export function ApplicationTable({
                             >
                               <Eye className="size-[18px]" aria-hidden />
                             </Link>
-                            {/* pencil = quick อนุมัติและลงนาม (green, same
+                            {/* pen = quick อนุมัติและลงนาม (green, same
                             SignatureModal as the detail page's Check button);
                             rotate-ccw = quick ส่งคืนเพื่อแก้ไข (amber, same
                             ReturnForEditModal as the detail page's button) */}
-                            <button
-                              type="button"
-                              disabled={!canEdit}
-                              onClick={() => setSignTarget(item)}
-                              aria-label={"อนุมัติและลงนาม " + item.requestNo}
-                              className="disabled:cursor-not-allowed"
-                            >
-                              <Pencil
-                                className={cn(
-                                  "size-[18px]",
-                                  canEdit
-                                    ? "text-action-approve"
-                                    : "text-slate-300",
-                                )}
-                                aria-hidden
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={!canEdit}
-                              onClick={() => setReturnTarget(item)}
-                              aria-label={"ส่งคืนเพื่อแก้ไข " + item.requestNo}
-                              className="disabled:cursor-not-allowed"
-                            >
-                              <RotateCcw
-                                className={cn(
-                                  "size-[18px]",
-                                  canEdit
-                                    ? "text-action-return"
-                                    : "text-slate-300",
-                                )}
-                                aria-hidden
-                              />
-                            </button>
+                            {canSign && (
+                              <button
+                                type="button"
+                                disabled={!canEdit}
+                                onClick={() => setSignTarget(item)}
+                                aria-label={"อนุมัติและลงนาม " + item.requestNo}
+                                className="disabled:cursor-not-allowed"
+                              >
+                                <SignIcon
+                                  className={cn(
+                                    "size-[18px]",
+                                    canEdit
+                                      ? "text-action-approve"
+                                      : "text-slate-300",
+                                  )}
+                                  aria-hidden
+                                />
+                              </button>
+                            )}
+                            {canDecide && (
+                              <button
+                                type="button"
+                                disabled={!canEdit}
+                                onClick={() => setReturnTarget(item)}
+                                aria-label={
+                                  "ส่งคืนเพื่อแก้ไข " + item.requestNo
+                                }
+                                className="disabled:cursor-not-allowed"
+                              >
+                                <RotateCcw
+                                  className={cn(
+                                    "size-[18px]",
+                                    canEdit
+                                      ? "text-action-return"
+                                      : "text-slate-300",
+                                  )}
+                                  aria-hidden
+                                />
+                              </button>
+                            )}
                             {/* the signed pdf exists only once the application
                             is อนุมัติแล้ว, so the icon is its #ff4d4f red (Ant
                             "file-pdf", Figma 4184:430930) and opens the signed
@@ -437,7 +465,7 @@ export function ApplicationTable({
       <ReturnForEditModal
         open={!!returnTarget}
         mode="return"
-        isSubmitting={approve.isPending}
+        isSubmitting={decide.isPending}
         onClose={() => setReturnTarget(null)}
         onConfirm={(values) => void handleReturn(values)}
       />

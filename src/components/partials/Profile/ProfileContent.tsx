@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ErrorState, LoadingState } from "@/components/common";
+import { usePrefixes } from "@/hooks/master";
 import { useProfile, useUpdateProfile } from "@/hooks/profile";
 import {
   formatPhone,
@@ -24,7 +25,6 @@ import {
   maskPhone,
 } from "@/lib/format";
 import { type UserProfile } from "@/types/app/profile";
-import { PREFIX_OPTIONS } from "@/components/partials/Signer/Signer.config";
 import { ProfileField } from "./ProfileField";
 
 type EditableFields = Pick<
@@ -58,6 +58,7 @@ function Card({
 export default function ProfileContent() {
   const { profile, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { options: prefixes } = usePrefixes();
   const [form, setForm] = useState<EditableFields | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,7 +227,7 @@ export default function ProfileContent() {
           value={form?.prefix ?? profile.prefix}
           editable={isEditing}
           onChange={updateField("prefix")}
-          options={PREFIX_OPTIONS}
+          options={prefixes}
         />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

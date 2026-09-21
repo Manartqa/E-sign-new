@@ -15,9 +15,15 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  DataTh,
   Pagination,
   SideDrawer,
+  useDataTable,
 } from "@/components/common";
+import { nextSort } from "@/lib/sort";
+import type { SortParams } from "@/types/app/common";
+import { usePermission } from "@/hooks/profile";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useRoleActions, useRoleList } from "@/hooks/roles";
 import { formatThaiDateTime } from "@/lib/format";
@@ -42,9 +48,18 @@ function Audit({ by, at }: { by: string; at: string }) {
  * The system role has no delete button (the service rejects it anyway).
  */
 export default function RoleListContent() {
+  const { can } = usePermission();
+  const canCreate = can("ROLES:CREATE");
+  const canUpdate = can("ROLES:UPDATE");
+  const canDelete = can("ROLES:DELETE");
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortParams>({});
+  const table = useDataTable(sort, (key) => {
+    setSort(nextSort(sort, key));
+    setPage(1);
+  });
   const [limit, setLimit] = useState(10);
   const [deleting, setDeleting] = useState<Role | null>(null);
   /** the drawer's subject: null = closed, "" = a new role, an id = that one */
@@ -52,6 +67,7 @@ export default function RoleListContent() {
 
   const { items, total, isLoading, isError } = useRoleList({
     keyword,
+    ...sort,
     page,
     limit,
   });
@@ -85,14 +101,16 @@ export default function RoleListContent() {
             กำหนดว่าแต่ละบทบาททำอะไรได้บ้างในระบบ
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditing("")}
-          className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
-        >
-          <Plus className="size-4" aria-hidden />
-          เพิ่มบทบาท
-        </button>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => setEditing("")}
+            className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
+          >
+            <Plus className="size-4" aria-hidden />
+            เพิ่มบทบาท
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -150,35 +168,41 @@ export default function RoleListContent() {
         ) : (
           <>
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full border-collapse">
+              <table
+                className={cn("w-full border-collapse", table.tableClassName)}
+                style={table.tableStyle}
+              >
                 <thead className="border-b bg-[#f8fafc]">
                   <tr>
-                    <th scope="col" className={TH}>
+                    <DataTh {...table.th(0, "name")} className={TH}>
                       ชื่อบทบาท
-                    </th>
-                    <th scope="col" className={`${TH} min-w-[280px]`}>
+                    </DataTh>
+                    <DataTh {...table.th(1, "description")} className={`${TH} min-w-[280px]`}>
                       คำอธิบาย
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(2, "permissions")} className={TH}>
                       สิทธิ์ที่ได้รับ
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(3, "createdAt")} className={TH}>
                       สร้างโดย
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(4, "updatedAt")} className={TH}>
                       ปรับปรุงล่าสุด
-                    </th>
-                    <th scope="col" className={`${TH} text-right`}>
+                    </DataTh>
+                    <DataTh {...table.th(5)} className={`${TH} text-right`}>
                       การดำเนินการ
-                    </th>
+                    </DataTh>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {items.map((role) => (
                     <tr
                       key={role.id}
-                      onClick={() => setEditing(role.id)}
-                      className="cursor-pointer bg-white transition-colors hover:bg-[#f8fafc]"
+                      onClick={canUpdate ? () => setEditing(role.id) : undefined}
+                      className={cn(
+                        "bg-white transition-colors hover:bg-[#f8fafc]",
+                        canUpdate && "cursor-pointer",
+                      )}
                     >
                       <td className={TD}>
                         <div className="flex flex-col items-start gap-1">
@@ -225,16 +249,18 @@ export default function RoleListContent() {
                           className="flex items-center justify-end gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
-                            type="button"
-                            onClick={() => setEditing(role.id)}
-                            aria-label={`แก้ไข ${role.name}`}
-                            title="แก้ไข"
-                            className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
-                          >
-                            <Pencil className="size-4" aria-hidden />
-                          </button>
-                          {!role.isSystem && (
+                          {canUpdate && (
+                            <button
+                              type="button"
+                              onClick={() => setEditing(role.id)}
+                              aria-label={`แก้ไข ${role.name}`}
+                              title="แก้ไข"
+                              className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
+                            >
+                              <Pencil className="size-4" aria-hidden />
+                            </button>
+                          )}
+                          {canDelete && !role.isSystem && (
                             <button
                               type="button"
                               onClick={() => setDeleting(role)}

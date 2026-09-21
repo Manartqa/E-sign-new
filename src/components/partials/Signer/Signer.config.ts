@@ -5,16 +5,6 @@ import {
   type SigningMethod,
 } from "@/types/app/signers";
 
-/**
- * Except ระดับการอนุมัติ, these option lists are placeholders — the legacy screen shows only
- * empty selects — until the backend supplies the real master data. The
- * prefixes cover the forms seen in legacy rows (พล.ต. and พลตรี both occur).
- */
-export const PERSON_TYPE_OPTIONS: SelectOption[] = [
-  { value: "SIGNER", label: "ผู้มีอำนาจลงนาม" },
-  { value: "REVIEWER", label: "ผู้ตรวจสอบ" },
-];
-
 /** from the legacy ระดับการอนุมัติ dropdown: ผู้ตรวจสอบ 1–19, then ผู้ตรวจสอบและลงนาม */
 export const APPROVAL_LEVEL_OPTIONS: SelectOption[] = [
   ...Array.from({ length: 19 }, (_, i) => ({
@@ -27,32 +17,6 @@ export const APPROVAL_LEVEL_OPTIONS: SelectOption[] = [
 export const approvalLevelLabel = (level: string) =>
   APPROVAL_LEVEL_OPTIONS.find((option) => option.value === level)?.label ??
   "ยังไม่กำหนดระดับการอนุมัติ";
-
-export const PREFIX_OPTIONS: SelectOption[] = [
-  "นาย",
-  "นาง",
-  "นางสาว",
-  "พล.อ.",
-  "พล.ท.",
-  "พล.ต.",
-  "พลเอก",
-  "พลโท",
-  "พลตรี",
-  "พล.ร.อ.",
-  "พล.ร.ท.",
-  "พล.ร.ต.",
-  "พล.อ.อ.",
-  "พล.อ.ท.",
-  "พล.อ.ต.",
-  "พ.อ.",
-  "พ.ท.",
-  "พ.ต.",
-  "น.อ.",
-  "น.ท.",
-  "น.ต.",
-  "พ.อ.หญิง",
-  "น.อ.หญิง",
-].map((prefix) => ({ value: prefix, label: prefix }));
 
 export const SIGNING_METHOD_OPTIONS: {
   value: SigningMethod;

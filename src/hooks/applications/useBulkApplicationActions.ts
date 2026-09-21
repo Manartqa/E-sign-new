@@ -2,12 +2,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  approveApplication,
+  decideApplication,
   signApplication,
 } from "@/services/application.service";
 import { signWithToken } from "@/services/signingToken.service";
 import type { ActionMode } from "@/types/app/applications";
 import { APPLICATION_LIST_QUERY_KEY } from "./useApplicationList";
+import { APPLICATION_STATS_QUERY_KEY } from "./useApplicationStats";
 
 interface BulkActionInput {
   ids: string[];
@@ -72,7 +73,12 @@ export const useBulkApplicationActions = () => {
               notes: notes ?? "",
             });
           } else {
-            await approveApplication(id, { notes: notes ?? "", officerId });
+            // a batch collects no reason — see BulkConfirmModal
+            await decideApplication(id, {
+              action: action === "reject" ? "REJECT" : "RETURN",
+              reasonCode: "",
+              notes: notes ?? "",
+            });
           }
           result.succeeded.push(id);
         } catch (error) {
@@ -87,6 +93,9 @@ export const useBulkApplicationActions = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: APPLICATION_LIST_QUERY_KEY,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: APPLICATION_STATS_QUERY_KEY,
       });
     },
   });

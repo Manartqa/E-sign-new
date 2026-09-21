@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Pagination, PdfIcon } from "@/components/common";
+import {
+  DataTh,
+  Pagination,
+  PdfIcon,
+  useDataTable,
+} from "@/components/common";
 import { formatThaiShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { nextSort, sortRows } from "@/lib/sort";
+import type { SortParams } from "@/types/app/common";
 import type { DocumentItem } from "@/types/app/applications";
 
 interface DocumentTableProps {
@@ -39,26 +46,40 @@ export function DocumentTable({
   compact = false,
 }: DocumentTableProps) {
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortParams>({});
+  const table = useDataTable(sort, (key) => {
+    setSort(nextSort(sort, key));
+    setPage(1);
+  });
   const start = (page - 1) * PAGE_SIZE;
-  const rows = documents.slice(start, start + PAGE_SIZE);
+  // every row is here, so the whole list is sorted, not just this page
+  const sorted = sortRows(
+    documents,
+    sort,
+    (document, key) => document[key as keyof DocumentItem],
+  );
+  const rows = sorted.slice(start, start + PAGE_SIZE);
 
   return (
     <div className="overflow-hidden rounded-lg border">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left">
+        <table
+          className={cn("w-full border-collapse text-left", table.tableClassName)}
+          style={table.tableStyle}
+        >
           <thead className="border-b bg-[#f8fafc]">
             <tr>
-              <th
-                scope="col"
+              <DataTh
+                {...table.th(0)}
                 className={cn(
                   CELL,
                   "w-12 text-[13px] font-bold text-brand-navy-mid",
                 )}
               >
                 #
-              </th>
-              <th
-                scope="col"
+              </DataTh>
+              <DataTh
+                {...table.th(1, "name")}
                 className={cn(
                   CELL,
                   "min-w-[380px] text-[13px] font-bold text-brand-navy-mid",
@@ -66,29 +87,29 @@ export function DocumentTable({
                 )}
               >
                 ชื่อเอกสาร
-              </th>
+              </DataTh>
               {!compact && (
                 <>
-                  <th
-                    scope="col"
+                  <DataTh
+                    {...table.th(2, "documentDate")}
                     className={cn(
                       CELL,
                       "min-w-[104px] text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
                     )}
                   >
                     วันที่เอกสาร
-                  </th>
-                  <th
-                    scope="col"
+                  </DataTh>
+                  <DataTh
+                    {...table.th(3, "expiryDate")}
                     className={cn(
                       CELL,
                       "min-w-[116px] text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
                     )}
                   >
                     วันหมดอายุ
-                  </th>
-                  <th
-                    scope="col"
+                  </DataTh>
+                  <DataTh
+                    {...table.th(4, "issuedPlace")}
                     className={cn(
                       CELL,
                       "min-w-[260px] text-[13px] font-bold text-brand-navy-mid",
@@ -96,18 +117,18 @@ export function DocumentTable({
                     )}
                   >
                     สถานที่ออกเอกสาร
-                  </th>
+                  </DataTh>
                 </>
               )}
-              <th
-                scope="col"
+              <DataTh
+                {...table.th(compact ? 2 : 5)}
                 className={cn(
                   STICKY_DOC,
                   "z-20 bg-[#f8fafc] px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
                 )}
               >
                 เอกสาร
-              </th>
+              </DataTh>
             </tr>
           </thead>
 

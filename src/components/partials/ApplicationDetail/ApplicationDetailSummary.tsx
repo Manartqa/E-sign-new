@@ -3,6 +3,7 @@
 import { ChevronRight, Eye } from "lucide-react";
 import { ActionButton, StatusBadge } from "@/components/common";
 import { APPLICATION_STATUS } from "@/constant/status";
+import { usePermission } from "@/hooks/profile";
 import { formatThaiShortDate } from "@/lib/format";
 import type { ActionMode, ApplicationSummary } from "@/types/app/applications";
 
@@ -32,7 +33,12 @@ export function ApplicationDetailSummary({
   // ส่งกลับแก้ไข have all been decided already, so the whole action group goes
   // away for them (user's call, 2026-09-18 — ไม่อนุมัติ / ส่งกลับแก้ไข used to
   // keep the buttons)
-  const canAct = summary.status === APPLICATION_STATUS.PENDING_APPROVAL;
+  const { can } = usePermission();
+  const canDecide = can("APPLICATIONS:APPROVE");
+  const canSign = can("APPLICATIONS:SIGN");
+  const canAct =
+    summary.status === APPLICATION_STATUS.PENDING_APPROVAL &&
+    (canDecide || canSign);
   // once approved there's a real license to open, not just a preview of one
   const licenseLabel = isApproved
     ? "ใบอนุญาต/หนังสืออนุญาต"
@@ -47,9 +53,15 @@ export function ApplicationDetailSummary({
         <h2 className="text-[15px] font-bold text-brand-navy-mid">ข้อมูลคำขอ</h2>
         {canAct && (
           <div className="grid w-full grid-cols-3 items-center gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
-            <ActionButton action="return" onClick={() => onAction("return")} />
-            <ActionButton action="reject" onClick={() => onAction("reject")} />
-            <ActionButton action="approve" onClick={() => onAction("approve")} />
+            {canDecide && (
+              <>
+                <ActionButton action="return" onClick={() => onAction("return")} />
+                <ActionButton action="reject" onClick={() => onAction("reject")} />
+              </>
+            )}
+            {canSign && (
+              <ActionButton action="approve" onClick={() => onAction("approve")} />
+            )}
           </div>
         )}
       </header>

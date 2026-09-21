@@ -3,12 +3,9 @@
 import { useState } from "react";
 import { Table } from "lucide-react";
 import { FILTER_TRIGGER, LabeledSelect } from "@/components/common";
-import {
-  FISCAL_YEAR_OPTIONS,
-  QUARTER_OPTIONS,
-  REPORT_TYPE_OPTIONS,
-} from "@/mocks/reports.mock";
+import { useReportOptions } from "@/hooks/reports";
 import type { ReportParams } from "@/types/app/reports";
+import { QUARTER_OPTIONS } from "./Reports.config";
 
 interface ReportsHeaderProps {
   filters: ReportParams;
@@ -23,6 +20,7 @@ export function ReportsHeader({
   onExport,
 }: ReportsHeaderProps) {
   const [draft, setDraft] = useState(filters);
+  const { fiscalYears, reportTypes } = useReportOptions();
 
   // Same pattern as ApplicationListHeader: re-sync the draft during render
   // when the applied filters change from the outside, never in an effect.
@@ -46,7 +44,7 @@ export function ReportsHeader({
         labelClassName="text-[#334155]"
         triggerClassName={FILTER_TRIGGER}
         value={draft.fiscalYear ?? ""}
-        options={FISCAL_YEAR_OPTIONS.map((year) => ({
+        options={fiscalYears.map((year) => ({
           value: year,
           label: year,
         }))}
@@ -69,7 +67,7 @@ export function ReportsHeader({
         labelClassName="text-[#334155]"
         triggerClassName={FILTER_TRIGGER}
         value={draft.reportType ?? "summary"}
-        options={REPORT_TYPE_OPTIONS}
+        options={reportTypes}
         onChange={(value) => setDraft((d) => ({ ...d, reportType: value }))}
       />
 

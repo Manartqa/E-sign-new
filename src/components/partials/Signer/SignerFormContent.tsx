@@ -19,6 +19,7 @@ import {
   LoadingState,
   SearchableSelect,
 } from "@/components/common";
+import { usePersonTypes, usePrefixes } from "@/hooks/master";
 import { usePositions, useSigner, useSignerActions } from "@/hooks/signers";
 import { formatThaiDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -30,8 +31,6 @@ import {
 } from "@/types/app/signers";
 import {
   APPROVAL_LEVEL_OPTIONS,
-  PERSON_TYPE_OPTIONS,
-  PREFIX_OPTIONS,
   SIGNING_METHOD_OPTIONS,
   isValidEmail,
   isValidNationalId,
@@ -127,6 +126,8 @@ function SignerForm({
 }) {
   const { create, update, checkCertificate } = useSignerActions();
   const { positions, isLoading: positionsLoading } = usePositions();
+  const { options: personTypes } = usePersonTypes();
+  const { options: prefixes } = usePrefixes();
   const [form, setForm] = useState<Fields>(() => {
     if (!signer) return EMPTY_FIELDS;
     const keys = Object.keys(EMPTY_FIELDS) as (keyof Fields)[];
@@ -243,7 +244,7 @@ function SignerForm({
             label="ประเภทบุคคล"
             required
             value={form.personType}
-            options={PERSON_TYPE_OPTIONS}
+            options={personTypes}
             onChange={(v) => set("personType", v)}
             triggerClassName={SELECT_TRIGGER}
           />
@@ -293,7 +294,7 @@ function SignerForm({
             <SearchableSelect
               id="signer-prefix"
               value={form.prefix}
-              options={PREFIX_OPTIONS}
+              options={prefixes}
               onChange={(v) => set("prefix", v)}
               placeholder="เลือกคำนำหน้า"
               searchPlaceholder="ค้นหาคำนำหน้าชื่อ"

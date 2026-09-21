@@ -2,9 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { useApplicationList } from "@/hooks/applications";
-import { useProfile } from "@/hooks/profile";
-import { APPLICATION_STATUS } from "@/constant/status";
+import { useApplicationStats } from "@/hooks/applications";
+import { ErrorState, LoadingState } from "@/components/common";
+import { usePermission, useProfile } from "@/hooks/profile";
+import { getRequiredPermission } from "./AdminLayout.config";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
@@ -15,10 +16,12 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const { profile } = useProfile();
-  const { total: pendingCount } = useApplicationList({
-    status: APPLICATION_STATUS.PENDING_APPROVAL,
-    limit: 1,
-  });
+  const { can, isLoading: permissionsLoading } = usePermission();
+  const required = getRequiredPermission(pathname);
+  const { stats } = useApplicationStats(
+    !permissionsLoading && can("APPLICATIONS:VIEW"),
+  );
+  const pendingCount = stats?.pending ?? 0;
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -44,7 +47,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header user={profile} onOpenMenu={() => setMenuOpen(true)} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 pt-1 sm:p-8 sm:pt-2">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 pt-1 sm:p-8 sm:pt-2">
+          {/* a page is held back until the permissions are known, so it never
+              fires requests the user isn't allowed to make */}
+          {!required ? (
+            children
+          ) : permissionsLoading ? (
+            <LoadingState rows={6} />
+          ) : can(required) ? (
+            children
+          ) : (
+            <ErrorState
+              title="ไม่มีสิทธิ์เข้าถึงหน้านี้"
+              description="บัญชีของคุณไม่ได้รับสิทธิ์ใช้งานเมนูนี้ กรุณาติดต่อผู้ดูแลระบบ"
+            />
+          )}
+        </main>
       </div>
     </div>
   );

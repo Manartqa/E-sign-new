@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, FileSignature, Usb, X } from "lucide-react";
+import { AlertTriangle, Usb, X } from "lucide-react";
+import { SignIcon } from "@/components/common";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSigningToken } from "@/hooks/signing";
 import type { ApplicationItem } from "@/types/app/applications";
@@ -79,7 +80,7 @@ export function SignatureModal({
       >
         <header className="flex items-center justify-between border-b p-5">
           <div className="flex items-center gap-3">
-            <FileSignature className="size-5 text-brand-navy-mid" aria-hidden />
+            <SignIcon className="size-5 text-brand-navy-mid" aria-hidden />
             <DialogTitle className="text-lg font-bold text-brand-navy-mid">
               ยืนยันการลงนามดิจิทัล
             </DialogTitle>

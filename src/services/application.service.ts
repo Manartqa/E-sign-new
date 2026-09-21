@@ -1,13 +1,14 @@
 import { USE_MOCK } from "@/lib/env";
 import {
-  approveApplicationApi,
+  decideApplicationApi,
   getApplicationDetailApi,
+  getApplicationStatsApi,
   getApplicationsApi,
   signApplicationApi,
 } from "@/lib/api/api-main";
 import type {
   ApplicationResponse,
-  ApproveRequest,
+  DecisionRequest,
   SignRequest,
 } from "@/types/api/main/application";
 import type {
@@ -22,6 +23,7 @@ import {
   REJECTED_OR_RETURNED_FILTER,
 } from "@/constant/status";
 import { getSession } from "next-auth/react";
+import { sortRows } from "@/lib/sort";
 import { MOCK_APPLICATIONS } from "@/mocks/applications.mock";
 import { buildMockDetail } from "@/mocks/applicationDetail.mock";
 
@@ -99,9 +101,15 @@ export async function getApplicationList(
         return false;
       return true;
     });
+    // the backend orders the whole result before paging; so does the mock
+    const sorted = sortRows(filtered, params, (item, key) =>
+      key === "status"
+        ? Object.values(APPLICATION_STATUS).indexOf(item.status)
+        : item[key as keyof ApplicationItem],
+    );
     const start = (page - 1) * limit;
     return {
-      items: filtered.slice(start, start + limit),
+      items: sorted.slice(start, start + limit),
       total: filtered.length,
       page,
       limit,
@@ -117,12 +125,14 @@ export async function getApplicationList(
   };
 }
 
-/** Feeds the four stat cards above the table (Figma 6:293). */
+/** Feeds the four stat cards above the table (Figma 6:293) and the sidebar badge. */
 export async function getApplicationStats(): Promise<ApplicationStats> {
-  const list = USE_MOCK
-    ? await myMockApplications()
-    : (await getApplicationsApi({ limit: 1000 })).data.data.map(toItem);
+  if (!USE_MOCK) {
+    const res = await getApplicationStatsApi();
+    return res.data.data;
+  }
 
+  const list = await myMockApplications();
   const countBy = (status: ApplicationItem["status"]) =>
     list.filter((item) => item.status === status).length;
 
@@ -148,9 +158,10 @@ export async function getApplicationDetail(
   return { ...toItem(raw), summary: raw.summary, panels: raw.panels };
 }
 
-export async function approveApplication(id: string, body: ApproveRequest) {
+/** ไม่อนุมัติ / ส่งคืนเพื่อแก้ไข */
+export async function decideApplication(id: string, body: DecisionRequest) {
   if (USE_MOCK) return { ok: true };
-  await approveApplicationApi(id, body);
+  await decideApplicationApi(id, body);
   return { ok: true };
 }
 

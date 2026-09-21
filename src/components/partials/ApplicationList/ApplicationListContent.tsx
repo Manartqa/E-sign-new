@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { useSearchPersist } from "@/hooks/common";
@@ -9,6 +9,7 @@ import {
   useBulkApplicationActions,
 } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
+import { nextSort } from "@/lib/sort";
 import { MOCK_CERTIFICATE } from "@/components/partials/ApplicationDetail/ApplicationDetail.config";
 import { SignatureModal } from "@/components/partials/ApplicationDetail/Modal";
 import type {
@@ -64,6 +65,15 @@ export default function ApplicationListContent({
     persist("", merged as Record<string, unknown>);
     setSelectedIds([]);
   };
+
+  // a remembered page can outlive its rows (requests got decided since) —
+  // an empty page past the end has no pager to get back, so jump to the last
+  const lastPage = Math.max(1, Math.ceil(total / limit));
+  const pastTheEnd =
+    !isLoading && page === filters.page && items.length === 0 && page > lastPage;
+  useEffect(() => {
+    if (pastTheEnd) persist("", { ...filters, page: lastPage });
+  }, [pastTheEnd, filters, lastPage, persist]);
 
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) =>
@@ -172,6 +182,10 @@ export default function ApplicationListContent({
         selectedIds={selectedIds}
         onToggleSelect={toggleSelect}
         onToggleSelectAll={toggleSelectAll}
+        sort={filters}
+        onSort={(key) =>
+          applyFilters({ ...filters, ...nextSort(filters, key), page: 1 })
+        }
         onPageChange={(nextPage) =>
           applyFilters({ ...filters, page: nextPage })
         }

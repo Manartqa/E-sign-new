@@ -1,4 +1,5 @@
 import { USE_MOCK } from "@/lib/env";
+import { sortRows } from "@/lib/sort";
 import {
   createSigningWorkflowApi,
   deleteSigningWorkflowApi,
@@ -51,7 +52,9 @@ export async function getSigningWorkflows(
 
   if (USE_MOCK) {
     const keyword = params.keyword?.trim().toLowerCase() ?? "";
-    const filtered = MOCK_SIGNING_WORKFLOWS.map(withCurrentSigners)
+    // newest first unless a column is picked
+    const filtered = sortRows(
+      MOCK_SIGNING_WORKFLOWS.map(withCurrentSigners)
       .filter(
         (w) =>
           !keyword ||
@@ -62,7 +65,15 @@ export async function getSigningWorkflows(
               s.signerName.toLowerCase().includes(keyword),
           ),
       )
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      params,
+      (workflow, key) =>
+        key === "steps"
+          ? workflow.steps.length
+          : key === "scope"
+            ? `${workflow.weaponCategory} ${workflow.licenseType}`
+            : workflow[key as keyof SigningWorkflow],
+    );
     return {
       items: filtered.slice((page - 1) * limit, page * limit),
       total: filtered.length,

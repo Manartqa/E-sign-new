@@ -18,21 +18,28 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  DataTh,
   Pagination,
   SideDrawer,
+  useDataTable,
 } from "@/components/common";
+import { nextSort } from "@/lib/sort";
+import type { SortParams } from "@/types/app/common";
+import { usePermission } from "@/hooks/profile";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   useSigningWorkflowActions,
   useSigningWorkflowList,
 } from "@/hooks/signingWorkflows";
+import { useApplicationTypes, useWeaponCategories } from "@/hooks/master";
 import { formatThaiDateTime } from "@/lib/format";
 import type { SigningWorkflow } from "@/types/app/signingWorkflows";
 import {
-  LICENSE_TYPE_OPTIONS,
+  ALL_LICENSE_TYPES,
+  ALL_WEAPON_CATEGORIES,
   REPLACEMENT_USAGE_OPTIONS,
   REQUEST_USAGE_OPTIONS,
-  WEAPON_CATEGORY_OPTIONS,
   optionLabel,
 } from "./SigningWorkflow.config";
 import SigningWorkflowFormContent from "./SigningWorkflowFormContent";
@@ -56,9 +63,18 @@ function Audit({ by, at }: { by: string; at: string }) {
  * select-then-toolbar flow). Copy opens the add form prefilled from the row.
  */
 export default function SigningWorkflowListContent() {
+  const { can } = usePermission();
+  const canCreate = can("SIGNING_WORKFLOWS:CREATE");
+  const canUpdate = can("SIGNING_WORKFLOWS:UPDATE");
+  const canDelete = can("SIGNING_WORKFLOWS:DELETE");
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortParams>({});
+  const table = useDataTable(sort, (key) => {
+    setSort(nextSort(sort, key));
+    setPage(1);
+  });
   const [limit, setLimit] = useState(10);
   const [deleting, setDeleting] = useState<SigningWorkflow | null>(null);
   /**
@@ -72,10 +88,15 @@ export default function SigningWorkflowListContent() {
 
   const { items, total, isLoading, isError } = useSigningWorkflowList({
     keyword,
+    ...sort,
     page,
     limit,
   });
   const { remove } = useSigningWorkflowActions();
+  const { options: weaponCategories } = useWeaponCategories();
+  const { options: applicationTypes } = useApplicationTypes();
+  const weaponCategoryOptions = [ALL_WEAPON_CATEGORIES, ...weaponCategories];
+  const licenseTypeOptions = [ALL_LICENSE_TYPES, ...applicationTypes];
 
   const search = (next: string) => {
     setKeyword(next);
@@ -105,14 +126,16 @@ export default function SigningWorkflowListContent() {
             เรียงตามระดับการอนุมัติ
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditing({})}
-          className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
-        >
-          <Plus className="size-4" aria-hidden />
-          เพิ่มกระบวนการลงนาม
-        </button>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => setEditing({})}
+            className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
+          >
+            <Plus className="size-4" aria-hidden />
+            เพิ่มกระบวนการลงนาม
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -170,27 +193,30 @@ export default function SigningWorkflowListContent() {
         ) : (
           <>
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full border-collapse">
+              <table
+                className={cn("w-full border-collapse", table.tableClassName)}
+                style={table.tableStyle}
+              >
                 <thead className="border-b bg-[#f8fafc]">
                   <tr>
-                    <th scope="col" className={`${TH} min-w-[280px]`}>
+                    <DataTh {...table.th(0, "name")} className={`${TH} min-w-[280px]`}>
                       ชื่อกระบวนการอนุมัติ
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(1, "steps")} className={TH}>
                       ลำดับผู้ลงนาม
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(2, "scope")} className={TH}>
                       ขอบเขตการใช้งาน
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(3, "createdAt")} className={TH}>
                       สร้างโดย
-                    </th>
-                    <th scope="col" className={TH}>
+                    </DataTh>
+                    <DataTh {...table.th(4, "updatedAt")} className={TH}>
                       ปรับปรุงล่าสุด
-                    </th>
-                    <th scope="col" className={`${TH} text-right`}>
+                    </DataTh>
+                    <DataTh {...table.th(5)} className={`${TH} text-right`}>
                       การดำเนินการ
-                    </th>
+                    </DataTh>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -199,8 +225,11 @@ export default function SigningWorkflowListContent() {
                     return (
                       <tr
                         key={workflow.id}
-                        onClick={() => setEditing({ id: workflow.id })}
-                        className="cursor-pointer bg-white transition-colors hover:bg-[#f8fafc]"
+                        onClick={canUpdate ? () => setEditing({ id: workflow.id }) : undefined}
+                        className={cn(
+                          "bg-white transition-colors hover:bg-[#f8fafc]",
+                          canUpdate && "cursor-pointer",
+                        )}
                       >
                         <td className={TD}>
                           <span className="font-semibold text-brand-navy-mid">
@@ -225,8 +254,8 @@ export default function SigningWorkflowListContent() {
                         <td className={TD}>
                           <div className="flex flex-wrap gap-1.5">
                             {[
-                              optionLabel(WEAPON_CATEGORY_OPTIONS, workflow.weaponCategory),
-                              optionLabel(LICENSE_TYPE_OPTIONS, workflow.licenseType),
+                              optionLabel(weaponCategoryOptions, workflow.weaponCategory),
+                              optionLabel(licenseTypeOptions, workflow.licenseType),
                               optionLabel(REQUEST_USAGE_OPTIONS, workflow.requestUsage),
                               optionLabel(REPLACEMENT_USAGE_OPTIONS, workflow.replacementUsage),
                             ].map((label) => (
@@ -251,33 +280,39 @@ export default function SigningWorkflowListContent() {
                             className="flex items-center justify-end gap-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <button
-                              type="button"
-                              onClick={() => setEditing({ id: workflow.id })}
-                              aria-label={`แก้ไข ${workflow.name}`}
-                              title="แก้ไข"
-                              className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
-                            >
-                              <Pencil className="size-4" aria-hidden />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditing({ copyFrom: workflow.id })}
-                              aria-label={`สำเนา ${workflow.name}`}
-                              title="สำเนา"
-                              className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
-                            >
-                              <Copy className="size-4" aria-hidden />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleting(workflow)}
-                              aria-label={`ลบ ${workflow.name}`}
-                              title="ลบ"
-                              className="rounded-md p-2 text-action-reject hover:bg-action-reject/10"
-                            >
-                              <Trash2 className="size-4" aria-hidden />
-                            </button>
+                            {canUpdate && (
+                              <button
+                                type="button"
+                                onClick={() => setEditing({ id: workflow.id })}
+                                aria-label={`แก้ไข ${workflow.name}`}
+                                title="แก้ไข"
+                                className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
+                              >
+                                <Pencil className="size-4" aria-hidden />
+                              </button>
+                            )}
+                            {canCreate && (
+                              <button
+                                type="button"
+                                onClick={() => setEditing({ copyFrom: workflow.id })}
+                                aria-label={`สำเนา ${workflow.name}`}
+                                title="สำเนา"
+                                className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
+                              >
+                                <Copy className="size-4" aria-hidden />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                onClick={() => setDeleting(workflow)}
+                                aria-label={`ลบ ${workflow.name}`}
+                                title="ลบ"
+                                className="rounded-md p-2 text-action-reject hover:bg-action-reject/10"
+                              >
+                                <Trash2 className="size-4" aria-hidden />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

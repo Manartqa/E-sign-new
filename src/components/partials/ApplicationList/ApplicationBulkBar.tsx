@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { ActionButton } from "@/components/common";
+import { usePermission } from "@/hooks/profile";
 import type { ActionMode } from "@/types/app/applications";
 
 interface ApplicationBulkBarProps {
@@ -24,7 +25,11 @@ export function ApplicationBulkBar({
   onAction,
   onClear,
 }: ApplicationBulkBarProps) {
-  if (count < 2) return null;
+  const { can } = usePermission();
+  const canDecide = can("APPLICATIONS:APPROVE");
+  const canSign = can("APPLICATIONS:SIGN");
+
+  if (count < 2 || !(canDecide || canSign)) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card px-5 py-3">
@@ -41,21 +46,27 @@ export function ApplicationBulkBar({
       </button>
 
       <div className="grid w-full grid-cols-3 items-center gap-1.5 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
-        <ActionButton
-          action="return"
-          disabled={isSubmitting}
-          onClick={() => onAction("return")}
-        />
-        <ActionButton
-          action="reject"
-          disabled={isSubmitting}
-          onClick={() => onAction("reject")}
-        />
-        <ActionButton
-          action="approve"
-          disabled={isSubmitting}
-          onClick={() => onAction("approve")}
-        />
+        {canDecide && (
+          <>
+            <ActionButton
+              action="return"
+              disabled={isSubmitting}
+              onClick={() => onAction("return")}
+            />
+            <ActionButton
+              action="reject"
+              disabled={isSubmitting}
+              onClick={() => onAction("reject")}
+            />
+          </>
+        )}
+        {canSign && (
+          <ActionButton
+            action="approve"
+            disabled={isSubmitting}
+            onClick={() => onAction("approve")}
+          />
+        )}
       </div>
     </div>
   );

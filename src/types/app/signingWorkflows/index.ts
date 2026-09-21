@@ -1,3 +1,4 @@
+import type { SortParams } from "@/types/app/common";
 /**
  * ตั้งค่าระบบ › กระบวนการลงนาม — not in Figma or the handoff. Fields follow the
  * legacy system's list screen. `steps` are the workflow's signers in signing
@@ -63,7 +64,7 @@ export type SigningWorkflowInput = Pick<
   | "steps"
 >;
 
-export interface SigningWorkflowListParams {
+export interface SigningWorkflowListParams extends SortParams {
   keyword?: string;
   page?: number;
   limit?: number;

@@ -1,4 +1,5 @@
 import type { ApplicationStatus } from "@/constant/status";
+import type { MasterOption } from "@/types/app/master";
 
 /** The four cards above the charts (Figma 8:310). */
 export interface ReportKpi {
@@ -45,6 +46,13 @@ export interface ReportSummary {
   /** the donut's data for each dimension the dropdown can switch to */
   breakdowns: Record<BreakdownDimension, BreakdownItem[]>;
   recentSignatures: RecentSignature[];
+}
+
+/** the filter bar's backend-owned choices; ไตรมาส is fixed, so not here */
+export interface ReportOptions {
+  /** ปีงบประมาณ (พ.ศ.), newest first */
+  fiscalYears: string[];
+  reportTypes: MasterOption[];
 }
 
 export interface ReportParams {

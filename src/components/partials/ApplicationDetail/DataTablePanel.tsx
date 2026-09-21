@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Pagination } from "@/components/common";
+import { DataTh, Pagination, useDataTable } from "@/components/common";
 import { cn } from "@/lib/utils";
+import { nextSort, sortRows } from "@/lib/sort";
+import type { SortParams } from "@/types/app/common";
 import type { DetailTableColumn } from "@/types/app/applications";
 
 const PAGE_SIZE = 10;
@@ -24,11 +26,18 @@ export function DataTablePanel({
 }: DataTablePanelProps) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<SortParams>({});
+  const table = useDataTable(sort, (key) => {
+    setSort(nextSort(sort, key));
+    setPage(1);
+  });
 
   const totalPages = Math.max(1, Math.ceil(rows.length / limit));
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * limit;
-  const pageRows = rows.slice(start, start + limit);
+  // every row is here, so the whole list is sorted, not just this page
+  const sorted = sortRows(rows, sort, (row, key) => row[key]);
+  const pageRows = sorted.slice(start, start + limit);
 
   return (
     <div className="flex flex-col gap-4 rounded-lg bg-card px-6 pt-1 pb-6">
@@ -38,20 +47,23 @@ export function DataTablePanel({
 
       <div className="overflow-hidden rounded-lg border">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table
+            className={cn("w-full border-collapse text-left", table.tableClassName)}
+            style={table.tableStyle}
+          >
             <thead className="border-b bg-[#f8fafc]">
               <tr>
-                {columns.map((column) => (
-                  <th
+                {columns.map((column, index) => (
+                  <DataTh
                     key={column.key}
-                    scope="col"
+                    {...table.th(index, column.key)}
                     className={cn(
                       "border-r px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
                       column.width,
                     )}
                   >
                     {column.label}
-                  </th>
+                  </DataTh>
                 ))}
               </tr>
             </thead>
