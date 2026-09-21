@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { SESSION_COOKIE_NAME, clearSessionCookie } from "@/lib/session-cookie";
+import {
+  SESSION_COOKIE_NAME,
+  clearSessionCookie,
+  setLogoutMarker,
+} from "@/lib/session-cookie";
 import {
   SSO_PROVIDER_ID,
   decodeJwtPayload,
@@ -49,5 +53,6 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(location, 302);
   response.headers.set("Cache-Control", "no-store");
-  return clearSessionCookie(response);
+  // the marker outlives a session cookie written back by an in-flight request
+  return setLogoutMarker(clearSessionCookie(response));
 }

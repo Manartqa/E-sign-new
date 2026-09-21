@@ -152,12 +152,18 @@ export const authOptions: NextAuthOptions = {
             refreshToken: account.refresh_token,
             expiresAt: account.expires_at,
             user: sessionUser,
+            signedInAt: Date.now(),
             error: undefined,
           };
         }
 
         // credentials sign-in (mock / POST /api/auth/login)
-        return { ...token, accessToken: user.accessToken, user: sessionUser };
+        return {
+          ...token,
+          accessToken: user.accessToken,
+          user: sessionUser,
+          signedInAt: Date.now(),
+        };
       }
 
       // ── later requests: refresh the SSO access token shortly before it dies ──

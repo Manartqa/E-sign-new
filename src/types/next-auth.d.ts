@@ -37,6 +37,8 @@ declare module "next-auth/jwt" {
     /** which provider issued this token — "sso" or undefined (credentials) */
     provider?: string;
     user?: SessionUser;
+    /** ms epoch of the sign-in; unlike `iat` it survives cookie re-issues */
+    signedInAt?: number;
     error?: "RefreshAccessTokenError";
   }
 }

@@ -55,9 +55,12 @@ test.describe("sign-out", () => {
 
     await page.getByRole("button", { name: "ออกจากระบบ" }).first().click();
     await expect(page).toHaveURL(/\/login$/);
-    expect(
-      (await page.context().cookies()).filter((c) => c.name.includes("session-token")),
-    ).toHaveLength(0);
+
+    // A session request still in flight during logout may write the cookie
+    // back; what must hold is that the session is dead, not that the cookie
+    // is already gone.
+    const session = await page.request.get("/api/auth/session");
+    expect(await session.json()).toEqual({});
 
     await page.goto("/applications");
     await expect(page).toHaveURL(/\/login\?callbackUrl=/);
