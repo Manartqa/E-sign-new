@@ -28,15 +28,9 @@ export interface LoginResponse {
 }
 
 /**
- * GET /api/users, GET /api/users/:id — ตั้งค่าระบบ › ผู้ใช้งาน; not in the
- * handoff, names are ours.
+ * /api/users — ตั้งค่าระบบ › ผู้ใช้งาน; not in the handoff, names are ours.
+ * - create / update take multipart/form-data (certificate file, signature
+ *   image, roleIds), built in user.service.ts
+ * - deleting a user that a workflow still uses is expected to answer 409
  */
 export type UserAccountResponse = User;
-
-/**
- * PUT /api/users/:id/roles — replaces the user's roles. The server should
- * refuse (403) a change to the caller's own roles, as the screen does.
- */
-export interface UpdateUserRolesRequest {
-  roleIds: string[];
-}

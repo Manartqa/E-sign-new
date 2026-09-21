@@ -6,5 +6,5 @@ import { ROUTES } from "@/constant/routes";
  * lands on its first entry.
  */
 export default function SettingsPage() {
-  redirect(ROUTES.signers);
+  redirect(ROUTES.users);
 }

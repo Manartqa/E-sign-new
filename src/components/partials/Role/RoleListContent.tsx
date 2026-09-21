@@ -44,7 +44,7 @@ function Audit({ by, at }: { by: string; at: string }) {
 }
 
 /**
- * ตั้งค่าระบบ › บทบาทและสิทธิ์ — not in Figma; styled like ผู้มีอำนาจลงนาม.
+ * ตั้งค่าระบบ › บทบาทและสิทธิ์ — not in Figma; styled like ผู้ใช้งาน.
  * The system role has no delete button (the service rejects it anyway).
  */
 export default function RoleListContent() {

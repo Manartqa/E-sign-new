@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Search, UserCog, X } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, UserCog, UserPlus, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   DataTh,
   EmptyState,
@@ -11,26 +12,40 @@ import {
   SideDrawer,
   useDataTable,
 } from "@/components/common";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { usePermission, useProfile } from "@/hooks/profile";
-import { useUserList } from "@/hooks/users";
+import { useUserActions, useUserList } from "@/hooks/users";
 import { formatThaiDateTime } from "@/lib/format";
 import { nextSort } from "@/lib/sort";
 import { cn } from "@/lib/utils";
 import type { SortParams } from "@/types/app/common";
-import { ROLE_PILL } from "./User.config";
-import UserRoleForm from "./UserRoleForm";
+import { UserInUseError, type User } from "@/types/app/users";
+import { ROLE_PILL, approvalLevelLabel } from "./User.config";
+import UserFormContent from "./UserFormContent";
 
 const TH = "px-4 py-3 text-left text-sm font-bold whitespace-nowrap text-brand-navy-mid";
 const TD = "px-4 py-3 align-top text-sm text-muted-foreground";
 
+function Audit({ by, at }: { by: string; at: string }) {
+  return (
+    <div className="flex flex-col whitespace-nowrap">
+      <span className="text-foreground">{by}</span>
+      <span className="text-xs">{formatThaiDateTime(at)}</span>
+    </div>
+  );
+}
+
 /**
- * ตั้งค่าระบบ › ผู้ใช้งาน — not in Figma; styled like บทบาทและสิทธิ์. Lists
- * the accounts and lets USERS:UPDATE change which roles each one holds. Your
- * own row can't be edited, so nobody locks themselves out by accident.
+ * ตั้งค่าระบบ › ผู้ใช้งาน — not in Figma; styled like บทบาทและสิทธิ์. One list
+ * for accounts and signers (ผู้มีอำนาจลงนาม used to be its own page): each row
+ * carries the user's roles and, when they sign, their approval level. You
+ * can't delete yourself.
  */
 export default function UserListContent() {
   const { can } = usePermission();
+  const canCreate = can("USERS:CREATE");
   const canUpdate = can("USERS:UPDATE");
+  const canDelete = can("USERS:DELETE");
   const { profile } = useProfile();
   const [draft, setDraft] = useState("");
   const [keyword, setKeyword] = useState("");
@@ -41,7 +56,8 @@ export default function UserListContent() {
     setSort(nextSort(sort, key));
     setPage(1);
   });
-  /** the drawer's subject: null = closed, otherwise that user's id */
+  const [deleting, setDeleting] = useState<User | null>(null);
+  /** the drawer's subject: null = closed, "" = a new user, an id = that one */
   const [editing, setEditing] = useState<string | null>(null);
 
   const { items, total, isLoading, isError } = useUserList({
@@ -50,21 +66,50 @@ export default function UserListContent() {
     page,
     limit,
   });
+  const { remove } = useUserActions();
 
   const search = (next: string) => {
     setKeyword(next);
     setPage(1);
   };
 
-  const editable = (id: string) => canUpdate && id !== profile?.id;
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    try {
+      await remove.mutateAsync(deleting.id);
+      toast.success(`ลบ “${deleting.name}” แล้ว`);
+      setDeleting(null);
+      // stepping back keeps the user off an emptied last page
+      if (items.length === 1 && page > 1) setPage(page - 1);
+    } catch (error) {
+      toast.error(
+        error instanceof UserInUseError
+          ? `${error.message} กรุณานำออกจากกระบวนการลงนามก่อน`
+          : "ลบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+      );
+      setDeleting(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold text-foreground">ผู้ใช้งาน</h1>
-        <p className="text-sm text-muted-foreground">
-          กำหนดบทบาทให้ผู้ใช้แต่ละคน สิทธิ์ของผู้ใช้คือสิทธิ์รวมของทุกบทบาทที่ได้รับ
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-bold text-foreground">ผู้ใช้งาน</h1>
+          <p className="text-sm text-muted-foreground">
+            ผู้ใช้งาน บทบาท และข้อมูลการลงนาม — ผู้ที่มีระดับการอนุมัติเลือกใส่ในกระบวนการลงนามได้
+          </p>
+        </div>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => setEditing("")}
+            className="flex items-center justify-center gap-2 rounded-lg bg-brand-navy-mid px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy-hover"
+          >
+            <Plus className="size-4" aria-hidden />
+            เพิ่มผู้ใช้งาน
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm">
@@ -80,7 +125,7 @@ export default function UserListContent() {
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="ค้นหาชื่อ หรืออีเมล"
+              placeholder="ค้นหาชื่อ อีเมล หรือตำแหน่ง"
               aria-label="ค้นหาผู้ใช้งาน"
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
@@ -129,86 +174,111 @@ export default function UserListContent() {
                     <DataTh {...table.th(0, "name")} className={TH}>
                       ชื่อ-นามสกุล
                     </DataTh>
-                    <DataTh {...table.th(1, "position")} className={TH}>
+                    <DataTh {...table.th(1, "position")} className={`${TH} min-w-[220px]`}>
                       ตำแหน่ง / หน่วยงาน
                     </DataTh>
-                    <DataTh {...table.th(2, "roles")} className={`${TH} min-w-[220px]`}>
+                    <DataTh {...table.th(2, "approvalLevel")} className={TH}>
+                      ระดับการอนุมัติ
+                    </DataTh>
+                    <DataTh {...table.th(3, "roles")} className={`${TH} min-w-[180px]`}>
                       บทบาท
                     </DataTh>
-                    <DataTh {...table.th(3, "lastLoginAt")} className={TH}>
-                      เข้าสู่ระบบล่าสุด
+                    <DataTh {...table.th(4, "updatedAt")} className={TH}>
+                      ปรับปรุงล่าสุด
                     </DataTh>
-                    <DataTh {...table.th(4)} className={`${TH} text-right`}>
+                    <DataTh {...table.th(5)} className={`${TH} text-right`}>
                       การดำเนินการ
                     </DataTh>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {items.map((user) => (
-                    <tr
-                      key={user.id}
-                      onClick={editable(user.id) ? () => setEditing(user.id) : undefined}
-                      className={cn(
-                        "bg-white transition-colors hover:bg-[#f8fafc]",
-                        editable(user.id) && "cursor-pointer",
-                      )}
-                    >
-                      <td className={TD}>
-                        <div className="flex flex-col">
-                          <span className="font-semibold whitespace-nowrap text-brand-navy-mid">
-                            {user.name}
-                            {user.id === profile?.id && (
-                              <span className="ml-1.5 font-normal text-muted-foreground">
-                                (คุณ)
+                  {items.map((user) => {
+                    const isSelf = user.id === profile?.id;
+                    return (
+                      <tr
+                        key={user.id}
+                        onClick={canUpdate ? () => setEditing(user.id) : undefined}
+                        className={cn(
+                          "bg-white transition-colors hover:bg-[#f8fafc]",
+                          canUpdate && "cursor-pointer",
+                        )}
+                      >
+                        <td className={TD}>
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span className="font-semibold whitespace-nowrap text-brand-navy-mid">
+                              {user.name}
+                              {isSelf && (
+                                <span className="ml-1.5 font-normal text-muted-foreground">
+                                  (คุณ)
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-xs">{user.email}</span>
+                            {!user.isActive && (
+                              <span className="mt-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                                ปิดใช้งาน
                               </span>
                             )}
-                          </span>
-                          <span className="text-xs">{user.email}</span>
-                        </div>
-                      </td>
-                      <td className={TD}>
-                        <div className="flex flex-col">
-                          <span className="text-foreground">{user.position || "—"}</span>
-                          <span className="text-xs">{user.department}</span>
-                        </div>
-                      </td>
-                      <td className={TD}>
-                        {user.roles.length ? (
-                          <div className="flex flex-wrap gap-1">
-                            {user.roles.map((role) => (
-                              <span key={role.id} className={ROLE_PILL}>
-                                {role.name}
-                              </span>
-                            ))}
                           </div>
-                        ) : (
-                          "ยังไม่ได้รับบทบาท"
-                        )}
-                      </td>
-                      <td className={`${TD} whitespace-nowrap`}>
-                        {formatThaiDateTime(user.lastLoginAt)}
-                      </td>
-                      <td className={TD}>
-                        {/* stopPropagation: the row itself opens the editor */}
-                        <div
-                          className="flex items-center justify-end"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {editable(user.id) && (
-                            <button
-                              type="button"
-                              onClick={() => setEditing(user.id)}
-                              aria-label={`กำหนดบทบาท ${user.name}`}
-                              title="กำหนดบทบาท"
-                              className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
-                            >
-                              <Pencil className="size-4" aria-hidden />
-                            </button>
+                        </td>
+                        <td className={TD}>
+                          <div className="flex flex-col">
+                            <span className="text-foreground">{user.position || "—"}</span>
+                            <span className="text-xs">{user.department}</span>
+                          </div>
+                        </td>
+                        <td className={`${TD} whitespace-nowrap`}>
+                          {user.approvalLevel ? approvalLevelLabel(user.approvalLevel) : "—"}
+                        </td>
+                        <td className={TD}>
+                          {user.roles.length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {user.roles.map((role) => (
+                                <span key={role.id} className={ROLE_PILL}>
+                                  {role.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            "ยังไม่ได้รับบทบาท"
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className={TD}>
+                          <Audit by={user.updatedBy} at={user.updatedAt} />
+                        </td>
+                        <td className={TD}>
+                          {/* stopPropagation: the row itself opens the editor */}
+                          <div
+                            className="flex items-center justify-end gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {canUpdate && (
+                              <button
+                                type="button"
+                                onClick={() => setEditing(user.id)}
+                                aria-label={`แก้ไข ${user.name}`}
+                                title="แก้ไข"
+                                className="rounded-md p-2 text-brand-navy-mid hover:bg-secondary"
+                              >
+                                <Pencil className="size-4" aria-hidden />
+                              </button>
+                            )}
+                            {canDelete && !isSelf && (
+                              <button
+                                type="button"
+                                onClick={() => setDeleting(user)}
+                                aria-label={`ลบ ${user.name}`}
+                                title="ลบ"
+                                className="rounded-md p-2 text-action-reject hover:bg-action-reject/10"
+                              >
+                                <Trash2 className="size-4" aria-hidden />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -232,13 +302,71 @@ export default function UserListContent() {
         <SideDrawer
           open
           onClose={() => setEditing(null)}
-          title="กำหนดบทบาท"
-          icon={<UserCog className="size-5" aria-hidden />}
-          description="เลือกบทบาทที่ผู้ใช้นี้ได้รับ"
+          title={editing ? "แก้ไขผู้ใช้งาน" : "เพิ่มผู้ใช้งาน"}
+          icon={
+            editing ? (
+              <UserCog className="size-5" aria-hidden />
+            ) : (
+              <UserPlus className="size-5" aria-hidden />
+            )
+          }
+          description={
+            editing
+              ? "แก้ไขข้อมูล บทบาท และข้อมูลการลงนามของผู้ใช้รายนี้"
+              : "กรอกข้อมูลเพื่อเพิ่มผู้ใช้งานรายใหม่"
+          }
+          // wider than the drawer's default: this form runs three fields
+          // across and carries the signature upload
+          className="sm:w-[min(720px,92vw)] xl:w-[880px]"
         >
-          <UserRoleForm id={editing} onDone={() => setEditing(null)} />
+          <UserFormContent
+            id={editing || undefined}
+            onDone={() => setEditing(null)}
+          />
         </SideDrawer>
       )}
+
+      <Dialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && !remove.isPending && setDeleting(null)}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="w-[440px] max-w-[calc(100vw-2rem)] gap-5 rounded-2xl p-6"
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-action-reject/10">
+              <Trash2 className="size-5 text-action-reject" aria-hidden />
+            </span>
+            <div className="flex min-w-0 flex-col gap-1">
+              <DialogTitle className="text-base font-bold text-foreground">
+                ลบผู้ใช้งาน
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                ต้องการลบ “{deleting?.name}” ใช่หรือไม่ การลบไม่สามารถย้อนกลับได้
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleting(null)}
+              disabled={remove.isPending}
+              className="rounded-lg border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              onClick={() => void confirmDelete()}
+              disabled={remove.isPending}
+              className="rounded-lg bg-action-reject px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {remove.isPending ? "กำลังลบ..." : "ลบ"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

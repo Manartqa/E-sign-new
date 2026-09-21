@@ -8,7 +8,7 @@ import {
   type RoleRef,
 } from "@/types/app/roles";
 
-const { APPLICATIONS, REPORTS, SIGNERS, SIGNING_WORKFLOWS } = PERMISSION_MODULE;
+const { APPLICATIONS, REPORTS, USERS, SIGNING_WORKFLOWS } = PERMISSION_MODULE;
 const { VIEW, CREATE, UPDATE, DELETE, APPROVE, SIGN } = PERMISSION_ACTION;
 
 const row = (
@@ -55,7 +55,7 @@ export const MOCK_ROLES: Role[] = [
       permissionKey(APPLICATIONS, VIEW),
       permissionKey(APPLICATIONS, APPROVE),
       permissionKey(REPORTS, VIEW),
-      permissionKey(SIGNERS, VIEW),
+      permissionKey(USERS, VIEW),
       permissionKey(SIGNING_WORKFLOWS, VIEW),
     ],
     false,
@@ -79,14 +79,14 @@ export const MOCK_ROLES: Role[] = [
   row(
     4,
     "เจ้าหน้าที่ธุรการ",
-    "ดูคำขอและรายงาน พร้อมดูแลทะเบียนผู้มีอำนาจลงนาม",
+    "ดูคำขอและรายงาน พร้อมดูแลทะเบียนผู้ใช้งานและข้อมูลการลงนาม",
     [
       permissionKey(APPLICATIONS, VIEW),
       permissionKey(REPORTS, VIEW),
-      permissionKey(SIGNERS, VIEW),
-      permissionKey(SIGNERS, CREATE),
-      permissionKey(SIGNERS, UPDATE),
-      permissionKey(SIGNERS, DELETE),
+      permissionKey(USERS, VIEW),
+      permissionKey(USERS, CREATE),
+      permissionKey(USERS, UPDATE),
+      permissionKey(USERS, DELETE),
       permissionKey(SIGNING_WORKFLOWS, VIEW),
     ],
     false,

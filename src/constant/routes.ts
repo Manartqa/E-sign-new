@@ -7,7 +7,6 @@ export const ROUTES = {
   profile: "/profile",
   settings: "/settings",
   signingWorkflows: "/settings/signing-workflows",
-  signers: "/settings/signers",
   roles: "/settings/roles",
   users: "/settings/users",
 } as const;

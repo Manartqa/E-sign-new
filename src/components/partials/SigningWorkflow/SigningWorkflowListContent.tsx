@@ -43,7 +43,7 @@ import {
   optionLabel,
 } from "./SigningWorkflow.config";
 import SigningWorkflowFormContent from "./SigningWorkflowFormContent";
-import { approvalLevelLabel } from "@/components/partials/Signer/Signer.config";
+import { approvalLevelLabel } from "@/components/partials/User/User.config";
 
 const TH = "px-4 py-3 text-left text-sm font-bold whitespace-nowrap text-brand-navy-mid";
 const TD = "px-4 py-3 align-top text-sm text-muted-foreground";

@@ -7,8 +7,17 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { PROFILE_QUERY_KEY } from "@/hooks/profile";
-import { getUser, getUsers, updateUserRoles } from "@/services/user.service";
-import type { UserListParams } from "@/types/app/users";
+import { SIGNING_WORKFLOWS_QUERY_KEY } from "@/hooks/signingWorkflows";
+import {
+  checkCertificate,
+  createUser,
+  deleteUser,
+  getPositions,
+  getUser,
+  getUsers,
+  updateUser,
+} from "@/services/user.service";
+import type { UserInput, UserListParams } from "@/types/app/users";
 
 export const USERS_QUERY_KEY = ["users"] as const;
 
@@ -38,16 +47,46 @@ export const useUser = (id: string) => {
   return { user: data ?? null, isLoading, isError };
 };
 
-export const useUpdateUserRoles = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, roleIds }: { id: string; roleIds: string[] }) =>
-      updateUserRoles(id, roleIds),
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY }),
-        // the signed-in user's permissions are built from these roles
-        queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY }),
-      ]),
+export const usePositions = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["positions"],
+    queryFn: getPositions,
+    staleTime: Infinity,
   });
+
+  return { positions: data ?? [], isLoading };
+};
+
+export const useUserActions = () => {
+  const queryClient = useQueryClient();
+  const onSuccess = () =>
+    Promise.all(
+      [
+        USERS_QUERY_KEY,
+        // workflows show each step's current signer name and position
+        SIGNING_WORKFLOWS_QUERY_KEY,
+        // the signed-in user's permissions are built from their roles
+        PROFILE_QUERY_KEY,
+      ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+    );
+
+  return {
+    create: useMutation({
+      mutationFn: (input: UserInput) => createUser(input),
+      onSuccess,
+    }),
+    update: useMutation({
+      mutationFn: ({ id, input }: { id: string; input: UserInput }) =>
+        updateUser(id, input),
+      onSuccess,
+    }),
+    checkCertificate: useMutation({
+      mutationFn: ({ file, pin }: { file: File; pin: string }) =>
+        checkCertificate(file, pin),
+    }),
+    remove: useMutation({
+      mutationFn: (id: string) => deleteUser(id),
+      onSuccess,
+    }),
+  };
 };

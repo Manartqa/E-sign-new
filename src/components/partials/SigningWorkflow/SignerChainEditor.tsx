@@ -10,11 +10,12 @@ import {
   Search,
   Users,
 } from "lucide-react";
-import { useSignerList } from "@/hooks/signers";
+import { useUserList } from "@/hooks/users";
 import { cn } from "@/lib/utils";
-import { approvalLevelRank, type Signer } from "@/types/app/signers";
+import { approvalLevelRank } from "@/types/app/signers";
+import type { User } from "@/types/app/users";
 import type { SigningWorkflowStep } from "@/types/app/signingWorkflows";
-import { approvalLevelLabel } from "@/components/partials/Signer/Signer.config";
+import { approvalLevelLabel } from "@/components/partials/User/User.config";
 
 const LIST_LIMIT = 50;
 const PANE = "flex h-96 flex-col overflow-hidden rounded-xl border bg-white";
@@ -48,13 +49,13 @@ export function SignerChainEditor({
   error,
 }: SignerChainEditorProps) {
   const [keyword, setKeyword] = useState("");
-  /** roster rows ticked for เพิ่ม — held as signers so a search can't drop one */
-  const [picked, setPicked] = useState<Map<string, Signer>>(new Map());
+  /** roster rows ticked for เพิ่ม — held whole so a search can't drop one */
+  const [picked, setPicked] = useState<Map<string, User>>(new Map());
   /** chain rows marked for นำออก */
   const [marked, setMarked] = useState<Set<string>>(new Set());
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const { items, total, isLoading, isError } = useSignerList({
+  const { items, total, isLoading, isError } = useUserList({
     keyword,
     activeOnly: true,
     page: 1,
@@ -62,7 +63,7 @@ export function SignerChainEditor({
   });
   const inChain = new Set(steps.map((step) => step.signerId));
 
-  const togglePick = (signer: Signer) =>
+  const togglePick = (signer: User) =>
     setPicked((prev) => {
       const next = new Map(prev);
       if (!next.delete(signer.id)) next.set(signer.id, signer);

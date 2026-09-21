@@ -33,6 +33,8 @@ export const MOCK_WEAPON_CATEGORIES: MasterOption[] = [
 export const MOCK_PERSON_TYPES: MasterOption[] = [
   { value: "SIGNER", label: "ผู้มีอำนาจลงนาม" },
   { value: "REVIEWER", label: "ผู้ตรวจสอบ" },
+  // users who neither review nor sign (e.g. clerks, system admins)
+  { value: "OFFICER", label: "เจ้าหน้าที่" },
 ];
 
 /** covers the forms seen in legacy rows (พล.ต. and พลตรี both occur) */

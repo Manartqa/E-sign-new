@@ -19,11 +19,9 @@ test.describe("ผู้มีอำนาจลงนาม (sombat)", () => {
   });
 
   test("is stopped at a settings page opened by URL", async ({ page }) => {
-    await page.goto("/settings/signers");
+    await page.goto("/settings/users");
     await expect(page.getByText("ไม่มีสิทธิ์เข้าถึงหน้านี้")).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "เพิ่มผู้มีอำนาจลงนาม" }),
-    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "เพิ่มผู้ใช้งาน" })).toHaveCount(0);
   });
 
   test("still gets all three decision buttons", async ({ page }) => {
@@ -40,14 +38,13 @@ test.describe("ผู้ดูแลระบบ (manart)", () => {
     await page.goto("/applications");
     await page.getByRole("button", { name: "ตั้งค่าระบบ" }).click();
     await expect(navLinks(page)).toContainText([
-      "ผู้มีอำนาจลงนาม",
+      "ผู้ใช้งาน",
       "กระบวนการลงนาม",
       "บทบาทและสิทธิ์",
-      "ผู้ใช้งาน",
     ]);
 
     for (const [path, add] of [
-      ["/settings/signers", "เพิ่มผู้มีอำนาจลงนาม"],
+      ["/settings/users", "เพิ่มผู้ใช้งาน"],
       ["/settings/signing-workflows", "เพิ่มกระบวนการลงนาม"],
       ["/settings/roles", "เพิ่มบทบาท"],
     ]) {

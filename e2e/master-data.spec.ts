@@ -24,11 +24,11 @@ test("the workflow form lists weapon categories and licence types", async ({
   await expect(options.first()).toHaveText("ทุกประเภทใบอนุญาต");
 });
 
-test("the signer form lists person types and name prefixes", async ({
+test("the user form lists person types and name prefixes", async ({
   page,
 }) => {
-  await page.goto("/settings/signers");
-  await page.getByRole("button", { name: "เพิ่มผู้มีอำนาจลงนาม" }).click();
+  await page.goto("/settings/users");
+  await page.getByRole("button", { name: "เพิ่มผู้ใช้งาน" }).click();
   const drawer = page.getByRole("dialog");
 
   // the default person type only shows its label once the list has loaded

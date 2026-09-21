@@ -9,7 +9,6 @@ import {
   ShieldAlert,
   ShieldUser,
   User,
-  UserPen,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -70,10 +69,10 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Settings,
     children: [
       {
-        href: ROUTES.signers,
-        label: "ผู้มีอำนาจลงนาม",
-        icon: UserPen,
-        permission: "SIGNERS:VIEW",
+        href: ROUTES.users,
+        label: "ผู้ใช้งาน",
+        icon: Users,
+        permission: "USERS:VIEW",
       },
       {
         href: ROUTES.signingWorkflows,
@@ -86,12 +85,6 @@ export const NAV_ITEMS: NavItem[] = [
         label: "บทบาทและสิทธิ์",
         icon: ShieldUser,
         permission: "ROLES:VIEW",
-      },
-      {
-        href: ROUTES.users,
-        label: "ผู้ใช้งาน",
-        icon: Users,
-        permission: "USERS:VIEW",
       },
     ],
   },

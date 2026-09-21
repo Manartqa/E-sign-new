@@ -40,10 +40,6 @@ export const MODULE_LABELS: Record<
     label: "รายงานภาพรวม",
     description: "สรุปสถิติคำขอ",
   },
-  [PERMISSION_MODULE.SIGNERS]: {
-    label: "ผู้มีอำนาจลงนาม",
-    description: "ตั้งค่าระบบ › ทะเบียนผู้มีอำนาจลงนาม",
-  },
   [PERMISSION_MODULE.SIGNING_WORKFLOWS]: {
     label: "กระบวนการลงนาม",
     description: "ตั้งค่าระบบ › ลำดับผู้ลงนามของแต่ละคำขอ",
@@ -54,6 +50,6 @@ export const MODULE_LABELS: Record<
   },
   [PERMISSION_MODULE.USERS]: {
     label: "ผู้ใช้งาน",
-    description: "ตั้งค่าระบบ › กำหนดบทบาทให้ผู้ใช้",
+    description: "ตั้งค่าระบบ › ผู้ใช้งานและข้อมูลการลงนาม (กำหนดบทบาทต้องมีสิทธิ์แก้ไขบทบาท)",
   },
 };

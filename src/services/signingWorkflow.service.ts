@@ -8,7 +8,7 @@ import {
   updateSigningWorkflowApi,
 } from "@/lib/api/api-main";
 import { MOCK_PROFILE } from "@/mocks/profile.mock";
-import { MOCK_SIGNERS } from "@/mocks/signers.mock";
+import { MOCK_USERS } from "@/mocks/users.mock";
 import { MOCK_SIGNING_WORKFLOWS } from "@/mocks/signingWorkflows.mock";
 import type {
   SigningWorkflow,
@@ -32,7 +32,7 @@ const DEFAULT_LIMIT = 10;
 const withCurrentSigners = (workflow: SigningWorkflow): SigningWorkflow => ({
   ...workflow,
   steps: workflow.steps.map((step) => {
-    const signer = MOCK_SIGNERS.find((s) => s.id === step.signerId);
+    const signer = MOCK_USERS.find((s) => s.id === step.signerId);
     return signer
       ? {
           ...step,

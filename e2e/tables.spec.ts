@@ -78,7 +78,7 @@ test("a column can be dragged narrower than its default and reset", async ({
 });
 
 test("settings lists sort by any column", async ({ page }) => {
-  await page.goto("/settings/signers");
+  await page.goto("/settings/users");
   await page.getByRole("button", { name: "ชื่อ-นามสกุล", exact: true }).click();
   await expect(header(page, "ชื่อ-นามสกุล")).toHaveAttribute("aria-sort", "ascending");
   const names = await columnText(page, 0);

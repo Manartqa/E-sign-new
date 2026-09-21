@@ -1,4 +1,4 @@
-import { MOCK_SIGNERS } from "@/mocks/signers.mock";
+import { MOCK_USERS } from "@/mocks/users.mock";
 import {
   REPLACEMENT_USAGE,
   REQUEST_USAGE,
@@ -9,7 +9,7 @@ import {
 /** the nine rows of the legacy กระบวนการลงนาม screen; the steps are invented */
 const steps = (...positions: string[]): SigningWorkflowStep[] =>
   positions.map((position, i) => {
-    const signer = MOCK_SIGNERS.find((s) => s.position === position)!;
+    const signer = MOCK_USERS.find((s) => s.position === position)!;
     return {
       id: `step-${i + 1}`,
       signerId: signer.id,

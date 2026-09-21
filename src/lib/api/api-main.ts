@@ -8,7 +8,6 @@ import type {
 } from "@/types/api/main/application";
 import type {
   ChangePasswordRequest,
-  UpdateUserRolesRequest,
   UserAccountResponse,
   UserResponse,
 } from "@/types/api/main/user";
@@ -22,10 +21,7 @@ import type {
   SigningWorkflowRequest,
   SigningWorkflowResponse,
 } from "@/types/api/main/signingWorkflow";
-import type {
-  CertificateCheckResponse,
-  SignerResponse,
-} from "@/types/api/main/signer";
+import type { CertificateCheckResponse } from "@/types/api/main/signer";
 import type { RoleRequest, RoleResponse } from "@/types/api/main/role";
 import { mainClient } from "./client";
 
@@ -118,34 +114,9 @@ export const updateSigningWorkflowApi = (
 export const deleteSigningWorkflowApi = (id: string) =>
   mainClient.delete<ApiResponse<null>>(`/api/signing-workflows/${id}`);
 
-/* Signers — ผู้มีอำนาจลงนาม (ตั้งค่าระบบ); not in the handoff; names are ours. */
-
-export const getSignersApi = (params?: Record<string, unknown>) =>
-  mainClient.get<PagedResponse<SignerResponse>>("/api/signers", { params });
-
-export const getSignerApi = (id: string) =>
-  mainClient.get<ApiResponse<SignerResponse>>(`/api/signers/${id}`);
-
-/** ตำแหน่ง master list for the signer form */
+/** ตำแหน่ง master list for the user form */
 export const getPositionsApi = () =>
   mainClient.get<ApiResponse<string[]>>("/api/positions");
-
-/* create / update / certificate check send multipart/form-data */
-
-export const createSignerApi = (body: FormData) =>
-  mainClient.post<ApiResponse<SignerResponse>>("/api/signers", body);
-
-export const updateSignerApi = (id: string, body: FormData) =>
-  mainClient.put<ApiResponse<SignerResponse>>(`/api/signers/${id}`, body);
-
-export const checkSignerCertificateApi = (body: FormData) =>
-  mainClient.post<ApiResponse<CertificateCheckResponse>>(
-    "/api/signers/certificate-check",
-    body,
-  );
-
-export const deleteSignerApi = (id: string) =>
-  mainClient.delete<ApiResponse<null>>(`/api/signers/${id}`);
 
 /* Roles — บทบาทและสิทธิ์ (ตั้งค่าระบบ); not in the handoff; names are ours. */
 
@@ -164,7 +135,8 @@ export const updateRoleApi = (id: string, body: RoleRequest) =>
 export const deleteRoleApi = (id: string) =>
   mainClient.delete<ApiResponse<null>>(`/api/roles/${id}`);
 
-/* Users — ผู้ใช้งาน (ตั้งค่าระบบ); not in the handoff; names are ours. */
+/* Users — ผู้ใช้งาน and their signing data (ตั้งค่าระบบ); not in the handoff;
+   names are ours. create / update / certificate check send multipart/form-data */
 
 export const getUsersApi = (params?: Record<string, unknown>) =>
   mainClient.get<PagedResponse<UserAccountResponse>>("/api/users", { params });
@@ -172,8 +144,20 @@ export const getUsersApi = (params?: Record<string, unknown>) =>
 export const getUserApi = (id: string) =>
   mainClient.get<ApiResponse<UserAccountResponse>>(`/api/users/${id}`);
 
-export const updateUserRolesApi = (id: string, body: UpdateUserRolesRequest) =>
-  mainClient.put<ApiResponse<UserAccountResponse>>(`/api/users/${id}/roles`, body);
+export const createUserApi = (body: FormData) =>
+  mainClient.post<ApiResponse<UserAccountResponse>>("/api/users", body);
+
+export const updateUserApi = (id: string, body: FormData) =>
+  mainClient.put<ApiResponse<UserAccountResponse>>(`/api/users/${id}`, body);
+
+export const checkCertificateApi = (body: FormData) =>
+  mainClient.post<ApiResponse<CertificateCheckResponse>>(
+    "/api/users/certificate-check",
+    body,
+  );
+
+export const deleteUserApi = (id: string) =>
+  mainClient.delete<ApiResponse<null>>(`/api/users/${id}`);
 
 /* Master data — option lists the backend owns; not in the handoff; names are ours. */
 

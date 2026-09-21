@@ -8,7 +8,7 @@ describe("rolesOf", () => {
     // both roles grant APPLICATIONS:VIEW — it appears once
     expect(permissions.filter((key) => key === "APPLICATIONS:VIEW")).toHaveLength(1);
     expect(permissions).toContain("APPLICATIONS:APPROVE"); // from RL-002
-    expect(permissions).toContain("SIGNERS:DELETE"); // from RL-004
+    expect(permissions).toContain("USERS:DELETE"); // from RL-004
   });
 
   it("drops an id that is no longer a role", () => {
