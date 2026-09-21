@@ -38,12 +38,17 @@ test.describe("sign-in", () => {
     await expect(page.getByRole("alert")).toContainText("ถูกยกเลิกหรือไม่สำเร็จ");
   });
 
-  test("a cross-site logout request is refused", async ({ request }) => {
-    const res = await request.get("/api/auth/logout", {
-      headers: { "Sec-Fetch-Site": "cross-site" },
-      maxRedirects: 0,
-    });
-    expect(res.status()).toBe(403);
+  test("logout refuses GET and a POST without a valid CSRF token", async ({
+    request,
+  }) => {
+    const get = await request.get("/api/auth/logout", { maxRedirects: 0 });
+    expect(get.status()).toBe(405);
+
+    const forms: Record<string, string>[] = [{}, { csrfToken: "forged" }];
+    for (const form of forms) {
+      const post = await request.post("/api/auth/logout", { form, maxRedirects: 0 });
+      expect(post.status()).toBe(403);
+    }
   });
 });
 

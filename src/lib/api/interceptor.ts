@@ -10,7 +10,7 @@ function forceLogout() {
   if (isForcingLogout) return;
   isForcingLogout = true;
   toast.error("Session หมดอายุ กรุณาเข้าสู่ระบบใหม่");
-  setTimeout(logoutEverywhere, 3000);
+  setTimeout(() => void logoutEverywhere(), 3000);
 }
 
 /** mainClient is the app's main backend: a 401 there ends the session. */

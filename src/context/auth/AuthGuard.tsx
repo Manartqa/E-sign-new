@@ -15,7 +15,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     status === "unauthenticated" || session?.error === "RefreshAccessTokenError";
 
   useEffect(() => {
-    if (isDead) logoutEverywhere();
+    if (isDead) void logoutEverywhere();
   }, [isDead]);
 
   if (status === "loading" || !session || isDead) return null;

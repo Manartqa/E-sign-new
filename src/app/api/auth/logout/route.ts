@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { isValidCsrfToken } from "@/lib/csrf";
 import {
+  CSRF_COOKIE_NAME,
   SESSION_COOKIE_NAME,
   clearSessionCookie,
   setLogoutMarker,
@@ -20,11 +22,19 @@ import {
  * leaves the IdP session and tokens alive, so the next "SSO" click would sign
  * the user straight back in.
  */
-export async function GET(request: NextRequest) {
-  // Ending the SSO session logs the user out of every app on it — refuse a
-  // cross-site trigger such as <img src=".../api/auth/logout">.
-  const site = request.headers.get("sec-fetch-site");
-  if (site && site !== "same-origin" && site !== "none") {
+export async function POST(request: NextRequest) {
+  // Ending the SSO session logs the user out of every app on it, so a
+  // cross-site page must not be able to trigger it: POST only (GET is 405),
+  // and the form must carry NextAuth's CSRF token. Unlike Sec-Fetch-Site this
+  // also holds on plain-HTTP origins, where browsers omit Sec-Fetch-* headers.
+  const form = await request.formData().catch(() => null);
+  if (
+    !isValidCsrfToken(
+      request.cookies.get(CSRF_COOKIE_NAME)?.value,
+      form?.get("csrfToken"),
+      process.env.NEXTAUTH_SECRET,
+    )
+  ) {
     return new NextResponse(null, { status: 403 });
   }
 
@@ -51,7 +61,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.redirect(location, 302);
+  // 303: the browser follows with a GET, as the IdP's end-session expects
+  const response = NextResponse.redirect(location, 303);
   response.headers.set("Cache-Control", "no-store");
   // the marker outlives a session cookie written back by an in-flight request
   return setLogoutMarker(clearSessionCookie(response));

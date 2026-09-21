@@ -23,6 +23,12 @@ const cookiePrefix =
 export const SESSION_COOKIE_NAME = `${IS_SECURE_COOKIE ? "__Secure-" : ""}${cookiePrefix}.session-token`;
 
 /**
+ * NextAuth's CSRF double-submit cookie (`token|sha256(token + secret)`), named
+ * here so the logout route can verify it too. `__Host-` requires Path=/.
+ */
+export const CSRF_COOKIE_NAME = `${IS_SECURE_COOKIE ? "__Host-" : ""}${cookiePrefix}.csrf-token`;
+
+/**
  * Set by logout to the time of logout. A session whose `signedInAt` is not
  * newer is dead, even if a request that was still in flight during logout
  * wrote the session cookie back afterwards. Must not start with the session

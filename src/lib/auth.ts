@@ -5,6 +5,7 @@ import { ROUTES } from "@/constant/routes";
 import { USE_MOCK } from "@/lib/env";
 import {
   BASE_PATH,
+  CSRF_COOKIE_NAME,
   IS_SECURE_COOKIE,
   SESSION_COOKIE_NAME,
   SESSION_COOKIE_PATH,
@@ -85,6 +86,16 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: "lax",
         path: SESSION_COOKIE_PATH,
+        secure: IS_SECURE_COOKIE,
+      },
+    },
+    // named so /api/auth/logout can verify the same double-submit token
+    csrfToken: {
+      name: CSRF_COOKIE_NAME,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
         secure: IS_SECURE_COOKIE,
       },
     },
