@@ -24,6 +24,7 @@ import {
   maskEmail,
   maskPhone,
 } from "@/lib/format";
+import { ROLE_PILL } from "@/components/partials/User";
 import { type UserProfile } from "@/types/app/profile";
 import { ProfileField } from "./ProfileField";
 
@@ -282,6 +283,22 @@ export default function ProfileContent() {
         title="ข้อมูลบัญชี"
       >
         <ProfileField label="ชื่อผู้ใช้งาน" value={profile.username} copyable />
+
+        {/* read-only: roles are given in ตั้งค่าระบบ › ผู้ใช้งาน */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[13px] text-muted-foreground">บทบาท</span>
+          {profile.roles.length ? (
+            <div className="flex flex-wrap gap-1.5">
+              {profile.roles.map((role) => (
+                <span key={role.id} className={ROLE_PILL}>
+                  {role.name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-sm text-foreground">ยังไม่ได้รับบทบาท</span>
+          )}
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[13px] text-muted-foreground">

@@ -8,6 +8,8 @@ import type {
 } from "@/types/api/main/application";
 import type {
   ChangePasswordRequest,
+  UpdateUserRolesRequest,
+  UserAccountResponse,
   UserResponse,
 } from "@/types/api/main/user";
 import type { NotificationResponse } from "@/types/api/main/notification";
@@ -161,6 +163,17 @@ export const updateRoleApi = (id: string, body: RoleRequest) =>
 
 export const deleteRoleApi = (id: string) =>
   mainClient.delete<ApiResponse<null>>(`/api/roles/${id}`);
+
+/* Users — ผู้ใช้งาน (ตั้งค่าระบบ); not in the handoff; names are ours. */
+
+export const getUsersApi = (params?: Record<string, unknown>) =>
+  mainClient.get<PagedResponse<UserAccountResponse>>("/api/users", { params });
+
+export const getUserApi = (id: string) =>
+  mainClient.get<ApiResponse<UserAccountResponse>>(`/api/users/${id}`);
+
+export const updateUserRolesApi = (id: string, body: UpdateUserRolesRequest) =>
+  mainClient.put<ApiResponse<UserAccountResponse>>(`/api/users/${id}/roles`, body);
 
 /* Master data — option lists the backend owns; not in the handoff; names are ours. */
 

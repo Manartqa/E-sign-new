@@ -52,4 +52,8 @@ export const MODULE_LABELS: Record<
     label: "บทบาทและสิทธิ์",
     description: "ตั้งค่าระบบ › หน้านี้",
   },
+  [PERMISSION_MODULE.USERS]: {
+    label: "ผู้ใช้งาน",
+    description: "ตั้งค่าระบบ › กำหนดบทบาทให้ผู้ใช้",
+  },
 };

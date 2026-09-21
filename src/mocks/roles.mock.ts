@@ -5,6 +5,7 @@ import {
   permissionKey,
   type PermissionKey,
   type Role,
+  type RoleRef,
 } from "@/types/app/roles";
 
 const { APPLICATIONS, REPORTS, SIGNERS, SIGNING_WORKFLOWS } = PERMISSION_MODULE;
@@ -102,3 +103,20 @@ export const MOCK_ROLES: Role[] = [
     ["มนัสนันท์", "2026-04-02T11:00:00+07:00"],
   ),
 ];
+
+/**
+ * The roles behind `roleIds` and the permissions they add up to. Reads
+ * MOCK_ROLES as it is now, so a role edited or deleted on บทบาทและสิทธิ์
+ * changes what its holders may do straight away; an id no longer on the list
+ * is dropped.
+ */
+export function rolesOf(roleIds: string[]): {
+  roles: RoleRef[];
+  permissions: PermissionKey[];
+} {
+  const held = MOCK_ROLES.filter((role) => roleIds.includes(role.id));
+  return {
+    roles: held.map(({ id, name }) => ({ id, name })),
+    permissions: [...new Set(held.flatMap((role) => role.permissions))],
+  };
+}

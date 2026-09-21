@@ -1,4 +1,5 @@
 import type { UserProfile } from "@/types/app/profile";
+import type { User } from "@/types/app/users";
 
 /**
  * GET /api/me — the handoff does not describe this body either; it mirrors
@@ -24,4 +25,18 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   user: UserResponse;
+}
+
+/**
+ * GET /api/users, GET /api/users/:id — ตั้งค่าระบบ › ผู้ใช้งาน; not in the
+ * handoff, names are ours.
+ */
+export type UserAccountResponse = User;
+
+/**
+ * PUT /api/users/:id/roles — replaces the user's roles. The server should
+ * refuse (403) a change to the caller's own roles, as the screen does.
+ */
+export interface UpdateUserRolesRequest {
+  roleIds: string[];
 }

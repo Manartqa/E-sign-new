@@ -11,6 +11,7 @@ export const PERMISSION_MODULE = {
   SIGNERS: "SIGNERS",
   SIGNING_WORKFLOWS: "SIGNING_WORKFLOWS",
   ROLES: "ROLES",
+  USERS: "USERS",
 } as const;
 export type PermissionModule =
   (typeof PERMISSION_MODULE)[keyof typeof PERMISSION_MODULE];
@@ -78,6 +79,10 @@ export const PERMISSION_MATRIX: {
       PERMISSION_ACTION.DELETE,
     ],
   },
+  {
+    module: PERMISSION_MODULE.USERS,
+    actions: [PERMISSION_ACTION.VIEW, PERMISSION_ACTION.UPDATE],
+  },
 ];
 
 /** every key in the matrix — what บทบาทผู้ดูแลระบบ holds */
@@ -101,6 +106,9 @@ export interface Role {
   updatedBy: string;
   updatedAt: string;
 }
+
+/** a role as it is attached to a user — enough to name it */
+export type RoleRef = Pick<Role, "id" | "name">;
 
 /** what the add / edit form submits */
 export type RoleInput = Pick<

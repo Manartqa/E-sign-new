@@ -10,6 +10,7 @@ import {
   ShieldUser,
   User,
   UserPen,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/constant/routes";
@@ -85,6 +86,12 @@ export const NAV_ITEMS: NavItem[] = [
         label: "บทบาทและสิทธิ์",
         icon: ShieldUser,
         permission: "ROLES:VIEW",
+      },
+      {
+        href: ROUTES.users,
+        label: "ผู้ใช้งาน",
+        icon: Users,
+        permission: "USERS:VIEW",
       },
     ],
   },

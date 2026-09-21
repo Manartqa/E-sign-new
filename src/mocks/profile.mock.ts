@@ -1,9 +1,5 @@
 import type { UserProfile } from "@/types/app/profile";
-import { MOCK_ROLES } from "./roles.mock";
-
-/** a mock role's permissions, looked up by id so the two lists can't drift */
-const permissionsOf = (roleId: string) =>
-  MOCK_ROLES.find((role) => role.id === roleId)?.permissions ?? [];
+import { rolesOf } from "./roles.mock";
 
 /**
  * Two officers, so both signing screens can be walked without editing code:
@@ -29,7 +25,7 @@ export const MOCK_PROFILE: UserProfile = {
   username: "manart.pa@smartalliance.co.th",
   createdAt: "2024-01-01T00:00:00Z",
   lastLoginAt: "2025-05-15T02:30:00Z",
-  permissions: permissionsOf("RL-001"),
+  ...rolesOf(["RL-001"]),
 };
 
 /** ผู้ลงนามลำดับสุดท้าย — every request in this officer's queue needs the token */
@@ -46,7 +42,7 @@ export const MOCK_FINAL_SIGNER_PROFILE: UserProfile = {
   username: "sombat.th@smartalliance.co.th",
   createdAt: "2024-01-01T00:00:00Z",
   lastLoginAt: "2025-05-15T02:30:00Z",
-  permissions: permissionsOf("RL-003"),
+  ...rolesOf(["RL-003"]),
 };
 
 export const MOCK_PROFILES: UserProfile[] = [

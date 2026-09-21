@@ -6,6 +6,8 @@ import {
   updateProfileApi,
 } from "@/lib/api/api-main";
 import { MOCK_CREDENTIALS } from "@/mocks/auth.mock";
+import { rolesOf } from "@/mocks/roles.mock";
+import { MOCK_USERS } from "@/mocks/users.mock";
 import type { ChangePasswordRequest } from "@/types/api/main/user";
 import type { UserProfile } from "@/types/app/profile";
 
@@ -15,10 +17,17 @@ import type { UserProfile } from "@/types/app/profile";
  */
 const MOCK_PROFILE_ROUTE = "/api/mock/profile";
 
+/**
+ * Roles are assigned (ตั้งค่าระบบ › ผู้ใช้งาน) and edited (บทบาทและสิทธิ์) in
+ * this browser's memory, which the dev server can't see — so the roles and
+ * permissions the server sends are replaced with the ones held here.
+ */
 async function mockProfileRequest(init?: RequestInit): Promise<UserProfile> {
   const res = await fetch(MOCK_PROFILE_ROUTE, init);
   if (!res.ok) throw new Error(`mock profile ${res.status}`);
-  return (await res.json()) as UserProfile;
+  const profile = (await res.json()) as UserProfile;
+  const user = MOCK_USERS.find((item) => item.id === profile.id);
+  return user ? { ...profile, ...rolesOf(user.roleIds) } : profile;
 }
 
 export async function getProfile(): Promise<UserProfile> {

@@ -6,6 +6,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { PROFILE_QUERY_KEY } from "@/hooks/profile";
+import { USERS_QUERY_KEY } from "@/hooks/users";
 import {
   createRole,
   deleteRole,
@@ -46,8 +48,13 @@ export const useRole = (id: string) => {
 
 export const useRoleActions = () => {
   const queryClient = useQueryClient();
+  // users list role names, and the signed-in user's permissions come from them
   const onSuccess = () =>
-    queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+    Promise.all(
+      [ROLES_QUERY_KEY, USERS_QUERY_KEY, PROFILE_QUERY_KEY].map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      ),
+    );
 
   return {
     create: useMutation({

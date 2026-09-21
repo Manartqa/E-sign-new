@@ -41,10 +41,11 @@ export async function GET() {
   if (!USE_MOCK) return notFound();
   const profile = await currentProfile();
   const overrides = await readOverrides();
-  // permissions come from the role, never from a saved edit
+  // roles and permissions come from ตั้งค่าระบบ, never from a saved edit
   return Response.json({
     ...profile,
     ...overrides[profile.id],
+    roles: profile.roles,
     permissions: profile.permissions,
   });
 }
@@ -65,6 +66,7 @@ export async function PATCH(request: Request) {
   return Response.json({
     ...profile,
     ...overrides,
+    roles: profile.roles,
     permissions: profile.permissions,
   });
 }
