@@ -5,7 +5,7 @@ const SPIN_ABOUT_CENTER = "origin-center [transform-box:fill-box]";
 
 /**
  * Not in Figma — the login hero's emblem, drawn from the user's reference
- * image (signed document + pen + signal, inside a crosshair target). Motion
+ * image (signed document + pen, inside a crosshair target). Motion
  * follows hub.mnre.go.th: two dashed rings orbit in opposite directions
  * (their icon-category, 7s / 5s), and hovering spins the target half a turn
  * (their category-block, 1s). Decorative only — the <h1> below names the system.
@@ -62,13 +62,6 @@ export function LoginEmblem({ className }: { className?: string }) {
       </g>
 
       <circle cx="100" cy="100" r="60" className="fill-white/15" />
-
-      {/* signal */}
-      <g strokeWidth="3" className="stroke-emblem-cyan">
-        <path d="M94.04 62.34A8 8 0 0 1 105.36 62.34" />
-        <path d="M89.8 58.1A14 14 0 0 1 109.6 58.1" />
-        <circle cx="99.7" cy="68" r="1.6" className="fill-emblem-cyan" />
-      </g>
 
       {/* document, its right edge broken where the pen crosses it */}
       <g strokeWidth="3.5" className="stroke-white">
