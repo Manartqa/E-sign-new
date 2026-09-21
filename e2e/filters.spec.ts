@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { authFile } from "./accounts";
+import { authFile, login } from "./accounts";
 
 test.use({ storageState: authFile("manart") });
 
@@ -31,7 +31,7 @@ test("saved filters are dropped once they expire", async ({ page }) => {
   await page.goto("/applications");
   await page.evaluate(() =>
     localStorage.setItem(
-      "application-list-filters-all",
+      "search-persist:application-list-filters-all",
       JSON.stringify({ values: { keyword: "old" }, expiresAt: Date.now() - 1 }),
     ),
   );
@@ -46,7 +46,7 @@ test("a remembered page past the end falls back to the last page", async ({
   // อนุมัติ has 6 requests — one page of 10
   await page.evaluate(() =>
     localStorage.setItem(
-      "application-list-filters-all",
+      "search-persist:application-list-filters-all",
       JSON.stringify({
         values: { status: "APPROVED", page: 2, limit: 10 },
         expiresAt: Date.now() + 60_000,
@@ -57,7 +57,26 @@ test("a remembered page past the end falls back to the last page", async ({
   await expect(page.locator("tbody tr")).toHaveCount(6);
   expect(
     await page.evaluate(
-      () => JSON.parse(localStorage.getItem("application-list-filters-all")!).values,
+      () => JSON.parse(localStorage.getItem("search-persist:application-list-filters-all")!).values,
     ),
   ).toMatchObject({ status: "APPROVED", page: 1 });
+});
+
+test("logging out forgets the saved filters", async ({ page }) => {
+  await page.goto("/applications");
+  await page.locator("#keyword").fill("2569");
+  await page.getByRole("button", { name: "ค้นหา", exact: true }).click();
+
+  await page.locator("aside").getByRole("button", { name: /ออกจากระบบ/ }).click();
+  await expect(page).toHaveURL(/\/login/);
+  expect(
+    await page.evaluate(() =>
+      Object.keys(localStorage).filter((key) => key.startsWith("search-persist:")),
+    ),
+  ).toEqual([]);
+
+  // the next person to sign in starts from a clean list
+  await login(page, "manart");
+  await expect(page).toHaveURL(/\/applications/);
+  await expect(page.locator("#keyword")).toHaveValue("");
 });

@@ -53,6 +53,20 @@ function write(key: string, values: Record<string, unknown> | null) {
   listeners.forEach((listener) => listener());
 }
 
+/** every saved filter lives under this prefix, so logout can find them all */
+const PREFIX = "search-persist:";
+
+/** forget every page's saved filters — called on logout */
+export function clearSearchPersist() {
+  try {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith(PREFIX))
+      .forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // storage blocked — nothing was saved either
+  }
+}
+
 /** the parsed value per key, reused while the stored string is unchanged */
 const cache = new Map<string, { raw: string | null; defaults: unknown; value: unknown }>();
 
@@ -67,9 +81,10 @@ export function useSearchPersist<T extends Record<string, unknown>>(
   storageKey: string,
   defaultValues: T,
 ) {
+  const key = PREFIX + storageKey;
   const getSnapshot = useCallback((): T => {
-    const raw = readRaw(storageKey);
-    const hit = cache.get(storageKey);
+    const raw = readRaw(key);
+    const hit = cache.get(key);
     if (hit && hit.raw === raw && hit.defaults === defaultValues) {
       return hit.value as T;
     }
@@ -84,9 +99,9 @@ export function useSearchPersist<T extends Record<string, unknown>>(
     } catch {
       // unreadable entry — fall back to the defaults
     }
-    cache.set(storageKey, { raw, defaults: defaultValues, value });
+    cache.set(key, { raw, defaults: defaultValues, value });
     return value;
-  }, [storageKey, defaultValues]);
+  }, [key, defaultValues]);
 
   const filterValues = useSyncExternalStore(
     subscribe,
@@ -95,11 +110,11 @@ export function useSearchPersist<T extends Record<string, unknown>>(
   );
 
   const persist = useCallback(
-    (_key: string, values: T) => write(storageKey, values),
-    [storageKey],
+    (_key: string, values: T) => write(key, values),
+    [key],
   );
 
-  const reset = useCallback(() => write(storageKey, null), [storageKey]);
+  const reset = useCallback(() => write(key, null), [key]);
 
   return { filterValues, persist, reset };
 }

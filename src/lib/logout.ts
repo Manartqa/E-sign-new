@@ -1,5 +1,6 @@
 import { signOut } from "next-auth/react";
 import { ROUTES } from "@/constant/routes";
+import { clearSearchPersist } from "@/hooks/common";
 
 /**
  * Sign out of this app *and* the SSO browser session.
@@ -19,6 +20,8 @@ export async function logoutEverywhere() {
     // offline or SSO down — fall through to the local sign-out
   }
 
+  // saved filters (search words included) must not carry over to the next user
+  clearSearchPersist();
   await signOut({ redirect: false });
   window.location.href = ssoLogoutUrl ?? ROUTES.login;
 }
