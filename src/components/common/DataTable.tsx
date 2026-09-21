@@ -6,7 +6,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ThHTMLAttributes,
 } from "react";
-import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SortParams } from "@/types/app/common";
 
@@ -88,6 +87,28 @@ export function useDataTable(
   };
 }
 
+/**
+ * Two stacked triangles; the one for the current direction is solid, the
+ * other faded — both faded while the column is unsorted. Drawn in
+ * currentColor so it works on the navy header rows too.
+ */
+function SortCarets({ direction }: { direction?: "asc" | "desc" }) {
+  return (
+    <svg viewBox="0 0 10 14" className="h-3.5 w-2.5 shrink-0" aria-hidden>
+      <path
+        d="M5 1 9 6H1z"
+        fill="currentColor"
+        opacity={direction === "asc" ? 1 : 0.3}
+      />
+      <path
+        d="M5 13 1 8h8z"
+        fill="currentColor"
+        opacity={direction === "desc" ? 1 : 0.3}
+      />
+    </svg>
+  );
+}
+
 interface DataThProps extends ThHTMLAttributes<HTMLTableCellElement> {
   /** makes the header a sort toggle for this key */
   sortKey?: string;
@@ -109,7 +130,6 @@ export function DataTh({
 }: DataThProps) {
   const active = sortKey !== undefined && sort?.sortBy === sortKey;
   const descending = active && sort?.sortOrder === "desc";
-  const Icon = !active ? ChevronsUpDown : descending ? ArrowDown : ArrowUp;
 
   return (
     <th
@@ -127,10 +147,7 @@ export function DataTh({
           className="flex w-full items-center justify-between gap-2 text-left hover:opacity-80"
         >
           {children}
-          <Icon
-            className={cn("size-3.5 shrink-0", !active && "opacity-40")}
-            aria-hidden
-          />
+          <SortCarets direction={active ? (descending ? "desc" : "asc") : undefined} />
         </button>
       ) : (
         children
