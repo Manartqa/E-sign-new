@@ -5,6 +5,7 @@ import type {
   DocumentItem,
   TimelineEvent,
 } from "@/types/app/applications";
+import { MOCK_FINAL_SIGNER_PROFILE } from "@/mocks/profile.mock";
 import { MOCK_SIGNING_WORKFLOWS } from "@/mocks/signingWorkflows.mock";
 
 /** ตัวอย่างใบอนุญาต — a preview of the license, shown regardless of status. */
@@ -187,12 +188,20 @@ function buildHistory(item: ApplicationItem): {
 } {
   const hour = 3_600_000;
   const received = Date.parse(item.receivedAt);
+  // a request in the final signer's queue runs on a chain that ends at them,
+  // and every decision on it is theirs — everyone before them has signed
   const workflow =
-    MOCK_SIGNING_WORKFLOWS.find(
-      (w) => w.licenseType === item.type || w.licenseType === "all",
-    ) ?? MOCK_SIGNING_WORKFLOWS[0];
+    (item.isFinalSigner
+      ? MOCK_SIGNING_WORKFLOWS.find(
+          (w) => w.steps.at(-1)?.signerName === MOCK_FINAL_SIGNER_PROFILE.name,
+        )
+      : MOCK_SIGNING_WORKFLOWS.find(
+          (w) => w.licenseType === item.type || w.licenseType === "all",
+        )) ?? MOCK_SIGNING_WORKFLOWS[0];
   const { steps } = workflow;
-  const seed = Number(item.id.replace(/\D/g, "").slice(-3));
+  const seed = item.isFinalSigner
+    ? steps.length - 1
+    : Number(item.id.replace(/\D/g, "").slice(-3));
   const signedAt = (index: number) =>
     new Date(received + (6 + index) * 24 * hour).toISOString();
 
