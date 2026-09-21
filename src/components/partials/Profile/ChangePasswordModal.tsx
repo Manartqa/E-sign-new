@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
-import { AlertTriangle, Check, Eye, EyeOff, KeyRound, X } from "lucide-react";
+import { AlertTriangle, Check, Eye, EyeOff, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useChangePassword } from "@/hooks/profile";
 import { cn } from "@/lib/utils";
@@ -33,13 +33,14 @@ function PasswordField({
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-black">
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="text-base font-semibold text-foreground">
         {label}
+        <span className="ml-1 text-destructive">*</span>
       </label>
       <div
         className={cn(
-          "flex h-11 items-center gap-2 rounded-lg border bg-[#f8fafc] px-3 focus-within:border-brand-navy-mid",
+          "flex h-14 items-center gap-2 rounded-xl border bg-white px-4 focus-within:border-brand-navy-mid",
           invalid && "border-destructive focus-within:border-destructive",
         )}
       >
@@ -49,8 +50,9 @@ function PasswordField({
           autoComplete={autoComplete}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          placeholder={label}
           aria-invalid={invalid || undefined}
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
+          className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-slate-400"
         />
         <button
           type="button"
@@ -58,10 +60,11 @@ function PasswordField({
           aria-label={visible ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
           className="shrink-0 text-muted-foreground"
         >
+          {/* crossed out while the text is hidden */}
           {visible ? (
-            <EyeOff className="size-[18px]" aria-hidden />
+            <Eye className="size-5" aria-hidden />
           ) : (
-            <Eye className="size-[18px]" aria-hidden />
+            <EyeOff className="size-5" aria-hidden />
           )}
         </button>
       </div>
@@ -71,8 +74,8 @@ function PasswordField({
 }
 
 /**
- * Not in Figma — the profile page's เปลี่ยนรหัสผ่าน button had no design, so
- * this follows ReturnForEditModal's header / body / footer layout.
+ * Not in Figma — laid out from the mock-up the user supplied (2026-09-21), in the app's navy:
+ * plain title with a close ×, three fields, the rules box, then the buttons.
  * Mount it only while open so every visit starts with empty fields.
  */
 export function ChangePasswordModal({
@@ -112,22 +115,19 @@ export function ChangePasswordModal({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="w-[480px] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-2xl p-0 shadow-[0_32px_64px_rgba(0,0,0,0.25)]"
+        className="w-[560px] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-2xl p-0 shadow-[0_32px_64px_rgba(0,0,0,0.25)]"
       >
-        <form onSubmit={(e) => void handleSubmit(e)}>
-          <header className="flex items-center justify-between border-b p-5">
-            <div className="flex items-center gap-3">
-              <KeyRound className="size-5 text-brand-navy-mid" aria-hidden />
-              <DialogTitle className="text-lg font-bold text-brand-navy-mid">
-                เปลี่ยนรหัสผ่าน
-              </DialogTitle>
-            </div>
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-6 p-6">
+          <header className="flex items-start justify-between gap-4">
+            <DialogTitle className="text-2xl font-bold text-foreground">
+              เปลี่ยนรหัสผ่าน
+            </DialogTitle>
             <button type="button" onClick={onClose} aria-label="ปิด">
-              <X className="size-5 text-muted-foreground" aria-hidden />
+              <X className="size-6 text-muted-foreground" aria-hidden />
             </button>
           </header>
 
-          <div className="flex flex-col gap-5 p-6">
+          <div className="flex flex-col gap-6">
             {error && (
               <div
                 role="alert"
@@ -179,29 +179,29 @@ export function ChangePasswordModal({
               )}
             </PasswordField>
 
-            {/* rules sit last, below both new-password fields */}
-            <div className="flex flex-col gap-1.5 rounded-lg bg-[#f8fafc] p-3">
-              <p className="text-xs font-semibold text-foreground">
-                รหัสผ่านใหม่ต้องมี
-              </p>
-              <ul className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+            {/* rules sit last, below both new-password fields; each ticks
+                green as the new password meets it */}
+            <div className="flex flex-col gap-2 rounded-xl border bg-[#f8fafc] p-4">
+              <p className="text-sm font-medium text-foreground">ข้อกำหนดรหัสผ่าน</p>
+              <ul className="flex flex-col gap-1.5">
                 {PASSWORD_RULES.map((rule) => {
                   const passed = rule.test(newPwd);
                   return (
                     <li
                       key={rule.label}
                       className={cn(
-                        "flex items-center gap-1.5 text-xs transition-colors",
-                        passed ? "text-status-approved-fg" : "text-muted-foreground",
+                        "flex items-center gap-2 text-sm transition-colors",
+                        passed ? "text-status-approved-fg" : "text-slate-400",
                       )}
                     >
-                      <Check
+                      <span
                         className={cn(
-                          "size-3.5 shrink-0",
-                          passed ? "opacity-100" : "opacity-30",
+                          "flex size-6 shrink-0 items-center justify-center rounded-full",
+                          passed ? "bg-status-approved-bg" : "bg-slate-200",
                         )}
-                        aria-hidden
-                      />
+                      >
+                        <Check className="size-3.5" aria-hidden />
+                      </span>
                       {rule.label}
                     </li>
                   );
@@ -210,20 +210,20 @@ export function ChangePasswordModal({
             </div>
           </div>
 
-          <footer className="flex items-center justify-end gap-3 bg-[#f8fafc] p-5">
+          <footer className="flex items-center justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-brand-navy-mid bg-white px-5 py-2.5 text-xs font-semibold text-brand-navy-mid hover:bg-secondary"
+              className="rounded-xl border bg-white px-5 py-3 text-base font-semibold text-foreground hover:bg-secondary"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="rounded-lg bg-brand-navy-mid px-5 py-2.5 text-xs font-semibold text-white hover:bg-brand-navy-hover disabled:opacity-50"
+              className="rounded-xl bg-brand-navy-mid px-6 py-3 text-base font-semibold text-white hover:bg-brand-navy-hover disabled:opacity-50"
             >
-              {changePassword.isPending ? "กำลังบันทึก..." : "บันทึกรหัสผ่านใหม่"}
+              {changePassword.isPending ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
             </button>
           </footer>
         </form>
