@@ -1,130 +1,162 @@
 /**
- * SSO Auth Server (OAuth 2.0 Authorization Code + OIDC).
+ * SSO Auth Server (OAuth 2.0 Authorization Code + OIDC) — server only.
  *
- * Contract read from the live server on 2026-08-24:
- *   discovery : {issuer}/.well-known/openid-configuration
- *   authorize : {issuer}/oauth2/authorize   (response_type=code, PKCE S256)
- *   token     : {issuer}/oauth2/token       (client_secret_basic, form-urlencoded)
- *   userinfo  : {issuer}/userinfo           (Bearer access token, `sub` = stable id)
- *   jwks      : {issuer}/oauth2/jwks
- *   logout    : end_session_endpoint from discovery ({issuer}/connect/logout)
+ * Endpoints are fixed paths under OIDC_ISSUER (checked against the live
+ * server's discovery document on 2026-08-24):
+ *   authorize   {issuer}/oauth2/authorize   (response_type=code, PKCE S256)
+ *   token       {issuer}/oauth2/token       (client_secret_basic, form-urlencoded)
+ *   userinfo    {issuer}/userinfo
+ *   jwks        {issuer}/oauth2/jwks
+ *   revoke      {issuer}/oauth2/revoke      (RFC 7009, client_secret_basic)
+ *   end-session {issuer}/connect/logout
  *
- * Everything except the issuer is discovered at runtime, so a change on the
- * SSO side does not need a code change here.
- *
- * The client_id/secret must be registered by the SSO admin with this app's
- * exact callback URL — `{NEXTAUTH_URL}/api/auth/callback/sso` — because the
- * server matches `redirect_uri` exactly.
+ * The client must be registered with the exact callback
+ * `{NEXT_BASE_URL}/api/auth/callback/sso` and the post-logout redirect
+ * `{NEXT_BASE_URL}/login`.
  */
+
+import type { JWT } from "next-auth/jwt";
+import { ROUTES } from "@/constant/routes";
+import { BASE_PATH } from "@/lib/session-cookie";
 
 export { SSO_PROVIDER_ID } from "@/constant/sso";
 
-/** Scopes the gateway-admin client uses; `roles` carries the user's roles. */
-const DEFAULT_SCOPES = "openid profile email roles";
+const DEFAULT_SCOPE = "openid profile email roles";
+
+const issuer = (process.env.OIDC_ISSUER ?? "").replace(/\/+$/, "");
 
 export const ssoConfig = {
-  issuer: process.env.SSO_ISSUER ?? "",
-  clientId: process.env.SSO_CLIENT_ID ?? "",
-  clientSecret: process.env.SSO_CLIENT_SECRET ?? "",
-  scopes: process.env.SSO_SCOPES ?? DEFAULT_SCOPES,
+  issuer,
+  clientId: process.env.OIDC_CLIENT_ID ?? "",
+  clientSecret: process.env.OIDC_CLIENT_SECRET ?? "",
+  scope: process.env.OIDC_SCOPE || DEFAULT_SCOPE,
 };
 
-/** Server-side: the provider is only registered when fully configured. */
+export const ssoEndpoints = {
+  authorize: `${issuer}/oauth2/authorize`,
+  token: `${issuer}/oauth2/token`,
+  userinfo: `${issuer}/userinfo`,
+  jwks: `${issuer}/oauth2/jwks`,
+  revoke: `${issuer}/oauth2/revoke`,
+  endSession: `${issuer}/connect/logout`,
+};
+
+/** The provider is only registered when fully configured. */
 export const isSsoConfigured = Boolean(
   ssoConfig.issuer && ssoConfig.clientId && ssoConfig.clientSecret,
 );
 
-export const wellKnownUrl = `${ssoConfig.issuer}/.well-known/openid-configuration`;
-
-interface Discovery {
-  token_endpoint: string;
-  end_session_endpoint?: string;
-  userinfo_endpoint?: string;
+/**
+ * Public URL of the login page, incl. basePath — the post-logout target. It
+ * must match the post-logout redirect URI registered at the IdP exactly, so
+ * NEXT_BASE_URL is the source; `fallbackOrigin` only covers a missing env.
+ */
+export function loginUrl(fallbackOrigin: string) {
+  const base = process.env.NEXT_BASE_URL?.replace(/\/+$/, "");
+  return `${base || `${fallbackOrigin}${BASE_PATH}`}${ROUTES.login}`;
 }
 
-let discoveryCache: Promise<Discovery> | null = null;
-
-/** Discovery document, fetched once per server process. */
-export function getDiscovery(): Promise<Discovery> {
-  discoveryCache ??= fetch(wellKnownUrl)
-    .then((res) => {
-      if (!res.ok) throw new Error(`discovery failed: ${res.status}`);
-      return res.json() as Promise<Discovery>;
-    })
-    .catch((error) => {
-      discoveryCache = null; // let the next call retry a transient failure
-      throw error;
-    });
-  return discoveryCache;
-}
-
-export interface RefreshedTokens {
-  accessToken: string;
-  /** epoch seconds */
-  expiresAt: number;
-  refreshToken: string;
-  idToken?: string;
-}
+const basicAuth = () =>
+  `Basic ${Buffer.from(`${ssoConfig.clientId}:${ssoConfig.clientSecret}`).toString("base64")}`;
 
 /**
- * Trade a refresh token for a new access token.
- * `client_secret_basic` per the server's token_endpoint_auth_methods_supported.
+ * Payload of a JWT, unverified. Only for display/affordance and for reading
+ * `exp` — the backend verifies the signature and is the authority.
  */
-export async function refreshAccessToken(
-  refreshToken: string,
-): Promise<RefreshedTokens> {
-  const { token_endpoint } = await getDiscovery();
-  const basic = Buffer.from(
-    `${ssoConfig.clientId}:${ssoConfig.clientSecret}`,
-  ).toString("base64");
-
-  const res = await fetch(token_endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basic}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
-  });
-
-  const data = (await res.json()) as {
-    access_token?: string;
-    expires_in?: number;
-    refresh_token?: string;
-    id_token?: string;
-  };
-
-  if (!res.ok || !data.access_token) {
-    throw new Error(`refresh failed: ${res.status}`);
+export function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
+  try {
+    const payload = jwt.split(".")[1];
+    if (!payload) return null;
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+  } catch {
+    return null;
   }
+}
 
-  return {
-    accessToken: data.access_token,
-    expiresAt: Math.floor(Date.now() / 1000) + (data.expires_in ?? 300),
-    // the server may or may not rotate the refresh token
-    refreshToken: data.refresh_token ?? refreshToken,
-    idToken: data.id_token,
-  };
+/** `roles` is a JSON array on this server, a space-separated string elsewhere */
+export function toRoles(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((r): r is string => typeof r === "string");
+  if (typeof raw === "string") return raw.split(" ").filter(Boolean);
+  return [];
 }
 
 /**
- * RP-initiated logout URL, or null when SSO is off / the server doesn't
- * advertise one. `id_token_hint` lets the server skip the confirm prompt.
+ * Trade the refresh token for a new access token. Any failure yields a token
+ * marked `RefreshAccessTokenError` — never one that still looks usable.
  */
-export async function buildSsoLogoutUrl(
-  idToken: string | undefined,
-  postLogoutRedirectUri: string,
-): Promise<string | null> {
-  if (!isSsoConfigured) return null;
-  const { end_session_endpoint } = await getDiscovery();
-  if (!end_session_endpoint) return null;
+export async function refreshAccessToken(token: JWT): Promise<JWT> {
+  try {
+    if (!token.refreshToken) throw new Error("no refresh token");
 
-  const url = new URL(end_session_endpoint);
-  url.searchParams.set("client_id", ssoConfig.clientId);
-  url.searchParams.set("post_logout_redirect_uri", postLogoutRedirectUri);
-  if (idToken) url.searchParams.set("id_token_hint", idToken);
-  return url.toString();
+    const res = await fetch(ssoEndpoints.token, {
+      method: "POST",
+      headers: {
+        Authorization: basicAuth(),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: token.refreshToken,
+      }),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`refresh failed: ${res.status}`);
+
+    const data = (await res.json()) as {
+      access_token?: string;
+      expires_in?: number;
+      refresh_token?: string;
+      id_token?: string;
+    };
+    if (!data.access_token) throw new Error("refresh returned no access_token");
+
+    const claims = decodeJwtPayload(data.access_token);
+    const roles = claims && "roles" in claims ? toRoles(claims.roles) : undefined;
+
+    return {
+      ...token,
+      accessToken: data.access_token,
+      // the server may or may not rotate these
+      idToken: data.id_token ?? token.idToken,
+      refreshToken: data.refresh_token ?? token.refreshToken,
+      expiresAt: Math.floor(Date.now() / 1000) + (data.expires_in ?? 300),
+      user: token.user && roles ? { ...token.user, roles } : token.user,
+      error: undefined,
+    };
+  } catch (error) {
+    // message carries the HTTP status at most — never a token or body
+    console.error("[sso] refresh failed:", (error as Error).message);
+    return { ...token, error: "RefreshAccessTokenError" };
+  }
+}
+
+/** Revoke access + refresh token (RFC 7009). Failures are logged, not thrown. */
+export async function revokeTokens(token: JWT) {
+  const targets = [
+    { value: token.accessToken, hint: "access_token" },
+    { value: token.refreshToken, hint: "refresh_token" },
+  ].filter((t): t is { value: string; hint: string } => Boolean(t.value));
+
+  const results = await Promise.allSettled(
+    targets.map(({ value, hint }) =>
+      fetch(ssoEndpoints.revoke, {
+        method: "POST",
+        headers: {
+          Authorization: basicAuth(),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ token: value, token_type_hint: hint }),
+        cache: "no-store",
+      }),
+    ),
+  );
+
+  results.forEach((result, i) => {
+    const hint = targets[i].hint;
+    if (result.status === "rejected") {
+      console.error(`[sso] revoke ${hint} failed: network error`);
+    } else if (!result.value.ok) {
+      console.error(`[sso] revoke ${hint} failed: ${result.value.status}`);
+    }
+  });
 }

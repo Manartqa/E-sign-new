@@ -3,25 +3,27 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { toast } from "sonner";
-import { ROUTES } from "@/constant/routes";
-import { IS_SSO_ENABLED, SSO_ERROR_MESSAGE, SSO_PROVIDER_ID } from "@/constant/sso";
+import { useAuth } from "@/hooks/auth";
 import { LOGIN_ERROR_MESSAGE, writeRememberedUsername } from "./Login.config";
 import { LoginForm, type LoginFormValues } from "./LoginForm";
 import { LoginHero } from "./LoginHero";
 
 interface LoginContentProps {
-  /** true when NextAuth redirected back here with `?error=` from the SSO flow */
-  hasSsoError?: boolean;
+  /** fixed Thai text mapped from NextAuth's `?error=` code, or null */
+  errorMessage?: string | null;
+  /** already validated app-relative path (see safeCallbackUrl) */
+  callbackUrl: string;
 }
 
-export default function LoginContent({ hasSsoError = false }: LoginContentProps) {
+export default function LoginContent({
+  errorMessage: initialError = null,
+  callbackUrl,
+}: LoginContentProps) {
   const router = useRouter();
+  const { loading: isSsoLoading, handleSSOLogin } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    hasSsoError ? SSO_ERROR_MESSAGE : null,
-  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialError);
 
   const handleSubmit = async ({ username, pwd, remember }: LoginFormValues) => {
     setIsSubmitting(true);
@@ -41,23 +43,9 @@ export default function LoginContent({ hasSsoError = false }: LoginContentProps)
     }
     // only a username that actually signed in is worth remembering
     writeRememberedUsername(remember ? username.trim() : null);
-    // Always land on the application list. The proxy appends a `callbackUrl`
-    // when it bounces an unauthenticated request, but that value is
-    // attacker-controllable (/login?callbackUrl=https://evil.com), so it is
-    // deliberately ignored rather than passed to router.replace.
-    router.replace(ROUTES.applications);
-  };
-
-  const handleSso = () => {
-    if (!IS_SSO_ENABLED) {
-      // no client_id registered for this environment yet
-      toast.info("ยังไม่ได้เชื่อมต่อระบบ SSO");
-      return;
-    }
-    // Full-page redirect into the SSO Auth Server's Authorization Code flow;
-    // NextAuth handles state/nonce/PKCE and the /api/auth/callback/sso return.
-    setIsSubmitting(true);
-    void signIn(SSO_PROVIDER_ID, { callbackUrl: ROUTES.applications });
+    // callbackUrl was validated on the server as an app-relative path, so it
+    // cannot send the user off-site
+    router.replace(callbackUrl);
   };
 
   return (
@@ -75,9 +63,10 @@ export default function LoginContent({ hasSsoError = false }: LoginContentProps)
         <div className="flex w-full animate-in justify-center fill-mode-both delay-200 duration-500 fade-in slide-in-from-bottom-4 motion-reduce:animate-none">
           <LoginForm
             onSubmit={(values) => void handleSubmit(values)}
-            isSubmitting={isSubmitting}
+            isSubmitting={isSubmitting || isSsoLoading}
             errorMessage={errorMessage}
-            onSso={handleSso}
+            // sign-in with SSO starts only from this click, never on load
+            onSso={() => void handleSSOLogin(callbackUrl)}
           />
         </div>
       </div>

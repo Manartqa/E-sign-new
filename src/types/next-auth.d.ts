@@ -1,15 +1,24 @@
 import "next-auth";
 import "next-auth/jwt";
 
+/** The signed-in user as the app sees it — standard claims + `roles`. */
+interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  /** from the SSO `roles` scope — empty on the mock credentials flow */
+  roles: string[];
+}
+
 declare module "next-auth" {
   interface Session {
+    user?: SessionUser;
     accessToken?: string;
     /** kept for RP-initiated logout (`id_token_hint`) */
     idToken?: string;
-    /** from the SSO `roles` scope — empty on the mock credentials flow */
-    roles?: string[];
     /** set when a refresh_token exchange failed and the session is dead */
-    error?: string;
+    error?: "RefreshAccessTokenError";
   }
   interface User {
     accessToken?: string;
@@ -20,13 +29,14 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string;
+    /** server-side only — never copied into the session */
     refreshToken?: string;
     idToken?: string;
-    /** epoch seconds, from the token endpoint's `expires_in` */
+    /** epoch seconds */
     expiresAt?: number;
     /** which provider issued this token — "sso" or undefined (credentials) */
     provider?: string;
-    roles?: string[];
-    error?: string;
+    user?: SessionUser;
+    error?: "RefreshAccessTokenError";
   }
 }

@@ -1,27 +1,15 @@
-import { signOut } from "next-auth/react";
-import { ROUTES } from "@/constant/routes";
+import { LOGOUT_URL } from "@/constant/sso";
 import { clearSearchPersist } from "@/hooks/common";
 
 /**
- * Sign out of this app *and* the SSO browser session.
+ * Sign out of this app *and* the SSO session.
  *
- * Order matters: the id_token used as `id_token_hint` lives in the NextAuth
- * cookie, so the logout URL is fetched first, the local session is cleared
- * second, and only then is the browser handed to the SSO server. A
- * credentials (mock) session gets `url: null` and just lands on /login.
+ * The server route revokes the tokens, clears the session cookie and hands the
+ * browser to the SSO end-session endpoint, which returns to /login. NextAuth's
+ * signOut() is not used — it would leave the IdP session alive.
  */
-export async function logoutEverywhere() {
-  let ssoLogoutUrl: string | null = null;
-
-  try {
-    const res = await fetch("/api/auth/sso-logout-url");
-    if (res.ok) ({ url: ssoLogoutUrl } = await res.json());
-  } catch {
-    // offline or SSO down — fall through to the local sign-out
-  }
-
+export function logoutEverywhere() {
   // saved filters (search words included) must not carry over to the next user
   clearSearchPersist();
-  await signOut({ redirect: false });
-  window.location.href = ssoLogoutUrl ?? ROUTES.login;
+  window.location.href = LOGOUT_URL;
 }

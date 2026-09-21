@@ -229,21 +229,28 @@ export function LoginForm({
       <button
         type="button"
         onClick={onSso}
+        // also blocks a double-click from starting two PKCE/state pairs
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
         style={riseDelay(6)}
         className={cn(
-          "flex w-full items-center justify-center gap-3 rounded-2xl border-[1.5px] border-brand-navy-mid bg-white px-4 py-2 sm:py-3 transition-[background-color,box-shadow,translate] duration-200 hover:bg-[#eff6ff] hover:shadow-md motion-safe:hover:-translate-y-0.5",
+          "flex w-full items-center justify-center gap-3 rounded-2xl border-[1.5px] border-brand-navy-mid bg-white px-4 py-2 sm:py-3 transition-[background-color,box-shadow,translate] duration-200 enabled:hover:bg-[#eff6ff] enabled:hover:shadow-md motion-safe:enabled:hover:-translate-y-0.5 disabled:opacity-60",
           RISE,
         )}
       >
-        {/* the SSO mark itself, cropped from the logo the user supplied */}
-        <Image
-          src="/brand/sso-mark.png"
-          alt=""
-          width={256}
-          height={256}
-          className="size-10 shrink-0"
-          aria-hidden
-        />
+        {isSubmitting ? (
+          <Loader2 className="size-10 shrink-0 animate-spin p-2 text-brand-navy-mid" aria-hidden />
+        ) : (
+          // the SSO mark itself, cropped from the logo the user supplied
+          <Image
+            src="/brand/sso-mark.png"
+            alt=""
+            width={256}
+            height={256}
+            className="size-10 shrink-0"
+            aria-hidden
+          />
+        )}
         <span className="flex flex-col items-center gap-0.5">
           <span className="text-[15px] font-bold text-brand-navy-mid">
             เข้าสู่ระบบด้วย SSO

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS } from "./accounts";
 
 test.describe("sign-in", () => {
@@ -17,4 +17,56 @@ test.describe("sign-in", () => {
     await expect(page.getByText("อีเมลหรือรหัสผ่านไม่ถูกต้อง")).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("returns to the page that asked for a login", async ({ page }) => {
+    await page.goto("/reports?m=2");
+    await expect(page).toHaveURL(/\/login\?callbackUrl=%2Freports%3Fm%3D2/);
+    await signInOnPage(page);
+    await expect(page).toHaveURL(/\/reports\?m=2$/);
+  });
+
+  for (const evil of ["https://evil.com", "//evil.com"]) {
+    test(`ignores callbackUrl=${evil}`, async ({ page }) => {
+      await page.goto(`/login?callbackUrl=${encodeURIComponent(evil)}`);
+      await signInOnPage(page);
+      await expect(page).toHaveURL(/localhost:3000\/applications$/);
+    });
+  }
+
+  test("a cancelled SSO sign-in shows a Thai message", async ({ page }) => {
+    await page.goto("/login?error=OAuthCallback");
+    await expect(page.getByRole("alert")).toContainText("ถูกยกเลิกหรือไม่สำเร็จ");
+  });
+
+  test("a cross-site logout request is refused", async ({ request }) => {
+    const res = await request.get("/api/auth/logout", {
+      headers: { "Sec-Fetch-Site": "cross-site" },
+      maxRedirects: 0,
+    });
+    expect(res.status()).toBe(403);
+  });
 });
+
+test.describe("sign-out", () => {
+  test("lands on /login, stays there and needs a new login", async ({ page }) => {
+    await page.goto("/login");
+    await signInOnPage(page);
+    await expect(page).toHaveURL(/\/applications$/);
+
+    await page.getByRole("button", { name: "ออกจากระบบ" }).first().click();
+    await expect(page).toHaveURL(/\/login$/);
+    expect(
+      (await page.context().cookies()).filter((c) => c.name.includes("session-token")),
+    ).toHaveLength(0);
+
+    await page.goto("/applications");
+    await expect(page).toHaveURL(/\/login\?callbackUrl=/);
+  });
+});
+
+async function signInOnPage(page: Page) {
+  const { username, pwd } = ACCOUNTS.manart;
+  await page.getByPlaceholder("เช่น officer.name@agency.go.th").fill(username);
+  await page.getByPlaceholder("กรอกรหัสผ่าน").fill(pwd);
+  await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
+}
