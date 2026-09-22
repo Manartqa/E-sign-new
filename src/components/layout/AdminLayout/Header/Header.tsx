@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { ChevronDown, KeyRound, LogOut, Menu, User } from "lucide-react";
 import { toast } from "sonner";
 import { logoutEverywhere } from "@/lib/logout";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChangePasswordModal } from "@/components/partials/Profile";
 import { ROUTES } from "@/constant/routes";
+import { SSO_PROVIDER_ID } from "@/constant/sso";
 import type { UserProfile } from "@/types/app/profile";
 import {
   SYSTEM_TITLE,
@@ -32,6 +34,9 @@ interface HeaderProps {
 /** Figma: 🧩 Components › TopBar/detail (5 states) + Profile Dropdown Card */
 export function Header({ user, onOpenMenu }: HeaderProps) {
   const [changingPassword, setChangingPassword] = useState(false);
+  // SSO users' passwords live in the SSO, not here
+  const { data: session } = useSession();
+  const isSsoUser = session?.provider === SSO_PROVIDER_ID;
 
   return (
     <header className="flex min-h-topbar shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-2 sm:px-8">
@@ -110,13 +115,15 @@ export function Header({ user, onOpenMenu }: HeaderProps) {
               <User className="size-5" aria-hidden />
               โปรไฟล์
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-3 rounded-none px-4 py-3 text-sm"
-              onClick={() => setChangingPassword(true)}
-            >
-              <KeyRound className="size-5" aria-hidden />
-              เปลี่ยนรหัสผ่าน
-            </DropdownMenuItem>
+            {!isSsoUser && (
+              <DropdownMenuItem
+                className="gap-3 rounded-none px-4 py-3 text-sm"
+                onClick={() => setChangingPassword(true)}
+              >
+                <KeyRound className="size-5" aria-hidden />
+                เปลี่ยนรหัสผ่าน
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               variant="destructive"
               className="gap-3 rounded-none px-4 py-3 text-sm"

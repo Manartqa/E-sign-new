@@ -2,6 +2,7 @@ import type { NextAuthOptions, Profile } from "next-auth";
 import type { OAuthConfig } from "next-auth/providers/oauth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { ROUTES } from "@/constant/routes";
+import { ACCESS_DENIED_ERROR } from "@/constant/sso";
 import { USE_MOCK } from "@/lib/env";
 import {
   BASE_PATH,
@@ -18,7 +19,7 @@ import {
   ssoEndpoints,
   toRoles,
 } from "@/lib/sso";
-import { findMockAccount } from "@/mocks/auth.mock";
+import { canSignIn, findMockAccount } from "@/mocks/auth.mock";
 
 /** Claims this app reads off the SSO id_token / userinfo response. */
 interface SsoProfile extends Profile {
@@ -116,6 +117,7 @@ export const authOptions: NextAuthOptions = {
         if (USE_MOCK) {
           const account = findMockAccount(credentials.username);
           if (!account || credentials.pwd !== account.pwd) return null;
+          if (!canSignIn(account.profile.email)) throw new Error(ACCESS_DENIED_ERROR);
           return {
             id: account.profile.id,
             name: account.profile.name,
@@ -135,6 +137,8 @@ export const authOptions: NextAuthOptions = {
             }),
           },
         );
+        // 403 = right password, but no active account or role here
+        if (res.status === 403) throw new Error(ACCESS_DENIED_ERROR);
         if (!res.ok) return null;
 
         const { accessToken, user } = await res.json();
@@ -193,6 +197,7 @@ export const authOptions: NextAuthOptions = {
       if (token.user) session.user = token.user;
       session.accessToken = token.accessToken;
       session.idToken = token.idToken;
+      session.provider = token.provider;
       session.error = token.error;
       return session;
     },

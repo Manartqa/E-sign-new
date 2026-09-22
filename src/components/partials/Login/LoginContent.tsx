@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { ACCESS_DENIED_ERROR, loginErrorMessage } from "@/constant/sso";
 import { useAuth } from "@/hooks/auth";
 import { LOGIN_ERROR_MESSAGE, writeRememberedUsername } from "./Login.config";
 import { LoginForm, type LoginFormValues } from "./LoginForm";
@@ -38,7 +39,11 @@ export default function LoginContent({
     setIsSubmitting(false);
 
     if (!result?.ok) {
-      setErrorMessage(LOGIN_ERROR_MESSAGE);
+      setErrorMessage(
+        result?.error === ACCESS_DENIED_ERROR
+          ? loginErrorMessage(ACCESS_DENIED_ERROR)
+          : LOGIN_ERROR_MESSAGE,
+      );
       return;
     }
     // only a username that actually signed in is worth remembering

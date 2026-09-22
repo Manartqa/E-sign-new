@@ -17,6 +17,8 @@ declare module "next-auth" {
     accessToken?: string;
     /** kept for RP-initiated logout (`id_token_hint`) */
     idToken?: string;
+    /** "sso" or undefined (credentials) — SSO users have no password here */
+    provider?: string;
     /** set when a refresh_token exchange failed and the session is dead */
     error?: "RefreshAccessTokenError";
   }

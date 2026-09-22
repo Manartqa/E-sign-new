@@ -27,11 +27,31 @@ async function readOverrides(): Promise<Overrides> {
   }
 }
 
-/** the signed-in officer, or the default account when there is no session */
+/**
+ * The signed-in officer, or the default account when there is no session. Any
+ * SSO account may sign in, so one this mock doesn't know gets a bare profile
+ * built from the session — no roles, so no menus — never someone else's.
+ */
 async function currentProfile(): Promise<UserProfile> {
-  const email = (await getServerSession(authOptions))?.user?.email;
+  const user = (await getServerSession(authOptions))?.user;
+  if (!user) return MOCK_PROFILE;
   return (
-    MOCK_PROFILES.find((profile) => profile.email === email) ?? MOCK_PROFILE
+    MOCK_PROFILES.find((profile) => profile.email === user.email) ?? {
+      id: user.id,
+      prefix: "",
+      firstName: user.name ?? "",
+      lastName: "",
+      name: user.name ?? user.email ?? "",
+      position: "",
+      department: "",
+      email: user.email ?? "",
+      phone: "",
+      username: user.email ?? "",
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      roles: [],
+      permissions: [],
+    }
   );
 }
 

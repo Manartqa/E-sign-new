@@ -23,6 +23,13 @@ export const LOGOUT_URL = `${PUBLIC_BASE_PATH}/api/auth/logout`;
 export const SSO_ERROR_MESSAGE = "เข้าสู่ระบบด้วย SSO ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
 
 /**
+ * NextAuth's own code for a sign-in the app refused: the password was right,
+ * but there is no active ผู้ใช้งาน record or no active role here. Thrown by
+ * the credentials flow only — any SSO account may sign in.
+ */
+export const ACCESS_DENIED_ERROR = "AccessDenied";
+
+/**
  * `?error=` codes NextAuth appends when sign-in fails, mapped to fixed text.
  * The raw query value is never rendered.
  */
@@ -31,7 +38,8 @@ const LOGIN_ERROR_MESSAGES: Record<string, string> = {
   OAuthCallback: "การเข้าสู่ระบบด้วย SSO ถูกยกเลิกหรือไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
   OAuthAccountNotLinked: "บัญชีนี้ไม่สามารถใช้เข้าสู่ระบบด้วย SSO ได้",
   Callback: "เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง",
-  AccessDenied: "คุณไม่มีสิทธิ์เข้าใช้งานระบบนี้",
+  [ACCESS_DENIED_ERROR]:
+    "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าใช้งานระบบ กรุณาติดต่อผู้ดูแลระบบ",
   SessionRequired: "กรุณาเข้าสู่ระบบก่อนใช้งาน",
 };
 

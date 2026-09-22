@@ -26,7 +26,11 @@ async function mockProfileRequest(init?: RequestInit): Promise<UserProfile> {
   const res = await fetch(MOCK_PROFILE_ROUTE, init);
   if (!res.ok) throw new Error(`mock profile ${res.status}`);
   const profile = (await res.json()) as UserProfile;
-  const user = MOCK_USERS.find((item) => item.id === profile.id);
+  // an SSO session's id is the SSO `sub`, so fall back to the e-mail
+  const email = profile.email.toLowerCase();
+  const user = MOCK_USERS.find(
+    (item) => item.id === profile.id || (email && item.email.toLowerCase() === email),
+  );
   return user ? { ...profile, ...rolesOf(user.roleIds) } : profile;
 }
 

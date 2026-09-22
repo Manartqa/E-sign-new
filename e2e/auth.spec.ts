@@ -18,6 +18,21 @@ test.describe("sign-in", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
+  test("a right password without an account here is turned away", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page
+      .getByPlaceholder("เช่น officer.name@agency.go.th")
+      .fill("no.access@smartalliance.co.th");
+    await page.getByPlaceholder("กรอกรหัสผ่าน").fill(ACCOUNTS.manart.pwd);
+    await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
+    await expect(
+      page.getByText("บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าใช้งานระบบ กรุณาติดต่อผู้ดูแลระบบ"),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+  });
+
   test("returns to the page that asked for a login", async ({ page }) => {
     await page.goto("/reports?m=2");
     await expect(page).toHaveURL(/\/login\?callbackUrl=%2Freports%3Fm%3D2/);
@@ -35,7 +50,10 @@ test.describe("sign-in", () => {
 
   test("a cancelled SSO sign-in shows a Thai message", async ({ page }) => {
     await page.goto("/login?error=OAuthCallback");
-    await expect(page.getByRole("alert")).toContainText("ถูกยกเลิกหรือไม่สำเร็จ");
+    // not the bare role: Next's route announcer is an (empty) alert too
+    await expect(
+      page.getByRole("alert").filter({ hasText: "ถูกยกเลิกหรือไม่สำเร็จ" }),
+    ).toBeVisible();
   });
 
   test("logout refuses GET and a POST without a valid CSRF token", async ({
