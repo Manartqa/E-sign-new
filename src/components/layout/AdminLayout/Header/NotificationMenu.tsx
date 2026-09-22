@@ -50,7 +50,12 @@ export function NotificationMenu() {
       >
         <Bell className="size-6 text-muted-foreground" aria-hidden />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 size-2 rounded border-2 border-white bg-destructive" />
+          <span
+            aria-hidden
+            className="absolute -top-2 -right-2.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-destructive px-1 text-[11px] leading-none font-bold text-white tabular-nums"
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
         )}
       </PopoverTrigger>
 
