@@ -10,6 +10,19 @@ export interface SigningToken {
   validTo: string;
 }
 
+/**
+ * Where the local signing agent stands on this PC. Only `ready` may go on to
+ * the token; the rest are shown as a setup step inside the signing dialog.
+ */
+export type SigningAgentState =
+  | { status: "ready"; version: string }
+  /** not installed, or installed but not running */
+  | { status: "missing" }
+  /** installed, but older than SIGNING_AGENT_MIN_VERSION */
+  | { status: "outdated"; version: string }
+  /** the agent runs, but the SafeNet driver (PKCS#11 library) isn't there */
+  | { status: "noDriver"; version: string };
+
 /** What the token hands back after signing — fed into POST .../sign. */
 export interface TokenSignResult {
   certificateId: string;

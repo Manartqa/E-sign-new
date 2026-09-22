@@ -3,11 +3,15 @@
 import { useId } from "react";
 import { Info, Loader2, RefreshCw, Usb } from "lucide-react";
 import { formatThaiShortDate } from "@/lib/format";
-import type { SigningToken } from "@/types/app/signing";
+import type { SigningAgentState, SigningToken } from "@/types/app/signing";
+import { SigningAgentSetup } from "./SigningAgentSetup";
 
 interface TokenSignPanelProps {
   /** why this signature needs the token, e.g. "คุณเป็นผู้ลงนามลำดับสุดท้าย…" */
   note: string;
+  /** the local signing agent; null while the first look is running */
+  agent: SigningAgentState | null;
+  onLaunchAgent: () => void;
   token: SigningToken | null;
   isDetecting: boolean;
   detectError: Error | null;
@@ -30,6 +34,8 @@ interface TokenSignPanelProps {
  */
 export function TokenSignPanel({
   note,
+  agent,
+  onLaunchAgent,
   token,
   isDetecting,
   detectError,
@@ -49,57 +55,66 @@ export function TokenSignPanel({
         <p className="text-[13px] text-foreground">{note}</p>
       </div>
 
-      {/* token status: detecting → found / not found */}
-      <div className="flex items-center gap-3 rounded-lg border p-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
-          {isDetecting ? (
-            <Loader2
-              className="size-5 animate-spin text-muted-foreground"
-              aria-hidden
-            />
-          ) : (
-            <Usb
-              className={
-                token
-                  ? "size-5 text-action-approve"
-                  : "size-5 text-muted-foreground"
-              }
-              aria-hidden
-            />
-          )}
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5" aria-live="polite">
-          {isDetecting ? (
-            <p className="text-sm text-muted-foreground">
-              กำลังตรวจหา USB Token...
-            </p>
-          ) : token ? (
-            <>
-              <p className="text-sm font-semibold text-foreground">
-                {token.label}
+      {/* no usable agent on this PC yet: install / update / driver first;
+          otherwise the token status: detecting → found / not found */}
+      {agent && agent.status !== "ready" ? (
+        <SigningAgentSetup agent={agent} onLaunch={onLaunchAgent} />
+      ) : (
+        <div className="flex items-center gap-3 rounded-lg border p-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
+            {isDetecting || !agent ? (
+              <Loader2
+                className="size-5 animate-spin text-muted-foreground"
+                aria-hidden
+              />
+            ) : (
+              <Usb
+                className={
+                  token
+                    ? "size-5 text-action-approve"
+                    : "size-5 text-muted-foreground"
+                }
+                aria-hidden
+              />
+            )}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5" aria-live="polite">
+            {!agent ? (
+              <p className="text-sm text-muted-foreground">
+                กำลังตรวจหาโปรแกรมลงนาม...
               </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {token.certificateOwner} · หมดอายุ{" "}
-                {formatThaiShortDate(token.validTo)}
+            ) : isDetecting ? (
+              <p className="text-sm text-muted-foreground">
+                กำลังตรวจหา USB Token...
               </p>
-            </>
-          ) : (
-            <p className="text-sm text-destructive">
-              {detectError?.message ?? "ไม่พบ USB Token"}
-            </p>
+            ) : token ? (
+              <>
+                <p className="text-sm font-semibold text-foreground">
+                  {token.label}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {token.certificateOwner} · หมดอายุ{" "}
+                  {formatThaiShortDate(token.validTo)}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-destructive">
+                {detectError?.message ?? "ไม่พบ USB Token"}
+              </p>
+            )}
+          </div>
+          {agent && !isDetecting && !token && (
+            <button
+              type="button"
+              onClick={onRedetect}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold text-brand-navy-mid hover:bg-secondary"
+            >
+              <RefreshCw className="size-3.5" aria-hidden />
+              ตรวจหาอีกครั้ง
+            </button>
           )}
         </div>
-        {!isDetecting && !token && (
-          <button
-            type="button"
-            onClick={onRedetect}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold text-brand-navy-mid hover:bg-secondary"
-          >
-            <RefreshCw className="size-3.5" aria-hidden />
-            ตรวจหาอีกครั้ง
-          </button>
-        )}
-      </div>
+      )}
 
       {token && (
         <div className="flex flex-col gap-2">

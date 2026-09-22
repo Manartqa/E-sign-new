@@ -4,6 +4,7 @@ import type {
   ApplicationDetailResponse,
   ApplicationStatsResponse,
   DecisionRequest,
+  SignPrepareResponse,
   SignRequest,
 } from "@/types/api/main/application";
 import type {
@@ -47,6 +48,12 @@ export const decideApplicationApi = (id: string, body: DecisionRequest) =>
   mainClient.patch<ApiResponse<ApplicationDetailResponse>>(
     `/api/applications/${id}/decision`,
     body,
+  );
+
+/** the digest the USB token signs — see SignPrepareResponse */
+export const prepareSignApi = (id: string) =>
+  mainClient.post<ApiResponse<SignPrepareResponse>>(
+    `/api/applications/${id}/sign/prepare`,
   );
 
 export const signApplicationApi = (id: string, body: SignRequest) =>

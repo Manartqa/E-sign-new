@@ -56,9 +56,8 @@ export function SignatureModal({
   const useToken = details.some((item) => item.isFinalSigner);
   const single = details.length === 1 ? details[0] : null;
 
-  const { token, isDetecting, detectError, redetect } = useSigningToken(
-    open && useToken,
-  );
+  const { agent, launchAgent, token, isDetecting, detectError, redetect } =
+    useSigningToken(open && useToken);
 
   const canConfirm = useToken
     ? Boolean(token) && pin.length >= MIN_PIN_LENGTH && !isSubmitting
@@ -124,6 +123,8 @@ export function SignatureModal({
           {useToken && (
             <TokenSignPanel
               note="คุณเป็นผู้ลงนามลำดับสุดท้าย กรุณาเสียบ USB Token แล้วกรอกรหัส PIN เพื่อลงนาม"
+              agent={agent}
+              onLaunchAgent={launchAgent}
               token={token}
               isDetecting={isDetecting}
               detectError={detectError}

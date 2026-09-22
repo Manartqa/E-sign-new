@@ -57,6 +57,18 @@ export interface DecisionRequest {
 /** GET /api/applications/stats — scoped to the caller like the list */
 export type ApplicationStatsResponse = ApplicationStats;
 
+/**
+ * POST /api/applications/:id/sign/prepare — what the USB token must sign: the
+ * digest of the PDF's signed byte range, never the file itself. Not in the
+ * handoff; names are ours (see SIGNING-AGENT.md).
+ */
+export interface SignPrepareResponse {
+  /** base64 */
+  digest: string;
+  /** only SHA-256 so far */
+  digestAlgorithm: "SHA256";
+}
+
 export interface SignRequest {
   certificateId: string;
   certificateOwner: string;
