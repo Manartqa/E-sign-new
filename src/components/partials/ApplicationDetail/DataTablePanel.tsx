@@ -13,6 +13,8 @@ interface DataTablePanelProps {
   heading?: string;
   columns: DetailTableColumn[];
   rows: Record<string, string>[];
+  /** column key → width class; the frontend owns these, not the backend */
+  widths?: Record<string, string>;
 }
 
 /**
@@ -23,6 +25,7 @@ export function DataTablePanel({
   heading,
   columns,
   rows,
+  widths,
 }: DataTablePanelProps) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -59,7 +62,7 @@ export function DataTablePanel({
                     {...table.th(index, column.key)}
                     className={cn(
                       "border-r px-3 py-3 text-[13px] font-bold whitespace-nowrap text-brand-navy-mid",
-                      column.width,
+                      widths?.[column.key],
                     )}
                   >
                     {column.label}

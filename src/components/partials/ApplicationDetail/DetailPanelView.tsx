@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type {
   DetailPanel,
   DetailSection,
+  DetailTabKey,
   DocumentItem,
 } from "@/types/app/applications";
+import { DETAIL_COLUMN_WIDTHS } from "./ApplicationDetail.config";
 import { AuthorizedPeoplePanel } from "./AuthorizedPeoplePanel";
 import { DataTablePanel } from "./DataTablePanel";
 import { DocumentTable } from "./DocumentTable";
@@ -145,6 +147,8 @@ function SectionBlock({ section }: { section: DetailSection }) {
 interface DetailPanelViewProps {
   /** undefined when the backend sends no panel for this tab */
   panel: DetailPanel | undefined;
+  /** picks the table's column widths */
+  tab: DetailTabKey;
   onOpenDocument?: (document: DocumentItem) => void;
 }
 
@@ -158,6 +162,7 @@ const NoPanel = () => (
 /** Renders one tab panel. Figma: tabs-content (106:7034) */
 export function DetailPanelView({
   panel,
+  tab,
   onOpenDocument,
 }: DetailPanelViewProps) {
   if (!panel) return <NoPanel />;
@@ -218,6 +223,7 @@ export function DetailPanelView({
         heading={panel.heading}
         columns={panel.columns}
         rows={panel.rows}
+        widths={DETAIL_COLUMN_WIDTHS[tab]}
       />
     );
   }

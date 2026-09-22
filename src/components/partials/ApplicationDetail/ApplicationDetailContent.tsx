@@ -149,6 +149,7 @@ export default function ApplicationDetailContent({
         >
           <DetailPanelView
             panel={detail.panels[activeTab]}
+            tab={activeTab}
             onOpenDocument={openDocument}
           />
         </div>

@@ -76,7 +76,8 @@ export interface TimelineEvent {
   id: string;
   title: string;
   actor: string;
-  at: string;
+  /** null while the step hasn't happened yet — a pending signer has no time */
+  at: string | null;
   /**
    * COMPLETED and PENDING are the two states Figma draws. REJECTED and
    * RETURNED are ours: a signing chain can stop at a signer who did not
@@ -122,7 +123,6 @@ export interface AuthorizedPerson {
 export interface DetailTableColumn {
   key: string;
   label: string;
-  width?: string;
   /** render this column's cells bold navy (e.g. the name column) */
   strong?: boolean;
 }

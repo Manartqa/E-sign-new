@@ -227,6 +227,11 @@ function buildHistory(item: ApplicationItem): {
 
   const chain: TimelineEvent[] = steps.map((step, index) => {
     const isDecision = decision !== undefined && index === signed;
+    const status = isDecision
+      ? decision
+      : index < signed
+        ? "COMPLETED"
+        : "PENDING";
     return {
       id: `TL-SIGN-${step.id}`,
       title: `${
@@ -237,8 +242,8 @@ function buildHistory(item: ApplicationItem): {
           : "ลงนามโดย"
       } ${step.position}`,
       actor: step.signerName,
-      at: signedAt(index),
-      status: isDecision ? decision : index < signed ? "COMPLETED" : "PENDING",
+      at: status === "PENDING" ? null : signedAt(index),
+      status,
     };
   });
 
@@ -400,20 +405,18 @@ export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
         kind: "table",
         heading: "อาคารและสถานที่",
         columns: [
-          { key: "no", label: "", width: "w-12" },
+          { key: "no", label: "" },
           {
             key: "name",
             label: "ชื่ออาคาร",
-            width: "min-w-[240px]",
             strong: true,
           },
-          { key: "type", label: "ประเภทอาคาร", width: "min-w-[140px]" },
+          { key: "type", label: "ประเภทอาคาร" },
           {
             key: "purpose",
             label: "วัตถุประสงค์การใช้งาน",
-            width: "min-w-[360px]",
           },
-          { key: "status", label: "สถานะอาคาร", width: "min-w-[120px]" },
+          { key: "status", label: "สถานะอาคาร" },
         ],
         rows: [
           {
@@ -446,20 +449,18 @@ export function buildMockDetail(item: ApplicationItem): ApplicationDetail {
         kind: "table",
         heading: "รายการที่ขออนุญาต",
         columns: [
-          { key: "no", label: "", width: "w-12" },
-          { key: "code", label: "รหัส", width: "min-w-[100px]", strong: true },
-          { key: "group", label: "กลุ่ม", width: "min-w-[120px]" },
-          { key: "name", label: "ชื่ออาวุธ&วัตถุดิบ", width: "min-w-[160px]" },
-          { key: "detail", label: "รายละเอียด", width: "min-w-[220px]" },
+          { key: "no", label: "" },
+          { key: "code", label: "รหัส", strong: true },
+          { key: "group", label: "กลุ่ม" },
+          { key: "name", label: "ชื่ออาวุธ&วัตถุดิบ" },
+          { key: "detail", label: "รายละเอียด" },
           {
             key: "capacityUnit",
             label: "กำลังการผลิต/ปี (หน่วยนับ)",
-            width: "min-w-[180px]",
           },
           {
             key: "capacityWeight",
             label: "กำลังการผลิต/ปี (น้ำหนัก)",
-            width: "min-w-[180px]",
           },
         ],
         rows: [

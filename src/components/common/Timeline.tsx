@@ -53,7 +53,9 @@ export function Timeline({ events, className }: TimelineProps) {
               <p className="text-xs text-muted-foreground">
                 {isPending
                   ? "รอดำเนินการ"
-                  : `${formatThaiDateTime(event.at)} • ${event.actor}`}
+                  : event.at
+                    ? `${formatThaiDateTime(event.at)} • ${event.actor}`
+                    : event.actor}
               </p>
             </div>
           </li>
