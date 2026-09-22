@@ -13,6 +13,8 @@ interface TokenSignPanelProps {
   agent: SigningAgentState | null;
   onLaunchAgent: () => void;
   token: SigningToken | null;
+  /** set when the token's certificate isn't the signed-in user's: no PIN then */
+  ownerMismatch?: string;
   isDetecting: boolean;
   detectError: Error | null;
   onRedetect: () => void;
@@ -37,6 +39,7 @@ export function TokenSignPanel({
   agent,
   onLaunchAgent,
   token,
+  ownerMismatch,
   isDetecting,
   detectError,
   onRedetect,
@@ -70,7 +73,7 @@ export function TokenSignPanel({
             ) : (
               <Usb
                 className={
-                  token
+                  token && !ownerMismatch
                     ? "size-5 text-action-approve"
                     : "size-5 text-muted-foreground"
                 }
@@ -96,6 +99,11 @@ export function TokenSignPanel({
                   {token.certificateOwner} · หมดอายุ{" "}
                   {formatThaiShortDate(token.validTo)}
                 </p>
+                {ownerMismatch && (
+                  <p className="text-xs text-destructive" role="alert">
+                    {ownerMismatch}
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-sm text-destructive">
@@ -103,7 +111,7 @@ export function TokenSignPanel({
               </p>
             )}
           </div>
-          {agent && !isDetecting && !token && (
+          {agent && !isDetecting && (!token || ownerMismatch) && (
             <button
               type="button"
               onClick={onRedetect}
@@ -116,7 +124,7 @@ export function TokenSignPanel({
         </div>
       )}
 
-      {token && (
+      {token && !ownerMismatch && (
         <div className="flex flex-col gap-2">
           <label htmlFor={pinId} className="text-sm font-semibold text-black">
             รหัส PIN ของ USB Token

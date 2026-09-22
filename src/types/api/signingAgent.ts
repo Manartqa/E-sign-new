@@ -19,6 +19,8 @@ export interface AgentCertificate {
   /** certificate subject's name */
   subject: string;
   issuer: string;
+  /** subject E= or SAN rfc822Name; "" when the certificate has none (agent 1.1.0+) */
+  email: string;
   /** ISO */
   validTo: string;
 }

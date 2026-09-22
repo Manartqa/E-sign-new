@@ -21,11 +21,7 @@ import {
 import { ApplicationDetailSummary } from "./ApplicationDetailSummary";
 import { DetailPanelView } from "./DetailPanelView";
 import { MOCK_CERTIFICATE } from "./ApplicationDetail.config";
-import {
-  ReturnForEditModal,
-  SignatureModal,
-  SuccessModal,
-} from "./Modal";
+import { ReturnForEditModal, SignatureModal } from "./Modal";
 import { PDFViewer } from "./PDFViewer";
 
 interface ApplicationDetailContentProps {
@@ -49,7 +45,6 @@ export default function ApplicationDetailContent({
 
   const [activeTab, setActiveTab] = useState<DetailTabKey>(DETAIL_TABS[0].key);
   const [action, setAction] = useState<ActionMode | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
 
   if (isError) return <ErrorState />;
@@ -84,8 +79,9 @@ export default function ApplicationDetailContent({
         officerId: profile?.id ?? "",
         notes: "",
       });
-      setAction(null);
-      setShowSuccess(true);
+      // the list has the signed document's download, so no success dialog
+      toast.success(`ลงนามสำเร็จ — คำขอ ${detail.requestNo}`);
+      router.push(ROUTES.applications);
     } catch {
       toast.error("ลงนามไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
@@ -179,18 +175,6 @@ export default function ApplicationDetailContent({
           onConfirm={(values) => void handleReturnOrReject(values)}
         />
       )}
-
-      <SuccessModal
-        open={showSuccess}
-        requestNo={detail.requestNo}
-        onBackToList={() => {
-          setShowSuccess(false);
-          router.push(ROUTES.applications);
-        }}
-        onDownload={() =>
-          toast.info("ดาวน์โหลดเอกสาร — รอ endpoint จากฝั่ง backend")
-        }
-      />
 
       {viewer && (
         <PDFViewer

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, Usb, X } from "lucide-react";
 import { SignIcon } from "@/components/common";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useProfile } from "@/hooks/profile";
 import { useSigningToken } from "@/hooks/signing";
 import type { ApplicationItem } from "@/types/app/applications";
 import { TokenSignPanel } from "./TokenSignPanel";
@@ -58,9 +59,16 @@ export function SignatureModal({
 
   const { agent, launchAgent, token, isDetecting, detectError, redetect } =
     useSigningToken(open && useToken);
+  const { profile } = useProfile();
+
+  // the token's certificate must belong to the signed-in user: same email.
+  // The backend must check it again — this only stops the officer early.
+  const ownerMatches =
+    Boolean(token && profile) &&
+    token!.email.trim().toLowerCase() === profile!.email.trim().toLowerCase();
 
   const canConfirm = useToken
-    ? Boolean(token) && pin.length >= MIN_PIN_LENGTH && !isSubmitting
+    ? ownerMatches && pin.length >= MIN_PIN_LENGTH && !isSubmitting
     : !isSubmitting;
 
   const confirm = () => {
@@ -126,6 +134,11 @@ export function SignatureModal({
               agent={agent}
               onLaunchAgent={launchAgent}
               token={token}
+              ownerMismatch={
+                token && profile && !ownerMatches
+                  ? `ใบรับรองใน USB Token นี้เป็นของ ${token.email || "ผู้อื่น"} ไม่ตรงกับบัญชีที่เข้าสู่ระบบ (${profile.email}) กรุณาเสียบ USB Token ของคุณ`
+                  : undefined
+              }
               isDetecting={isDetecting}
               detectError={detectError}
               onRedetect={redetect}

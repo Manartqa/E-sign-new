@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test";
  */
 export const ACCOUNTS = {
   manart: { username: "manart.pa@smartalliance.co.th", pwd: "P@ssw0rd" },
-  sombat: { username: "sombat.th@smartalliance.co.th", pwd: "P@ssw0rd" },
+  sombat: { username: "adminsmart@smartalliance.co.th", pwd: "P@ssw0rd" },
 } as const;
 
 export type AccountName = keyof typeof ACCOUNTS;

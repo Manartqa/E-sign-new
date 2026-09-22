@@ -9,6 +9,7 @@ import {
 import {
   MOCK_AGENT_OLD_VERSION,
   MOCK_AGENT_VERSION,
+  MOCK_OTHER_SIGNING_TOKEN,
   MOCK_SIGNING_TOKEN,
   MOCK_TOKEN_PIN,
   readMockAgentScenario,
@@ -20,6 +21,7 @@ import type {
   AgentSignResponse,
   AgentStatusResponse,
 } from "@/types/api/signingAgent";
+import type { SignPrepareResponse } from "@/types/api/main/application";
 import type {
   SigningAgentState,
   SigningToken,
@@ -72,17 +74,46 @@ async function callAgent<T>(
   return body as T;
 }
 
+/** the mock agent plays only when a scenario is set — see readMockAgentScenario */
+const mockAgentScenario = () => (USE_MOCK ? readMockAgentScenario() : null);
+
 /** stands in for the hardware round-trip so the waiting states are visible */
 const tokenDelay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Set once the agent has answered from this browser. A browser can't see what
+ * is installed, so an agent that doesn't answer is only "not installed" (and
+ * offered for download) when it never has — otherwise it is just not running.
+ */
+const AGENT_SEEN_STORAGE_KEY = "signing-agent-seen";
+
+function hasSeenAgent() {
+  try {
+    return localStorage.getItem(AGENT_SEEN_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markAgentSeen() {
+  try {
+    localStorage.setItem(AGENT_SEEN_STORAGE_KEY, "1");
+  } catch {
+    // no storage: the download step may show again if the agent is ever down
+  }
+}
+
 /** Is the agent installed, running, recent enough and able to reach the driver? */
 export async function detectSigningAgent(): Promise<SigningAgentState> {
-  if (USE_MOCK) {
+  const scenario = mockAgentScenario();
+  if (scenario) {
     await tokenDelay(300);
-    switch (readMockAgentScenario()) {
+    switch (scenario) {
       case "missing":
         return { status: "missing" };
+      case "notRunning":
+        return { status: "notRunning" };
       case "outdated":
         return { status: "outdated", version: MOCK_AGENT_OLD_VERSION };
       case "noDriver":
@@ -97,8 +128,9 @@ export async function detectSigningAgent(): Promise<SigningAgentState> {
     // short: an agent that isn't there must not hold the dialog up
     status = await callAgent<AgentStatusResponse>("/status", { timeoutMs: 1500 });
   } catch {
-    return { status: "missing" };
+    return { status: hasSeenAgent() ? "notRunning" : "missing" };
   }
+  markAgentSeen();
   if (!isVersionAtLeast(status.version, SIGNING_AGENT_MIN_VERSION))
     return { status: "outdated", version: status.version };
   if (!status.driverInstalled) return { status: "noDriver", version: status.version };
@@ -110,7 +142,7 @@ export async function detectSigningAgent(): Promise<SigningAgentState> {
  * installer registers. Nothing happens when it isn't installed.
  */
 export function launchSigningAgent() {
-  if (USE_MOCK) return;
+  if (mockAgentScenario()) return;
   const link = document.createElement("a");
   link.href = SIGNING_AGENT_LAUNCH_URL;
   link.click();
@@ -120,15 +152,17 @@ const toSigningToken = (cert: AgentCertificate): SigningToken => ({
   label: cert.tokenLabel,
   certificateId: cert.id,
   certificateOwner: cert.subject,
+  email: cert.email ?? "",
   issuer: cert.issuer,
   validTo: cert.validTo,
 });
 
 /** Resolves with the plugged-in token, or rejects with a message to show. */
 export async function detectSigningToken(): Promise<SigningToken> {
-  if (USE_MOCK) {
+  const scenario = mockAgentScenario();
+  if (scenario) {
     await tokenDelay(800);
-    return MOCK_SIGNING_TOKEN;
+    return scenario === "wrongOwner" ? MOCK_OTHER_SIGNING_TOKEN : MOCK_SIGNING_TOKEN;
   }
   const certificates = await callAgent<AgentCertificate[]>("/certificates", {
     timeoutMs: 10_000,
@@ -142,6 +176,18 @@ export async function detectSigningToken(): Promise<SigningToken> {
 }
 
 /**
+ * real agent, mock backend: there is no PDF, so the token signs 32 random
+ * bytes. Not crypto.subtle — it is missing on plain http off localhost.
+ */
+function mockPrepareSign(): SignPrepareResponse {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return {
+    digest: btoa(String.fromCharCode(...bytes)),
+    digestAlgorithm: "SHA256",
+  };
+}
+
+/**
  * The backend hands over the digest of the PDF to sign, the agent signs it on
  * the token with the PIN, and the CMS signature goes back through POST .../sign.
  */
@@ -149,7 +195,7 @@ export async function signWithToken(body: {
   applicationId: string;
   pin: string;
 }): Promise<TokenSignResult> {
-  if (USE_MOCK) {
+  if (mockAgentScenario()) {
     await tokenDelay(1000);
     if (body.pin !== MOCK_TOKEN_PIN) throw new Error("รหัส PIN ไม่ถูกต้อง");
     return {
@@ -160,7 +206,9 @@ export async function signWithToken(body: {
   }
 
   const token = await detectSigningToken();
-  const prepared = (await prepareSignApi(body.applicationId)).data.data;
+  const prepared = USE_MOCK
+    ? mockPrepareSign()
+    : (await prepareSignApi(body.applicationId)).data.data;
   const request: AgentSignRequest = {
     certificateId: token.certificateId,
     pin: body.pin,

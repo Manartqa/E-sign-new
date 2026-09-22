@@ -5,6 +5,8 @@ export interface SigningToken {
   certificateId: string;
   /** subject of the certificate on the token */
   certificateOwner: string;
+  /** must be the signed-in user's email, or the token may not sign */
+  email: string;
   issuer: string;
   /** ISO */
   validTo: string;
@@ -16,8 +18,10 @@ export interface SigningToken {
  */
 export type SigningAgentState =
   | { status: "ready"; version: string }
-  /** not installed, or installed but not running */
+  /** never seen from this browser — presumably not installed */
   | { status: "missing" }
+  /** seen from this browser before, so installed, but not answering now */
+  | { status: "notRunning" }
   /** installed, but older than SIGNING_AGENT_MIN_VERSION */
   | { status: "outdated"; version: string }
   /** the agent runs, but the SafeNet driver (PKCS#11 library) isn't there */

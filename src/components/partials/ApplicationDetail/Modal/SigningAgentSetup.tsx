@@ -59,6 +59,21 @@ export function SigningAgentSetup({ agent, onLaunch }: SigningAgentSetupProps) {
         </>
       )}
 
+      {agent.status === "notRunning" && (
+        <>
+          <Heading
+            icon={<MonitorCog className="size-5 text-brand-navy-mid" aria-hidden />}
+            title="โปรแกรมลงนามยังไม่ได้เปิด"
+            text="เครื่องนี้ติดตั้งโปรแกรมลงนามไว้แล้ว กดเปิดโปรแกรม แล้วหน้านี้จะไปขั้นลงนามต่อเอง"
+          />
+          <button type="button" onClick={onLaunch} className={DOWNLOAD}>
+            <MonitorCog className="size-3.5" aria-hidden />
+            เปิดโปรแกรมลงนาม
+          </button>
+          <Waiting />
+        </>
+      )}
+
       {agent.status === "outdated" && (
         <>
           <Heading

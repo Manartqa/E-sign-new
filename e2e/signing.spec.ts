@@ -1,10 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { authFile, PENDING } from "./accounts";
 
+/** the mock agent's situation — see readMockAgentScenario; unset = the real agent */
+const playAgent = (page: Page, scenario: string) =>
+  page.evaluate((value) => localStorage.setItem("mock-signing-agent", value), scenario);
+
 test.describe("final signer (sombat) signs with the USB token", () => {
   test.use({ storageState: authFile("sombat") });
 
   test("a wrong PIN is refused, the right one signs", async ({ page }) => {
+    await page.goto("/applications");
+    await playAgent(page, "ready");
     await page.goto(`/applications/${PENDING.sombat.id}`);
     await page
       .getByRole("button", { name: "อนุมัติและลงนาม", exact: true })
@@ -22,16 +28,13 @@ test.describe("final signer (sombat) signs with the USB token", () => {
 
     await pin.fill("123456"); // MOCK_TOKEN_PIN
     await sign.click();
-    await expect(page.getByText("ลงนามสำเร็จ!")).toBeVisible();
+    await expect(page.getByText(/^ลงนามสำเร็จ/)).toBeVisible();
+    await expect(page).toHaveURL(/\/applications$/);
   });
 });
 
 test.describe("final signer (sombat) without a usable signing agent", () => {
   test.use({ storageState: authFile("sombat") });
-
-  /** the mock agent's situation — see readMockAgentScenario */
-  const playAgent = (page: Page, scenario: string) =>
-    page.evaluate((value) => localStorage.setItem("mock-signing-agent", value), scenario);
 
   const openSignDialog = async (page: Page) => {
     await page.goto(`/applications/${PENDING.sombat.id}`);
@@ -58,6 +61,32 @@ test.describe("final signer (sombat) without a usable signing agent", () => {
     await playAgent(page, "ready");
     await expect(dialog.getByText("SafeNet eToken 5110")).toBeVisible();
     await expect(dialog.getByLabel("รหัส PIN ของ USB Token")).toBeVisible();
+  });
+
+  test("an installed agent that isn't running is opened, not downloaded again", async ({
+    page,
+  }) => {
+    await page.goto("/applications");
+    await playAgent(page, "notRunning");
+    const dialog = await openSignDialog(page);
+
+    await expect(dialog.getByText("โปรแกรมลงนามยังไม่ได้เปิด")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "เปิดโปรแกรมลงนาม" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /ดาวน์โหลด/ })).toHaveCount(0);
+
+    await playAgent(page, "ready");
+    await expect(dialog.getByLabel("รหัส PIN ของ USB Token")).toBeVisible();
+  });
+
+  test("someone else's token is refused before the PIN", async ({ page }) => {
+    await page.goto("/applications");
+    await playAgent(page, "wrongOwner");
+    const dialog = await openSignDialog(page);
+    await expect(dialog.getByText(/ไม่ตรงกับบัญชีที่เข้าสู่ระบบ/)).toBeVisible();
+    await expect(dialog.getByLabel("รหัส PIN ของ USB Token")).toHaveCount(0);
+    await expect(
+      dialog.getByRole("button", { name: "ลงนามด้วย USB Token" }),
+    ).toBeDisabled();
   });
 
   test("an old agent is asked to update", async ({ page }) => {
@@ -90,6 +119,7 @@ test.describe("mid-chain signer (manart) signs with a button", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("รหัส PIN ของ USB Token")).toHaveCount(0);
     await dialog.getByRole("button", { name: "ยืนยันการลงนาม" }).click();
-    await expect(page.getByText("ลงนามสำเร็จ!")).toBeVisible();
+    await expect(page.getByText(/^ลงนามสำเร็จ/)).toBeVisible();
+    await expect(page).toHaveURL(/\/applications$/);
   });
 });

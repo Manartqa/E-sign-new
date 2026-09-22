@@ -17,9 +17,9 @@ export const SIGNING_AGENT_INSTALLER_URL =
   process.env.NEXT_PUBLIC_SIGNING_AGENT_INSTALLER_URL ||
   `${PUBLIC_BASE_PATH}/downloads/esign-agent-setup.exe`;
 
-/** older agents are asked to update before they may sign */
+/** older agents are asked to update before they may sign — 1.1.0 sends the certificate's email */
 export const SIGNING_AGENT_MIN_VERSION =
-  process.env.NEXT_PUBLIC_SIGNING_AGENT_MIN_VERSION || "1.0.0";
+  process.env.NEXT_PUBLIC_SIGNING_AGENT_MIN_VERSION || "1.1.0";
 
 /** registered by the installer; starts an installed agent that isn't running */
 export const SIGNING_AGENT_LAUNCH_URL = "esign-agent://start";

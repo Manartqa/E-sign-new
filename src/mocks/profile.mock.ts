@@ -37,9 +37,10 @@ export const MOCK_FINAL_SIGNER_PROFILE: UserProfile = {
   name: "พล.อ.สมบัติ ทองดี",
   position: "ปล.กห.",
   department: "สำนักงานปลัดกระทรวงกลาโหม",
-  email: "sombat.th@smartalliance.co.th",
+  // the test USB token's certificate email (SMART-Esig), so the token matches
+  email: "adminsmart@smartalliance.co.th",
   phone: "0898765432",
-  username: "sombat.th@smartalliance.co.th",
+  username: "adminsmart@smartalliance.co.th",
   createdAt: "2024-01-01T00:00:00Z",
   lastLoginAt: "2025-05-15T02:30:00Z",
   ...rolesOf(["RL-003"]),
