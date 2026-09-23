@@ -17,6 +17,7 @@ export const DEFAULT_FILTERS: ApplicationListParams = {
   keyword: "",
   type: "all",
   status: "all",
+  urgent: "all",
   dateFrom: "",
   dateTo: "",
   page: 1,
@@ -28,6 +29,12 @@ export const PENDING_FILTERS: ApplicationListParams = {
   ...DEFAULT_FILTERS,
   status: APPLICATION_STATUS.PENDING_APPROVAL,
 };
+
+/** the ความเร่งด่วน dropdown — ด่วน is a flag, so there is nothing between the two */
+export const URGENT_OPTIONS = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "only", label: "เฉพาะรายการด่วน" },
+] as const;
 
 export interface StatCardDef {
   key: keyof ApplicationStats;

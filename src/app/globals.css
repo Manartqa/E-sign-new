@@ -42,6 +42,11 @@
   --color-viewer-border: #4a5568;
   --color-viewer-muted: #a0aec0;
 
+  /* --- ด่วน (not in Figma — the flag the originating system sets) ----- */
+  --color-urgent: #dc2626;            /* flag icon + the row's left bar */
+  --color-urgent-bg: #fef2f2;         /* the tint across the whole row  */
+  --color-urgent-bg-hover: #fee2e2;
+
   /* --- Login emblem (not in Figma — from the user's reference image) - */
   --color-emblem-cyan: #27eeff;       /* rings, crosshair, signal arcs */
   --color-emblem-ink: #fff200;        /* text lines + signature        */

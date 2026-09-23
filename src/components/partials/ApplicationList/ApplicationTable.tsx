@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, RotateCcw } from "lucide-react";
+import { Eye, Flag, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -276,10 +276,22 @@ export function ApplicationTable({
                     // not in Figma: rows fade up in turn when a page of
                     // results arrives; only the first 10 are staggered so a
                     // 50-row page doesn't keep the user waiting
-                    className="group animate-in border-b bg-white fill-mode-both duration-200 fade-in slide-in-from-bottom-1 hover:bg-[#f8fafc] motion-reduce:animate-none"
+                    className={cn(
+                      "group animate-in border-b fill-mode-both duration-200 fade-in slide-in-from-bottom-1 motion-reduce:animate-none",
+                      item.isUrgent
+                        ? "bg-urgent-bg hover:bg-urgent-bg-hover"
+                        : "bg-white hover:bg-[#f8fafc]",
+                    )}
                     style={{ animationDelay: `${Math.min(index, 9) * 30}ms` }}
                   >
-                    <td className={CELL}>
+                    <td
+                      className={cn(
+                        CELL,
+                        // the bar runs down the row's left edge, outside the
+                        // horizontal scroll of the columns to its right
+                        item.isUrgent && "border-l-4 border-l-urgent",
+                      )}
+                    >
                       <Checkbox
                         checked={selectedIds.includes(item.id)}
                         onCheckedChange={() => onToggleSelect(item.id)}
@@ -295,6 +307,12 @@ export function ApplicationTable({
                       )}
                     >
                       {item.typeName}
+                      {item.isUrgent && (
+                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-urgent px-2 py-0.5 align-middle text-[11px] font-semibold whitespace-nowrap text-white">
+                          <Flag className="size-3 fill-current" aria-hidden />
+                          ด่วน
+                        </span>
+                      )}
                     </td>
                     <td
                       className={cn(
@@ -339,7 +357,10 @@ export function ApplicationTable({
                       className={cn(
                         CELL,
                         STICKY_ACTIONS,
-                        "z-10 bg-white group-hover:bg-[#f8fafc]",
+                        "z-10",
+                        item.isUrgent
+                          ? "bg-urgent-bg group-hover:bg-urgent-bg-hover"
+                          : "bg-white group-hover:bg-[#f8fafc]",
                       )}
                     >
                       {/*

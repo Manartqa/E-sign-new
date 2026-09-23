@@ -10,6 +10,7 @@ import {
 import { STATUS_OPTIONS } from "@/constant/status";
 import { useApplicationTypes } from "@/hooks/master";
 import type { ApplicationListParams } from "@/types/app/applications";
+import { URGENT_OPTIONS } from "./ApplicationList.config";
 
 interface ApplicationListHeaderProps {
   filters: ApplicationListParams;
@@ -82,10 +83,10 @@ export function ApplicationListHeader({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+      <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap">
         <LabeledSelect
           label="ประเภท"
-          className="flex-1"
+          className="flex-1 min-w-[180px]"
           labelClassName="text-[#334155]"
           triggerClassName={FILTER_TRIGGER}
           value={draft.type ?? "all"}
@@ -96,7 +97,7 @@ export function ApplicationListHeader({
         {!lockStatus && (
           <LabeledSelect
             label="สถานะ"
-            className="flex-1"
+            className="flex-1 min-w-[180px]"
             labelClassName="text-[#334155]"
             triggerClassName={FILTER_TRIGGER}
             value={draft.status ?? "all"}
@@ -110,7 +111,23 @@ export function ApplicationListHeader({
           />
         )}
 
-        <div className="flex flex-1 flex-col gap-1.5">
+        {/* shown on both routes: the pending page hides สถานะ, not this */}
+        <LabeledSelect
+          label="ความเร่งด่วน"
+          className="flex-1 min-w-[180px]"
+          labelClassName="text-[#334155]"
+          triggerClassName={FILTER_TRIGGER}
+          value={draft.urgent ?? "all"}
+          options={[...URGENT_OPTIONS]}
+          onChange={(value) =>
+            setDraft((d) => ({
+              ...d,
+              urgent: value as ApplicationListParams["urgent"],
+            }))
+          }
+        />
+
+        <div className="flex flex-1 flex-col gap-1.5 min-w-[180px]">
           <span className="text-sm font-medium text-[#334155]">ช่วงวันที่</span>
           <DateRangePicker
             value={{ from: draft.dateFrom, to: draft.dateTo }}

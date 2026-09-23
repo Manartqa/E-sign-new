@@ -62,6 +62,7 @@ function toItem(raw: ApplicationResponse): ApplicationItem {
     updatedAt: raw.updatedAt,
     assignedOfficer: raw.assignedOfficer,
     isFinalSigner: raw.isFinalSigner,
+    isUrgent: raw.isUrgent,
   };
 }
 
@@ -89,6 +90,7 @@ export async function getApplicationList(
       }
       if (params.type && params.type !== "all" && item.type !== params.type)
         return false;
+      if (params.urgent === "only" && !item.isUrgent) return false;
       // ช่วงวันที่ filters on วันที่รับเรื่อง, the date shown in the table
       if (params.dateFrom && item.receivedAt < params.dateFrom) return false;
       if (params.dateTo && item.receivedAt > params.dateTo) return false;
@@ -107,9 +109,17 @@ export async function getApplicationList(
         ? Object.values(APPLICATION_STATUS).indexOf(item.status)
         : item[key as keyof ApplicationItem],
     );
+    // ด่วน outranks the officer's own sort: an urgent request must be on the
+    // first page whatever column they ordered by. Their sort still decides the
+    // order inside each group. The real endpoint owes the same ORDER BY —
+    // pinning here only would float urgent rows within the current page.
+    const ordered = [
+      ...sorted.filter((item) => item.isUrgent),
+      ...sorted.filter((item) => !item.isUrgent),
+    ];
     const start = (page - 1) * limit;
     return {
-      items: sorted.slice(start, start + limit),
+      items: ordered.slice(start, start + limit),
       total: filtered.length,
       page,
       limit,

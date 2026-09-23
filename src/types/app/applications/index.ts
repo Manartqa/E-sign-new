@@ -37,6 +37,12 @@ export interface ApplicationItem {
   /** เจ้าหน้าที่รับเรื่อง */
   assignedOfficer: string;
   /**
+   * ด่วน — flagged by the originating system, never set here. Urgent requests
+   * are pinned above everything else on both list pages so they are decided
+   * first; see getApplicationList.
+   */
+  isUrgent: boolean;
+  /**
    * Whether the signed-in officer is the LAST signer on this request. The
    * final signature must be made with a USB token; earlier signers confirm
    * with a button. Decided by the backend, which owns the approval chain.
@@ -65,6 +71,8 @@ export interface ApplicationListParams extends SortParams {
     | typeof REJECTED_OR_RETURNED_FILTER
     | "all";
   type?: string | "all";
+  /** `only` keeps just the ด่วน rows; they are pinned on top either way */
+  urgent?: "all" | "only";
   /** ช่วงวันที่รับเรื่อง — inclusive ISO bounds, both optional */
   dateFrom?: string;
   dateTo?: string;

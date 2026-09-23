@@ -99,6 +99,13 @@ const OWNERS = [MOCK_PROFILE, MOCK_FINAL_SIGNER_PROFILE];
 const ownerOf = (i: number) =>
   OWNERS[Math.floor(i / STATUSES.length) % OWNERS.length];
 
+/**
+ * Requests the originating system flagged ด่วน. Spread across both officers'
+ * queues and across สถานะ, so the flag reads as its own thing and not as a
+ * second way of saying "รอการอนุมัติ".
+ */
+const URGENT_INDEXES = new Set([0, 4, 8, 13, 17, 20, 24]);
+
 export const MOCK_APPLICATIONS: MockApplication[] = Array.from(
   { length: 47 },
   (_, i) => {
@@ -123,6 +130,7 @@ export const MOCK_APPLICATIONS: MockApplication[] = Array.from(
       assignedOfficer: OFFICERS[i % OFFICERS.length],
       officerEmail: ownerOf(i).email,
       isFinalSigner: ownerOf(i) === MOCK_FINAL_SIGNER_PROFILE,
+      isUrgent: URGENT_INDEXES.has(i),
     };
   },
 );

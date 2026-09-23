@@ -29,6 +29,11 @@ export interface ApplicationResponse {
   assignedOfficer: string;
   /** not in the handoff — see ApplicationItem.isFinalSigner */
   isFinalSigner: boolean;
+  /**
+   * ด่วน, decided by the originating system. The list endpoint must also
+   * order urgent rows first, before paging — see ApplicationItem.isUrgent.
+   */
+  isUrgent: boolean;
 }
 
 /**
