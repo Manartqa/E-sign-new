@@ -110,9 +110,11 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
       <aside
         className={cn(
           "flex shrink-0 flex-col gap-10 bg-sidebar p-5 transition-[width]",
-          // 272px, not Figma's 240: fits APP_NAME on one line (163px bold at
-          // 14px + 40px padding + 40px logo + 12px gap = 255px, plus slack)
-          isCollapsed ? "w-20 px-3" : "w-68",
+          // 304px, not Figma's 240: fits the longest sub-menu label on one
+          // line (ประวัติการเปลี่ยนแปลงข้อมูล, 164px semibold at 14px + 40px
+          // padding + 48px pl-12 + 16px icon + 12px gap + 16px pr-4 = 296px,
+          // plus slack); its rows are a fixed h-11 the sliding highlight needs
+          isCollapsed ? "w-20 px-3" : "w-76",
           // on desktop it fills the viewport-high shell (AdminLayout), which
           // keeps the user block below pinned to the bottom
           "fixed inset-y-0 left-0 z-50 overflow-y-auto max-lg:transition-transform lg:static",
