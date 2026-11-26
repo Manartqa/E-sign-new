@@ -16,6 +16,22 @@ const columnText = (page: Page, index: number) =>
 const header = (page: Page, name: string) =>
   page.locator("thead th").filter({ has: page.getByRole("button", { name, exact: true }) });
 
+/** each row's เลขที่คำขอ, and whether its ประเภทคำขอ cell carries the ด่วน flag */
+const requestRows = (page: Page) =>
+  page.locator("tbody tr").evaluateAll((rows) =>
+    rows.map((row) => {
+      const cells = (row as HTMLTableRowElement).cells;
+      return { urgent: cells[1].innerText.includes("ด่วน"), no: cells[2].innerText.trim() };
+    }),
+  );
+
+/** ด่วน rows are pinned above any sort, so each group is descending on its own */
+const pinnedDescending = (rows: { urgent: boolean; no: string }[]) => {
+  const desc = (urgent: boolean) =>
+    rows.filter((row) => row.urgent === urgent).map((row) => row.no).sort(thai).reverse();
+  return [...desc(true), ...desc(false)];
+};
+
 test("sorting the requests orders every page, not just the one on screen", async ({
   page,
 }) => {
@@ -28,20 +44,19 @@ test("sorting the requests orders every page, not just the one on screen", async
   // the header flips before the re-sorted rows arrive — wait for the rows
   await expect
     .poll(async () => {
-      const rows = await columnText(page, 2);
-      return rows.join() === [...rows].sort(thai).reverse().join();
+      const rows = await requestRows(page);
+      return rows.map((row) => row.no).join() === pinnedDescending(rows).join();
     })
     .toBe(true);
 
-  const firstPage = await columnText(page, 2);
+  const firstPage = await requestRows(page);
   await page.getByRole("button", { name: "2", exact: true }).click();
-  await expect(page.locator("tbody tr").first()).not.toContainText(firstPage[0]);
-  const secondPage = await columnText(page, 2);
+  await expect(page.locator("tbody tr").first()).not.toContainText(firstPage[0].no);
+  const secondPage = await requestRows(page);
 
   // page 2 continues where page 1 stopped
-  expect([...firstPage, ...secondPage]).toEqual(
-    [...firstPage, ...secondPage].sort(thai).reverse(),
-  );
+  const bothPages = [...firstPage, ...secondPage];
+  expect(bothPages.map((row) => row.no)).toEqual(pinnedDescending(bothPages));
 
   // a third click goes back to the default order
   await requestNo.click();
