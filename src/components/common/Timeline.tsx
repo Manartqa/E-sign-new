@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 
 interface TimelineProps {
   events: TimelineEvent[];
+  /** names a signing step's ระดับการอนุมัติ; the level is not shown without it */
+  levelLabel?: (level: string) => string;
   className?: string;
 }
 
@@ -24,7 +26,7 @@ const MARKER: Record<
 };
 
 /** Figma: 🧩 Components › Timeline Item (Completed / Pending / Last) — node 67:660 */
-export function Timeline({ events, className }: TimelineProps) {
+export function Timeline({ events, levelLabel, className }: TimelineProps) {
   return (
     <ol className={cn("flex flex-col", className)}>
       {events.map((event, index) => {
@@ -56,7 +58,14 @@ export function Timeline({ events, className }: TimelineProps) {
                   : event.at
                     ? `${formatThaiDateTime(event.at)} • ${event.actor}`
                     : event.actor}
+                {/* not in Figma: legacy showed ลำดับ and ระดับ beside every signer */}
+                {event.stepNo !== undefined && levelLabel && event.approvalLevel
+                  ? ` • ลำดับที่ ${event.stepNo} ${levelLabel(event.approvalLevel)}`
+                  : ""}
               </p>
+              {event.remark && (
+                <p className="text-xs text-black">หมายเหตุ: {event.remark}</p>
+              )}
             </div>
           </li>
         );

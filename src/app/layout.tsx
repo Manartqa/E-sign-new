@@ -3,6 +3,7 @@ import { Geist_Mono, Noto_Sans_Thai } from "next/font/google";
 import { NextAuthProvider } from "@/context/auth/NextAuthProvider";
 import { QueryProvider } from "@/context/query/QueryProvider";
 import { AppToaster } from "@/components/common/AppToaster";
+import { BfcacheReload } from "@/components/common/BfcacheReload";
 import "./globals.css";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <QueryProvider>
             {children}
             <AppToaster />
+            <BfcacheReload />
           </QueryProvider>
         </NextAuthProvider>
       </body>

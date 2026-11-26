@@ -24,10 +24,20 @@ export const PENDING = {
   sombat: { id: "APP-2567-001238", requestNo: "44/2569" },
 } as const;
 
+/** the mock's e-mailed OTP (src/mocks/auth.mock.ts MOCK_OTP) */
+export const MOCK_OTP = "123456";
+
 export async function login(page: Page, name: AccountName) {
-  const { username, pwd } = ACCOUNTS[name];
   await page.goto("/login");
+  await signInOnPage(page, name);
+}
+
+/** password, then the e-mailed OTP — on a login page already open */
+export async function signInOnPage(page: Page, name: AccountName = "manart") {
+  const { username, pwd } = ACCOUNTS[name];
   await page.getByPlaceholder("เช่น officer.name@agency.go.th").fill(username);
   await page.getByPlaceholder("กรอกรหัสผ่าน").fill(pwd);
   await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
+  await page.getByLabel("รหัส OTP").fill(MOCK_OTP);
+  await page.getByRole("button", { name: "ยืนยันรหัส OTP" }).click();
 }

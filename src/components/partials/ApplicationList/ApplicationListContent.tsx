@@ -1,23 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { APPLICATION_STATUS } from "@/constant/status";
 import { useSearchPersist } from "@/hooks/common";
 import {
   useApplicationList,
   useBulkApplicationActions,
 } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
+import { signMethodFor } from "@/lib/sign-method";
 import { nextSort } from "@/lib/sort";
-import { MOCK_CERTIFICATE } from "@/components/partials/ApplicationDetail/ApplicationDetail.config";
-import { SignatureModal } from "@/components/partials/ApplicationDetail/Modal";
+import {
+  ReturnForEditModal,
+  SignatureModal,
+} from "@/components/partials/ApplicationDetail/Modal";
 import type {
   ActionMode,
   ApplicationListParams,
 } from "@/types/app/applications";
 import { ApplicationBulkBar } from "./ApplicationBulkBar";
-import { BulkConfirmModal } from "./BulkConfirmModal";
+import { BulkResultModal, type BulkFailure } from "./BulkResultModal";
 import { ApplicationListHeader } from "./ApplicationListHeader";
 import { ApplicationStatCards } from "./ApplicationStatCards";
 import { ApplicationTable } from "./ApplicationTable";
@@ -46,11 +48,24 @@ export default function ApplicationListContent({
     defaults,
   );
 
-  const filters = filterValues as ApplicationListParams;
+  // the pending route is always pinned, even over filters saved before the pin changed
+  const filters = useMemo(
+    () =>
+      (isPending
+        ? { ...filterValues, status: PENDING_FILTERS.status }
+        : filterValues) as ApplicationListParams,
+    [isPending, filterValues],
+  );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<ActionMode | null>(null);
   /** the last batch's failure message, e.g. a wrong token PIN */
   const [bulkError, setBulkError] = useState<string>();
+  /** a batch where some rows failed — shown until dismissed */
+  const [bulkResult, setBulkResult] = useState<{
+    verb: string;
+    succeeded: number;
+    failures: BulkFailure[];
+  } | null>(null);
 
   const { items, total, page, limit, isLoading, isError } =
     useApplicationList(filters);
@@ -81,13 +96,17 @@ export default function ApplicationListContent({
     );
 
   // selection never outlives a page change, so every selected id is on
-  // `items`; rows this officer signs last need the USB token
+  // `items`; rows this officer signs last are signed by their own method
   const selectedItems = items.filter((item) => selectedIds.includes(item.id));
   const finalSignerIds = selectedItems
     .filter((item) => item.isFinalSigner)
     .map((item) => item.id);
 
-  const confirmBulk = async (pin?: string) => {
+  const confirmBulk = async (input: {
+    pin?: string;
+    notes: string;
+    reasonCode?: string;
+  }) => {
     if (!bulkAction) return;
 
     const ids = selectedIds;
@@ -100,50 +119,61 @@ export default function ApplicationListContent({
           : "ส่งคืนเพื่อแก้ไข";
 
     try {
-      const { succeeded, failed, error } = await bulkRun.mutateAsync({
+      const { succeeded, failed, error, results } = await bulkRun.mutateAsync({
         ids,
         action: bulkAction,
+        notes: input.notes,
+        reasonCode: input.reasonCode,
         officerId: profile?.id ?? "",
-        certificate: { id: MOCK_CERTIFICATE.id, owner: profile?.name ?? "" },
         finalSignerIds,
-        pin,
+        // the modal offers approval only when this resolves to a method
+        finalMethod:
+          signMethodFor(true, profile?.signingMethod) ?? undefined,
+        pin: input.pin,
       });
-
-      if (failed.length) {
-        toast.warning(
-          `${verb}สำเร็จ ${succeeded.length} รายการ ไม่สำเร็จ ${failed.length} รายการ` +
-            (error ? ` — ${error}` : ""),
-        );
-      } else {
-        toast.success(`${verb} ${succeeded.length} รายการเรียบร้อยแล้ว`);
-      }
 
       // keep only the rows that could not be processed, so a retry is one click
       setSelectedIds(failed);
 
       // nothing went through — a wrong PIN, most likely, so keep the modal up
       // with the message instead of making them start the batch over
-      if (succeeded.length === 0 && error) {
+      if (succeeded.length === 0 && error && bulkAction === "approve") {
         setBulkError(error);
         return;
       }
       setBulkAction(null);
+
+      if (failed.length) {
+        setBulkResult({
+          verb,
+          succeeded: succeeded.length,
+          failures: results
+            .filter((row) => !row.ok)
+            .map((row) => ({
+              requestNo:
+                items.find((item) => item.id === row.id)?.requestNo ?? row.id,
+              message: row.message,
+            })),
+        });
+      } else {
+        toast.success(`${verb} ${succeeded.length} รายการเรียบร้อยแล้ว`);
+      }
     } catch {
       toast.error("ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
       setBulkAction(null);
     }
   };
 
-  // bulk actions (approve/reject/return) only apply to pending requests, so
-  // "select all" only ever selects the pending rows on this page
+  // bulk actions (approve/reject/return) only apply where it is this officer's
+  // turn, so "select all" only ever selects those rows on this page
   const toggleSelectAll = () => {
-    const pendingIds = items
-      .filter((item) => item.status === APPLICATION_STATUS.PENDING_APPROVAL)
+    const actionableIds = items
+      .filter((item) => item.canAct)
       .map((item) => item.id);
     setSelectedIds((prev) =>
-      pendingIds.length > 0 && pendingIds.every((id) => prev.includes(id))
+      actionableIds.length > 0 && actionableIds.every((id) => prev.includes(id))
         ? []
-        : pendingIds,
+        : actionableIds,
     );
   };
 
@@ -203,18 +233,25 @@ export default function ApplicationListContent({
           isSubmitting={bulkRun.isPending}
           error={bulkError}
           onClose={() => setBulkAction(null)}
-          onConfirm={(pin) => void confirmBulk(pin)}
+          onConfirm={(input) => void confirmBulk(input)}
         />
       )}
 
+      {/* one reason and detail for the whole batch — legacy required a
+          remark on every rejection */}
       {(bulkAction === "reject" || bulkAction === "return") && (
-        <BulkConfirmModal
-          action={bulkAction}
+        <ReturnForEditModal
+          open
+          mode={bulkAction}
           count={selectedIds.length}
           isSubmitting={bulkRun.isPending}
           onClose={() => setBulkAction(null)}
-          onConfirm={() => void confirmBulk()}
+          onConfirm={(values) => void confirmBulk(values)}
         />
+      )}
+
+      {bulkResult && (
+        <BulkResultModal {...bulkResult} onClose={() => setBulkResult(null)} />
       )}
     </div>
   );

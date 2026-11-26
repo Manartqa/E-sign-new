@@ -63,3 +63,38 @@ export interface ReportParams {
   /** ประเภทรายงาน */
   reportType?: string;
 }
+
+/**
+ * รายงานสรุปการตรวจสอบและลงนาม — legacy SSPF's only live report
+ * (docs/legacy-sspf/05-reports.md §E.3): every decision one officer made in a
+ * date range, grouped by day with the day's totals.
+ */
+export interface SignatureReportParams {
+  /** วันที่ตรวจสอบลงนาม — inclusive ISO bounds, both required */
+  dateFrom: string;
+  dateTo: string;
+  /** ประเภทคำขอ — an application `type`, or "all" */
+  type: string;
+  /** เจ้าหน้าที่ตรวจสอบ/ลงนาม — a user id, required */
+  officerId: string;
+}
+
+/**
+ * ผ่าน / ไม่ผ่าน as legacy, plus ส่งคืน — the new system's third decision,
+ * counted on its own (user's call, 2026-11-26).
+ */
+export type SignatureDecision = "APPROVED" | "REJECTED" | "RETURNED";
+
+export interface SignatureReportRow {
+  id: string;
+  /** วันที่ตรวจสอบ/ลงนาม (ISO) */
+  decidedAt: string;
+  typeName: string;
+  requestNo: string;
+  receiptNo: string;
+  receivedAt: string;
+  operatorName: string;
+  decision: SignatureDecision;
+  /** หมายเหตุ written with the decision */
+  remark: string | null;
+}

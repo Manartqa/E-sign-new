@@ -18,6 +18,8 @@ import type {
   ReportOptionsResponse,
   ReportSummaryResponse,
 } from "@/types/api/main/report";
+import type { SignatureReportRow } from "@/types/app/reports";
+import type { ChangeLog, LogonLog } from "@/types/app/logs";
 import type {
   SigningWorkflowRequest,
   SigningWorkflowResponse,
@@ -69,6 +71,20 @@ export const getReportSummaryApi = (params?: Record<string, unknown>) =>
 
 export const getReportOptionsApi = () =>
   mainClient.get<ApiResponse<ReportOptionsResponse>>("/api/reports/options");
+
+/** not in the handoff — legacy Report/ReportSignatureVerification */
+export const getSignatureReportApi = (params: Record<string, unknown>) =>
+  mainClient.get<ApiResponse<SignatureReportRow[]>>(
+    "/api/reports/signature-verification",
+    { params },
+  );
+
+/** not in the handoff — legacy AuditLogon / AuditLog; one page, or all with limit=0 */
+export const getLogonLogsApi = (params: Record<string, unknown>) =>
+  mainClient.get<PagedResponse<LogonLog>>("/api/logs/logon", { params });
+
+export const getChangeLogsApi = (params: Record<string, unknown>) =>
+  mainClient.get<PagedResponse<ChangeLog>>("/api/logs/changes", { params });
 
 export const getProfileApi = () =>
   mainClient.get<ApiResponse<UserResponse>>("/api/me");

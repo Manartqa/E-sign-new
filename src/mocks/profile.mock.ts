@@ -1,4 +1,5 @@
 import type { UserProfile } from "@/types/app/profile";
+import { SIGNING_METHOD } from "@/types/app/signers";
 import { rolesOf } from "./roles.mock";
 
 /**
@@ -26,6 +27,8 @@ export const MOCK_PROFILE: UserProfile = {
   createdAt: "2024-01-01T00:00:00Z",
   lastLoginAt: "2025-05-15T02:30:00Z",
   ...rolesOf(["RL-001"]),
+  signingMethod: SIGNING_METHOD.USB_TOKEN,
+  certificateFileName: null,
 };
 
 /** ผู้ลงนามลำดับสุดท้าย — every request in this officer's queue needs the token */
@@ -44,6 +47,8 @@ export const MOCK_FINAL_SIGNER_PROFILE: UserProfile = {
   createdAt: "2024-01-01T00:00:00Z",
   lastLoginAt: "2025-05-15T02:30:00Z",
   ...rolesOf(["RL-003"]),
+  signingMethod: SIGNING_METHOD.USB_TOKEN,
+  certificateFileName: null,
 };
 
 export const MOCK_PROFILES: UserProfile[] = [

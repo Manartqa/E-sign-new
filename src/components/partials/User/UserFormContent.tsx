@@ -27,6 +27,7 @@ import { usePositions, useUser, useUserActions } from "@/hooks/users";
 import { formatThaiDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
+  APPROVAL_LEVEL_FINAL,
   SIGNING_METHOD,
   type CertificateCheckResult,
 } from "@/types/app/signers";
@@ -168,6 +169,10 @@ function UserForm({
     setForm((f) => ({ ...f, [key]: value }));
 
   const usesCertFile = form.signingMethod === SIGNING_METHOD.CERTIFICATE_FILE;
+  // the ผู้ตรวจสอบและลงนาม issues the licence: they sign with a USB token or a
+  // stored certificate, and their signature image is stamped on the licence
+  // (user's call, 2026-11-26)
+  const isFinalSigner = form.approvalLevel === APPROVAL_LEVEL_FINAL;
   const errors = {
     prefix: !form.prefix && "กรุณาเลือกคำนำหน้าชื่อ",
     firstName: !form.firstName.trim() && "กรุณากรอกชื่อ",
@@ -188,6 +193,12 @@ function UserForm({
       (certFile
         ? !certCheck?.valid && "กรุณาตรวจสอบ Certificate ให้ผ่านก่อนบันทึก"
         : !signer?.certificateFileName && "กรุณาเลือกไฟล์ Certificate"),
+    signingMethod:
+      isFinalSigner &&
+      form.signingMethod === SIGNING_METHOD.E_DOCUMENT &&
+      "ผู้ตรวจสอบและลงนามต้องลงนามด้วย USB Token หรือ Certificate File",
+    signatureImage:
+      isFinalSigner && !signaturePreview && "ผู้ตรวจสอบและลงนามต้องมีรูปลายเซ็นต์",
   };
   const show = (error: string | false) => submitted && error;
 
@@ -499,6 +510,9 @@ function UserForm({
               );
             })}
           </div>
+          {show(errors.signingMethod) && (
+            <p className="text-xs text-destructive">{errors.signingMethod}</p>
+          )}
         </fieldset>
 
         {usesCertFile && (
@@ -593,7 +607,10 @@ function UserForm({
         )}
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">รูปลายเซ็นต์</span>
+          <span className="text-sm font-medium">
+            รูปลายเซ็นต์
+            {isFinalSigner && <span className="ml-1 text-destructive">*</span>}
+          </span>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed bg-white sm:w-72">
               {signaturePreview ? (
@@ -648,6 +665,9 @@ function UserForm({
               </span>
             </div>
           </div>
+          {show(errors.signatureImage) && (
+            <p className="text-xs text-destructive">{errors.signatureImage}</p>
+          )}
         </div>
       </FormSection>
 

@@ -2,10 +2,11 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  approveApplication,
   decideApplication,
-  signApplication,
+  type ApproveInput,
 } from "@/services/application.service";
-import type { DecisionRequest, SignRequest } from "@/types/api/main/application";
+import type { DecisionRequest } from "@/types/api/main/application";
 import { APPLICATION_DETAIL_QUERY_KEY } from "./useApplicationDetail";
 import { APPLICATION_LIST_QUERY_KEY } from "./useApplicationList";
 import { APPLICATION_STATS_QUERY_KEY } from "./useApplicationStats";
@@ -13,6 +14,8 @@ import { APPLICATION_STATS_QUERY_KEY } from "./useApplicationStats";
 export const useApplicationActions = (id: string) => {
   const queryClient = useQueryClient();
 
+  // refetch after a failure too: "already signed" / "not your turn yet" means
+  // what is on screen is stale, and the fresh state hides the buttons
   const invalidate = () => {
     void queryClient.invalidateQueries({
       queryKey: [...APPLICATION_DETAIL_QUERY_KEY, id],
@@ -27,13 +30,13 @@ export const useApplicationActions = (id: string) => {
 
   const decide = useMutation({
     mutationFn: (body: DecisionRequest) => decideApplication(id, body),
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
-  const sign = useMutation({
-    mutationFn: (body: SignRequest) => signApplication(id, body),
-    onSuccess: invalidate,
+  const approve = useMutation({
+    mutationFn: (input: ApproveInput) => approveApplication(id, input),
+    onSettled: invalidate,
   });
 
-  return { decide, sign };
+  return { decide, approve };
 };

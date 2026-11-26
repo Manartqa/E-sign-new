@@ -31,6 +31,12 @@ export interface SigningWorkflowStep {
   position: string;
   /** the signer's ระดับการอนุมัติ — read-only, resolved from signerId on read */
   approvalLevel: string;
+  /**
+   * whether the signer's account is still ใช้งาน — read-only, resolved on
+   * read. A step whose signer was switched off is flagged on the form; the
+   * workflow still saves (user's call, 2026-11-26).
+   */
+  signerActive: boolean;
 }
 
 export interface SigningWorkflow {
@@ -45,8 +51,15 @@ export interface SigningWorkflow {
   requestUsage: RequestUsage;
   /** การใช้กับคำขอใบแทน */
   replacementUsage: ReplacementUsage;
-  /** each signer once, in signing order */
+  /**
+   * each signer once, in signing order; the last is the one
+   * ผู้ตรวจสอบและลงนาม (REVIEW_AND_SIGN) who issues the licence
+   */
   steps: SigningWorkflowStep[];
+  /** ใช้งาน — legacy IS_ACTIVE; an inactive workflow is not picked for new requests */
+  isActive: boolean;
+  /** หมายเหตุ — legacy NOTE1, max 512 */
+  note: string;
   createdBy: string;
   createdAt: string;
   updatedBy: string;
@@ -62,7 +75,16 @@ export type SigningWorkflowInput = Pick<
   | "requestUsage"
   | "replacementUsage"
   | "steps"
+  | "isActive"
+  | "note"
 >;
+
+/** thrown by deleteSigningWorkflow when requests still run on the workflow */
+export class WorkflowInUseError extends Error {
+  constructor(message = "กระบวนการลงนามนี้ยังมีคำขอที่อยู่ระหว่างการลงนาม จึงลบไม่ได้") {
+    super(message);
+  }
+}
 
 export interface SigningWorkflowListParams extends SortParams {
   keyword?: string;

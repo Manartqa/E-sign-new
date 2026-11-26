@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-import { ACCOUNTS } from "./accounts";
+import { expect, test } from "@playwright/test";
+import { ACCOUNTS, MOCK_OTP, signInOnPage } from "./accounts";
 
 test.describe("sign-in", () => {
   test("a guest is sent to the login page", async ({ page }) => {
@@ -34,10 +34,10 @@ test.describe("sign-in", () => {
   });
 
   test("returns to the page that asked for a login", async ({ page }) => {
-    await page.goto("/reports?m=2");
-    await expect(page).toHaveURL(/\/login\?callbackUrl=%2Freports%3Fm%3D2/);
+    await page.goto("/reports/overview?m=2");
+    await expect(page).toHaveURL(/\/login\?callbackUrl=%2Freports%2Foverview%3Fm%3D2/);
     await signInOnPage(page);
-    await expect(page).toHaveURL(/\/reports\?m=2$/);
+    await expect(page).toHaveURL(/\/reports\/overview\?m=2$/);
   });
 
   for (const evil of ["https://evil.com", "//evil.com"]) {
@@ -90,9 +90,48 @@ test.describe("sign-out", () => {
   });
 });
 
-async function signInOnPage(page: Page) {
-  const { username, pwd } = ACCOUNTS.manart;
-  await page.getByPlaceholder("เช่น officer.name@agency.go.th").fill(username);
-  await page.getByPlaceholder("กรอกรหัสผ่าน").fill(pwd);
-  await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
-}
+test.describe("OTP and session limits", () => {
+  test("a right password asks for the e-mailed OTP; a wrong one is refused", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByPlaceholder("เช่น officer.name@agency.go.th").fill(ACCOUNTS.manart.username);
+    await page.getByPlaceholder("กรอกรหัสผ่าน").fill(ACCOUNTS.manart.pwd);
+    await page.getByRole("button", { name: "เข้าสู่ระบบ", exact: true }).click();
+    await expect(page.getByText(/ส่งรหัส OTP 6 หลักไปที่อีเมล m\*+a@/)).toBeVisible();
+
+    await page.getByLabel("รหัส OTP").fill("000000");
+    await page.getByRole("button", { name: "ยืนยันรหัส OTP" }).click();
+    await expect(page.getByText("รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง")).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+
+    await page.getByLabel("รหัส OTP").fill(MOCK_OTP);
+    await page.getByRole("button", { name: "ยืนยันรหัส OTP" }).click();
+    await expect(page).toHaveURL(/\/applications$/);
+  });
+
+  test("idling warns, then signs the app out and comes back to the page", async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await page.goto("/login");
+    await signInOnPage(page);
+    await expect(page).toHaveURL(/\/applications$/);
+    await page.goto("/reports");
+    // the idle timer starts when the signed-in shell mounts — wait for it
+    await expect(page.getByRole("heading", { name: "ยอดคำขอรายเดือน" })).toBeVisible();
+
+    // idle limit 1 hour, warning 2 minutes before
+    await page.clock.fastForward("58:30");
+    await expect(page.getByText("ใกล้หมดเวลาการใช้งาน")).toBeVisible();
+    await page.getByRole("button", { name: "ต่อเวลาใช้งาน" }).click();
+    await expect(page.getByText("ใกล้หมดเวลาการใช้งาน")).toBeHidden();
+
+    await page.clock.fastForward("01:00:30");
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByText(/ไม่มีการใช้งานเกิน 1 ชั่วโมง/)).toBeVisible();
+
+    await signInOnPage(page);
+    await expect(page).toHaveURL(/\/reports\/overview$/);
+  });
+});

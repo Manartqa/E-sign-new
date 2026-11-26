@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   ArrowUpDown,
@@ -86,6 +87,7 @@ export function SignerChainEditor({
         signerName: signer.name,
         position: signer.position,
         approvalLevel: signer.approvalLevel,
+        signerActive: signer.isActive,
       }));
     if (added.length) onChange([...steps, ...added]);
     setPicked(new Map());
@@ -307,6 +309,13 @@ export function SignerChainEditor({
                           {step.position}
                         </span>
                       )}
+                      {/* a warning only — the workflow still saves (user's call, 2026-11-26) */}
+                      {!step.signerActive && (
+                        <span className="flex items-center gap-1 text-xs text-action-reject">
+                          <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+                          ผู้ใช้งานนี้ถูกปิดใช้งานแล้ว คำขอที่มาถึงลำดับนี้จะไม่มีผู้ลงนาม
+                        </span>
+                      )}
                     </span>
                     <span
                       className={cn(
@@ -331,6 +340,7 @@ export function SignerChainEditor({
         <span>
           ระบบจะจัดเรียงลำดับการลงนามตามลำดับที่เลือก
           คุณสามารถลาก (Drag &amp; Drop) เพื่อปรับลำดับได้ภายหลัง
+          · ต้องมีผู้ตรวจสอบและลงนาม 1 คน อยู่ลำดับสุดท้าย (เป็นผู้ออกใบอนุญาต)
         </span>
       </p>
 

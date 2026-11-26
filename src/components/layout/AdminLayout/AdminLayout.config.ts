@@ -3,8 +3,11 @@ import {
   Clock,
   FileCheck,
   FilePen,
+  FileSignature,
   FileText,
+  History,
   ListOrdered,
+  LogIn,
   Settings,
   ShieldAlert,
   ShieldUser,
@@ -58,9 +61,23 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     href: ROUTES.reports,
-    label: "รายงานภาพรวม",
+    label: "รายงาน",
     icon: BarChart3,
-    permission: "REPORTS:VIEW",
+    // both reports share REPORTS:VIEW (user's call, 2026-11-26)
+    children: [
+      {
+        href: ROUTES.reportsOverview,
+        label: "รายงานภาพรวม",
+        icon: BarChart3,
+        permission: "REPORTS:VIEW",
+      },
+      {
+        href: ROUTES.signatureReport,
+        label: "สรุปการตรวจสอบและลงนาม",
+        icon: FileSignature,
+        permission: "REPORTS:VIEW",
+      },
+    ],
   },
   { href: ROUTES.profile, label: "โปรไฟล์ผู้ใช้งาน", icon: User },
   {
@@ -85,6 +102,18 @@ export const NAV_ITEMS: NavItem[] = [
         label: "บทบาทและสิทธิ์",
         icon: ShieldUser,
         permission: "ROLES:VIEW",
+      },
+      {
+        href: ROUTES.logonLogs,
+        label: "ประวัติการเข้าใช้งานระบบ",
+        icon: LogIn,
+        permission: "LOGON_LOGS:VIEW",
+      },
+      {
+        href: ROUTES.changeLogs,
+        label: "ประวัติการเปลี่ยนแปลงข้อมูล",
+        icon: History,
+        permission: "CHANGE_LOGS:VIEW",
       },
     ],
   },

@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
+  Info,
   Loader2,
   Lock,
   User,
@@ -42,6 +43,8 @@ interface LoginFormProps {
   isSubmitting?: boolean;
   /** null = no error; otherwise the banner message */
   errorMessage?: string | null;
+  /** an information banner, e.g. why the last session ended — not an error */
+  notice?: string | null;
   onSso?: () => void;
 }
 
@@ -53,6 +56,7 @@ export function LoginForm({
   onSubmit,
   isSubmitting = false,
   errorMessage = null,
+  notice = null,
   onSso,
 }: LoginFormProps) {
   const usernameId = useId();
@@ -114,6 +118,17 @@ export function LoginForm({
           <p className="text-sm font-semibold text-destructive">
             {errorMessage ?? LOGIN_ERROR_MESSAGE}
           </p>
+        </div>
+      )}
+
+      {/* not in Figma: why the last session ended (idle, 8-hour limit) */}
+      {!hasError && notice && (
+        <div
+          role="status"
+          className="flex items-center gap-2.5 rounded-2xl border border-brand-navy-mid/20 bg-brand-navy-mid/5 p-4"
+        >
+          <Info className="size-[18px] shrink-0 text-brand-navy-mid" aria-hidden />
+          <p className="text-sm font-semibold text-brand-navy-mid">{notice}</p>
         </div>
       )}
 

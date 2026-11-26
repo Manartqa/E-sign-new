@@ -52,4 +52,12 @@ export const MODULE_LABELS: Record<
     label: "ผู้ใช้งาน",
     description: "ตั้งค่าระบบ › ผู้ใช้งานและข้อมูลการลงนาม (กำหนดบทบาทต้องมีสิทธิ์แก้ไขบทบาท)",
   },
+  [PERMISSION_MODULE.LOGON_LOGS]: {
+    label: "ประวัติการเข้าใช้งานระบบ",
+    description: "ตั้งค่าระบบ › Log การเข้าสู่ระบบและออกจากระบบ",
+  },
+  [PERMISSION_MODULE.CHANGE_LOGS]: {
+    label: "ประวัติการเปลี่ยนแปลงข้อมูล",
+    description: "ตั้งค่าระบบ › Log การเพิ่ม แก้ไข และลบข้อมูล",
+  },
 };

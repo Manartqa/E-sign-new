@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
-import { EmptyState, Timeline } from "@/components/common";
+import { EmptyState, LabeledSelect, Timeline } from "@/components/common";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { approvalLevelLabel } from "@/components/partials/User/User.config";
 import type {
   DetailPanel,
   DetailSection,
   DetailTabKey,
   DocumentItem,
+  TimelineEvent,
 } from "@/types/app/applications";
-import { DETAIL_COLUMN_WIDTHS } from "./ApplicationDetail.config";
+import { DETAIL_COLUMN_WIDTHS, revisionsOf } from "./ApplicationDetail.config";
 import { AuthorizedPeoplePanel } from "./AuthorizedPeoplePanel";
 import { DataTablePanel } from "./DataTablePanel";
 import { DocumentTable } from "./DocumentTable";
@@ -152,6 +154,46 @@ interface DetailPanelViewProps {
   onOpenDocument?: (document: DocumentItem) => void;
 }
 
+/**
+ * ประวัติการดำเนินการ, one ครั้งที่ at a time (legacy "ประวัติการลงนาม ครั้งที่"):
+ * the latest round first; a request never sent back has one round and no
+ * selector.
+ */
+function HistoryTimeline({
+  heading,
+  events,
+}: {
+  heading?: string;
+  events: TimelineEvent[];
+}) {
+  const revisions = revisionsOf(events);
+  const [picked, setPicked] = useState<number>();
+  const revision = picked ?? revisions.at(-1) ?? 1;
+
+  return (
+    <div className="flex flex-col gap-4 rounded-lg bg-card px-6 py-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        {heading && (
+          <h3 className="text-base font-bold text-brand-navy-mid">{heading}</h3>
+        )}
+        {revisions.length > 1 && (
+          <LabeledSelect
+            label="ครั้งที่"
+            className="w-32"
+            value={String(revision)}
+            options={revisions.map((no) => ({ value: String(no), label: String(no) }))}
+            onChange={(value) => setPicked(Number(value))}
+          />
+        )}
+      </div>
+      <Timeline
+        events={events.filter((event) => event.revisionNo === revision)}
+        levelLabel={approvalLevelLabel}
+      />
+    </div>
+  );
+}
+
 const NoPanel = () => (
   <EmptyState
     title="ไม่มีข้อมูลในหัวข้อนี้"
@@ -168,16 +210,7 @@ export function DetailPanelView({
   if (!panel) return <NoPanel />;
 
   if (panel.kind === "timeline") {
-    return (
-      <div className="flex flex-col gap-4 rounded-lg bg-card px-6 py-6">
-        {panel.heading && (
-          <h3 className="text-base font-bold text-brand-navy-mid">
-            {panel.heading}
-          </h3>
-        )}
-        <Timeline events={panel.events} />
-      </div>
-    );
+    return <HistoryTimeline heading={panel.heading} events={panel.events} />;
   }
 
   if (panel.kind === "documents") {

@@ -30,9 +30,8 @@ interface TokenSignPanelProps {
 
 /**
  * The USB-token half of a signing dialog: detection status, a retry, and the
- * PIN. Shared by the single-request SignatureModal and the list's
- * BulkConfirmModal, which ask for the same thing in different frames — one
- * document versus the final-signer rows of a batch.
+ * PIN. Used by SignatureModal, for one document from the detail page or the
+ * final-signer rows of a batch from the list.
  */
 export function TokenSignPanel({
   note,

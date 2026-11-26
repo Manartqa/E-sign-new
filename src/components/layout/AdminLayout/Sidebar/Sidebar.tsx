@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import { ROUTES } from "@/constant/routes";
-import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationDetail } from "@/hooks/applications";
 import { usePermission } from "@/hooks/profile";
 import { logoutEverywhere } from "@/lib/logout";
@@ -62,13 +61,14 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   const { can } = usePermission();
   const navItems = getVisibleNavItems(can);
   // an application detail page (/applications/:id) belongs to รอการอนุมัติ
-  // while the request is still pending — the same rule as its back link —
-  // so opening one from a notification doesn't light up คำขอทั้งหมด. The
-  // detail query is shared with the page, so this adds no extra request.
+  // while it waits for this officer's decision (`canAct` — the only requests
+  // that menu lists, and the same rule as its back link), so opening one from
+  // a notification doesn't light up คำขอทั้งหมด. The detail query is shared
+  // with the page, so this adds no extra request.
   const detailId = pathname.match(/^\/applications\/(?!pending$)([^/]+)$/)?.[1];
   const { detail } = useApplicationDetail(detailId ?? "");
   const activeHref =
-    detailId && detail?.summary.status === APPLICATION_STATUS.PENDING_APPROVAL
+    detailId && detail?.canAct
       ? ROUTES.applicationsPending
       : getActiveNavHref(pathname);
   // the group owning the active page opens on arrival and folds again when the
@@ -110,9 +110,11 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
       <aside
         className={cn(
           "flex shrink-0 flex-col gap-10 bg-sidebar p-5 transition-[width]",
-          // 272px, not Figma's 240: fits APP_NAME on one line (163px bold at
-          // 14px + 40px padding + 40px logo + 12px gap = 255px, plus slack)
-          isCollapsed ? "w-20 px-3" : "w-68",
+          // 304px, not Figma's 240: fits the longest sub-menu label on one
+          // line (ประวัติการเปลี่ยนแปลงข้อมูล, 164px semibold at 14px + 40px
+          // padding + 48px pl-12 + 16px icon + 12px gap + 16px pr-4 = 296px,
+          // plus slack); its rows are a fixed h-11 the sliding highlight needs
+          isCollapsed ? "w-20 px-3" : "w-76",
           // on desktop it fills the viewport-high shell (AdminLayout), which
           // keeps the user block below pinned to the bottom
           "fixed inset-y-0 left-0 z-50 overflow-y-auto max-lg:transition-transform lg:static",

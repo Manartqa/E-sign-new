@@ -6,6 +6,8 @@ import {
 import type { User } from "@/types/app/users";
 import { MOCK_PROFILE, MOCK_FINAL_SIGNER_PROFILE } from "./profile.mock";
 
+const MOCK_SIGNATURE_URL = "/mock/signature-sample.svg";
+
 /** a mock user and the ids of the roles it holds (names resolve on read) */
 export type MockUser = Omit<User, "roles"> & { roleIds: string[] };
 
@@ -41,7 +43,9 @@ const user = (
   roleIds: details.roleIds,
   signingMethod: details.signingMethod ?? SIGNING_METHOD.USB_TOKEN,
   certificateFileName: null,
-  signatureImageUrl: null,
+  // a ผู้ตรวจสอบและลงนาม must have one — it is stamped on the licence
+  signatureImageUrl:
+    details.approvalLevel === APPROVAL_LEVEL_FINAL ? MOCK_SIGNATURE_URL : null,
   lastLoginAt: details.lastLoginAt ?? null,
   createdBy: created[0],
   createdAt: created[1],

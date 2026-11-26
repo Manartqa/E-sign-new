@@ -41,12 +41,19 @@ export async function POST(request: NextRequest) {
   const target = loginUrl(request.nextUrl.origin);
   let location = target;
 
+  // scope=app: the session ended on its own (idle, or the 8-hour limit) — end
+  // this app's session only and leave the SSO session and its tokens alone
+  // (user's call, 2026-11-26). The ออกจากระบบ button sends no scope.
+  const appOnly = form?.get("scope") === "app";
+
   // the raw JWT is the only place the refresh token is reachable
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-    cookieName: SESSION_COOKIE_NAME,
-  });
+  const token = appOnly
+    ? null
+    : await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+        cookieName: SESSION_COOKIE_NAME,
+      });
 
   if (token?.provider === SSO_PROVIDER_ID) {
     await revokeTokens(token);

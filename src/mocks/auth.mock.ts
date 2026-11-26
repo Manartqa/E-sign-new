@@ -1,3 +1,4 @@
+import { MFA_MAX_ATTEMPTS } from "@/constant/mfa";
 import { MOCK_FINAL_SIGNER_PROFILE, MOCK_PROFILE } from "./profile.mock";
 import { MOCK_ROLES } from "./roles.mock";
 import { MOCK_USERS, type MockUser } from "./users.mock";
@@ -47,6 +48,32 @@ export function canSignIn(
     : undefined;
   if (!user?.isActive) return false;
   return roles.some((role) => role.isActive && user.roleIds.includes(role.id));
+}
+
+/**
+ * The e-mailed OTP, in the mock: no mail is sent, the code is always this.
+ * Wrong codes are counted per account on the server; the fifth locks the
+ * sign-in until it starts over with the password (which sends a new code).
+ */
+export const MOCK_OTP = "123456";
+const wrongOtps = new Map<string, number>();
+
+/** a new code is "sent": the count starts again */
+export function sendMockOtp(username: string) {
+  wrongOtps.set(username, 0);
+}
+
+export function checkMockOtp(
+  username: string,
+  otp: string,
+): "ok" | "invalid" | "locked" {
+  if (otp === MOCK_OTP) {
+    wrongOtps.delete(username);
+    return "ok";
+  }
+  const wrong = (wrongOtps.get(username) ?? 0) + 1;
+  wrongOtps.set(username, wrong);
+  return wrong >= MFA_MAX_ATTEMPTS ? "locked" : "invalid";
 }
 
 export const findMockAccount = (username: string) =>

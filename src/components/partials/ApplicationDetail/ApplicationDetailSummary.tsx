@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Eye } from "lucide-react";
+import { ChevronRight, Clock, Eye } from "lucide-react";
 import { ActionButton, StatusBadge } from "@/components/common";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { usePermission } from "@/hooks/profile";
@@ -9,6 +9,10 @@ import type { ActionMode, ApplicationSummary } from "@/types/app/applications";
 
 interface ApplicationDetailSummaryProps {
   summary: ApplicationSummary;
+  /** whether this officer may decide now — see ApplicationItem.canAct */
+  canAct: boolean;
+  /** why a pending request has no buttons for them (stepNotice) */
+  notice?: string;
   onAction: (action: ActionMode) => void;
   onPreviewLicense: () => void;
 }
@@ -25,20 +29,20 @@ function Field({ label, value }: { label: string; value: string }) {
 /** Figma: app-detail › ข้อมูลคำขอ card (8:86) + detail id request (156:1991) */
 export function ApplicationDetailSummary({
   summary,
+  canAct: myTurn,
+  notice,
   onAction,
   onPreviewLicense,
 }: ApplicationDetailSummaryProps) {
   const isApproved = summary.status === APPLICATION_STATUS.APPROVED;
-  // only a request still รอการอนุมัติ can be acted on: อนุมัติ, ไม่อนุมัติ and
-  // ส่งกลับแก้ไข have all been decided already, so the whole action group goes
-  // away for them (user's call, 2026-09-18 — ไม่อนุมัติ / ส่งกลับแก้ไข used to
-  // keep the buttons)
+  // only a request waiting for THIS officer's decision can be acted on
+  // (`canAct`: รอการอนุมัติ and their turn — signing runs in step order).
+  // Decided requests lose the whole action group (user's call, 2026-09-18);
+  // so does one still with an earlier signer or already approved by them.
   const { can } = usePermission();
   const canDecide = can("APPLICATIONS:APPROVE");
   const canSign = can("APPLICATIONS:SIGN");
-  const canAct =
-    summary.status === APPLICATION_STATUS.PENDING_APPROVAL &&
-    (canDecide || canSign);
+  const canAct = myTurn && (canDecide || canSign);
   // once approved there's a real license to open, not just a preview of one
   const licenseLabel = isApproved
     ? "ใบอนุญาต/หนังสืออนุญาต"
@@ -63,6 +67,15 @@ export function ApplicationDetailSummary({
               <ActionButton action="approve" onClick={() => onAction("approve")} />
             )}
           </div>
+        )}
+        {!canAct && notice && (
+          <p
+            role="status"
+            className="flex items-center gap-2 text-[13px] text-status-pending-approval-fg"
+          >
+            <Clock className="size-4 shrink-0" aria-hidden />
+            {notice}
+          </p>
         )}
       </header>
 

@@ -20,7 +20,7 @@ declare module "next-auth" {
     /** "sso" or undefined (credentials) — SSO users have no password here */
     provider?: string;
     /** set when a refresh_token exchange failed and the session is dead */
-    error?: "RefreshAccessTokenError";
+    error?: "RefreshAccessTokenError" | "SessionExpired";
   }
   interface User {
     accessToken?: string;
@@ -41,6 +41,6 @@ declare module "next-auth/jwt" {
     user?: SessionUser;
     /** ms epoch of the sign-in; unlike `iat` it survives cookie re-issues */
     signedInAt?: number;
-    error?: "RefreshAccessTokenError";
+    error?: "RefreshAccessTokenError" | "SessionExpired";
   }
 }
