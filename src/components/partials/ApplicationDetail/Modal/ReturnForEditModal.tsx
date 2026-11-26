@@ -17,6 +17,8 @@ interface ReturnForEditModalProps {
    * ไม่อนุมัติ button has no modal of its own in the file.
    */
   mode: "return" | "reject";
+  /** set for a batch: the one reason and detail go to every selected request */
+  count?: number;
   isSubmitting: boolean;
   onClose: () => void;
   onConfirm: (values: ReturnFormValues) => void;
@@ -25,6 +27,7 @@ interface ReturnForEditModalProps {
 export function ReturnForEditModal({
   open,
   mode,
+  count,
   isSubmitting,
   onClose,
   onConfirm,
@@ -59,6 +62,11 @@ export function ReturnForEditModal({
         </header>
 
         <div className="flex flex-col gap-5 p-6">
+          {count !== undefined && (
+            <p className="rounded-lg bg-[#f8fafc] p-4 text-sm text-black">
+              คำขอที่เลือกไว้ {count} รายการ — สาเหตุและรายละเอียดนี้จะใช้กับทุกรายการ
+            </p>
+          )}
           <LabeledSelect
             label={isReject ? "ระบุสาเหตุที่ไม่อนุมัติ" : "ระบุสาเหตุที่ส่งคืน"}
             labelClassName="text-sm font-semibold text-black"

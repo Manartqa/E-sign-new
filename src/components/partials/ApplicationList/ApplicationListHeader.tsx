@@ -10,7 +10,11 @@ import {
 import { STATUS_OPTIONS } from "@/constant/status";
 import { useApplicationTypes } from "@/hooks/master";
 import type { ApplicationListParams } from "@/types/app/applications";
-import { URGENT_OPTIONS } from "./ApplicationList.config";
+import {
+  MY_DECISION_OPTIONS,
+  URGENT_OPTIONS,
+  withMyDecision,
+} from "./ApplicationList.config";
 
 interface ApplicationListHeaderProps {
   filters: ApplicationListParams;
@@ -77,7 +81,7 @@ export function ApplicationListHeader({
             onChange={(e) =>
               setDraft((d) => ({ ...d, keyword: e.target.value }))
             }
-            placeholder="ค้นหาผู้ประกอบการ, เลขที่คำขอ..."
+            placeholder="ค้นหาผู้ประกอบการ, เลขที่คำขอ, ผู้ซื้อ/ปลายทาง..."
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
           />
         </div>
@@ -126,6 +130,27 @@ export function ApplicationListHeader({
             }))
           }
         />
+
+        {/* คำขอทั้งหมด only: the pending route is the officer's turn, so
+            nothing on it has their decision yet */}
+        {!lockStatus && (
+          <LabeledSelect
+            label="ผลการพิจารณาของฉัน"
+            className="flex-1 min-w-[180px]"
+            labelClassName="text-[#334155]"
+            triggerClassName={FILTER_TRIGGER}
+            value={draft.myDecision ?? "all"}
+            options={[...MY_DECISION_OPTIONS]}
+            onChange={(value) =>
+              setDraft((d) =>
+                withMyDecision(
+                  d,
+                  value as NonNullable<ApplicationListParams["myDecision"]>,
+                ),
+              )
+            }
+          />
+        )}
 
         <div className="flex flex-1 flex-col gap-1.5 min-w-[180px]">
           <span className="text-sm font-medium text-[#334155]">ช่วงวันที่</span>

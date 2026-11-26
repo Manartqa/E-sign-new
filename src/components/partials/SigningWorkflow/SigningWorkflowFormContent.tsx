@@ -19,11 +19,14 @@ import {
   type RequestUsage,
   type SigningWorkflowInput,
 } from "@/types/app/signingWorkflows";
+import { cn } from "@/lib/utils";
 import {
   ALL_LICENSE_TYPES,
   ALL_WEAPON_CATEGORIES,
+  NOTE_MAX,
   REPLACEMENT_USAGE_OPTIONS,
   REQUEST_USAGE_OPTIONS,
+  chainError,
 } from "./SigningWorkflow.config";
 import { SignerChainEditor, newStepId } from "./SignerChainEditor";
 
@@ -43,6 +46,9 @@ const EMPTY_INPUT: Fields = {
   requestUsage: "",
   replacementUsage: "",
   steps: [],
+  // legacy opened a new process ticked ใช้งาน
+  isActive: true,
+  note: "",
 };
 
 const FIELD =
@@ -91,6 +97,8 @@ export default function SigningWorkflowFormContent({
         licenseType: workflow.licenseType,
         requestUsage: workflow.requestUsage,
         replacementUsage: workflow.replacementUsage,
+        isActive: workflow.isActive,
+        note: workflow.note,
         // fresh step ids on a copy so the two workflows never share them
         steps: id
           ? workflow.steps
@@ -134,11 +142,7 @@ function WorkflowForm({
     requestUsage: !form.requestUsage,
     replacementUsage: !form.replacementUsage,
   };
-  const stepsError =
-    form.steps.length === 0
-      ? "กรุณาเลือกผู้ลงนามอย่างน้อย 1 คน"
-      : form.steps.some((step) => !step.approvalLevel) &&
-        "มีผู้ลงนามที่ยังไม่กำหนดระดับการอนุมัติ";
+  const stepsError = chainError(form.steps);
   const invalid =
     nameMissing || Object.values(missing).some(Boolean) || Boolean(stepsError);
 
@@ -155,6 +159,7 @@ function WorkflowForm({
     const input: SigningWorkflowInput = {
       ...form,
       name: form.name.trim(),
+      note: form.note.trim(),
       requestUsage: form.requestUsage as RequestUsage,
       replacementUsage: form.replacementUsage as ReplacementUsage,
     };
@@ -234,6 +239,53 @@ function WorkflowForm({
             onChange={(v) => set("replacementUsage", v as ReplacementUsage)}
             triggerClassName={SELECT_TRIGGER}
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="workflow-note"
+            className="flex items-center justify-between text-sm font-medium"
+          >
+            หมายเหตุ
+            <span className="text-xs font-normal text-muted-foreground">
+              {form.note.length}/{NOTE_MAX}
+            </span>
+          </label>
+          <textarea
+            id="workflow-note"
+            value={form.note}
+            maxLength={NOTE_MAX}
+            onChange={(e) => set("note", e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border bg-white p-3 text-sm outline-none focus:border-brand-navy-mid"
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-4 rounded-lg border bg-white px-3 py-2.5">
+          <span className="flex flex-col">
+            <span className="text-sm font-medium">ใช้งาน</span>
+            <span className="text-xs text-muted-foreground">
+              ปิดไว้ถ้าไม่ต้องการให้เลือกใช้กับคำขอใหม่
+            </span>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.isActive}
+            aria-label="ใช้งาน"
+            onClick={() => set("isActive", !form.isActive)}
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+              form.isActive ? "bg-action-approve" : "bg-slate-300",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform",
+                form.isActive && "translate-x-5",
+              )}
+            />
+          </button>
         </div>
       </Section>
 

@@ -1,15 +1,48 @@
-import type { DetailTabKey } from "@/types/app/applications";
+import { APPLICATION_STATUS } from "@/constant/status";
+import { formatThaiDate } from "@/lib/format";
+import {
+  DETAIL_TABS,
+  MY_STEP_STATUS,
+  type ApplicationDetail,
+  type ApplicationItem,
+  type DetailTabKey,
+  type TimelineEvent,
+} from "@/types/app/applications";
 
 /**
- * Stand-in certificate shown in the signature modal. The real values come
- * from the PKI service (`PKI_SERVICE_URL` in the handoff env block).
+ * Why a request still รอการอนุมัติ shows no action buttons — or undefined
+ * when there is nothing to explain (the officer can act, the request is
+ * decided, or they are not on its chain).
  */
-export const MOCK_CERTIFICATE = {
-  id: "CERT-2024-0891",
-  issuer: "สำนักงาน PKI รัฐบาล",
-  validFrom: "2024-01-01T00:00:00Z",
-  validTo: "2026-12-31T00:00:00Z",
-};
+export function stepNotice(
+  item: Pick<ApplicationItem, "status" | "canAct" | "myStep">,
+): string | undefined {
+  if (item.status !== APPLICATION_STATUS.PENDING_APPROVAL || item.canAct) return;
+  const step = item.myStep;
+  if (!step) return;
+  if (step.status === MY_STEP_STATUS.WAITING_PREVIOUS) {
+    return `รอผู้ลงนามลำดับก่อนหน้า — คุณเป็นผู้ลงนามลำดับที่ ${step.stepNo} ยังไม่ถึงลำดับการลงนามของคุณ`;
+  }
+  if (step.status === MY_STEP_STATUS.APPROVED) {
+    const when = step.decidedAt ? ` เมื่อ ${formatThaiDate(step.decidedAt)}` : "";
+    return `คุณอนุมัติคำขอนี้แล้ว${when} — รอผู้ลงนามลำดับถัดไป`;
+  }
+}
+
+/** the ครั้งที่ numbers a history covers, oldest first */
+export const revisionsOf = (events: Pick<TimelineEvent, "revisionNo">[]) =>
+  [...new Set(events.map((event) => event.revisionNo))].sort((a, b) => a - b);
+
+/**
+ * The tabs this request has data for, in DETAIL_TABS order. A tab the backend
+ * sends no panel for is left out entirely rather than shown empty — request
+ * types differ in which sections they have (legacy SSPF did the same).
+ */
+export const visibleDetailTabs = (panels: ApplicationDetail["panels"]) =>
+  DETAIL_TABS.flatMap((tab) => {
+    const panel = panels[tab.key];
+    return panel ? [{ key: tab.key, label: panel.tabLabel ?? tab.label }] : [];
+  });
 
 /**
  * Column widths for the data-table tabs, by tab then column key. The backend

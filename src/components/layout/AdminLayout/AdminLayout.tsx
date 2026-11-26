@@ -7,6 +7,7 @@ import { ErrorState, LoadingState } from "@/components/common";
 import { usePermission, useProfile } from "@/hooks/profile";
 import { getRequiredPermission } from "./AdminLayout.config";
 import { Header } from "./Header";
+import { IdleTimeoutDialog } from "./IdleTimeoutDialog";
 import { Sidebar } from "./Sidebar";
 
 interface AdminLayoutProps {
@@ -38,16 +39,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     // the shell fills the viewport and only <main> scrolls, so the header
     // and sidebar stay put (dvh: phone browser bars don't hide the bottom)
-    <div className="flex h-dvh overflow-hidden">
-      <Sidebar
-        user={profile}
-        counts={{ pending: pendingCount }}
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header user={profile} onOpenMenu={() => setMenuOpen(true)} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 pt-1 sm:p-8 sm:pt-2">
+    // print (รายงาน → พิมพ์ / บันทึก PDF): only the page content, and the
+    // shell grows to fit it instead of clipping it to one screen
+    <div className="flex h-dvh overflow-hidden print:block print:h-auto print:overflow-visible">
+      <div className="contents print:hidden">
+        <Sidebar
+          user={profile}
+          counts={{ pending: pendingCount }}
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col print:block">
+        <div className="contents print:hidden">
+          <Header user={profile} onOpenMenu={() => setMenuOpen(true)} />
+        </div>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 pt-1 sm:p-8 sm:pt-2 print:overflow-visible print:p-0">
           {/* a page is held back until the permissions are known, so it never
               fires requests the user isn't allowed to make */}
           {!required ? (
@@ -64,6 +71,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           )}
         </main>
       </div>
+      <IdleTimeoutDialog />
     </div>
   );
 }

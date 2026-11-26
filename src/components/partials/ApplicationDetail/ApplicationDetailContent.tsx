@@ -5,14 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
-import { ErrorState, LoadingState, TabNav } from "@/components/common";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  TabNav,
+} from "@/components/common";
 import { ROUTES } from "@/constant/routes";
-import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationActions, useApplicationDetail } from "@/hooks/applications";
 import { useProfile } from "@/hooks/profile";
-import { useSigningToken } from "@/hooks/signing";
+import { signMethodFor } from "@/lib/sign-method";
+import { TokenSignError } from "@/services/application.service";
 import {
-  DETAIL_TABS,
   type ActionMode,
   type DetailTabKey,
   type DocumentItem,
@@ -20,7 +24,7 @@ import {
 } from "@/types/app/applications";
 import { ApplicationDetailSummary } from "./ApplicationDetailSummary";
 import { DetailPanelView } from "./DetailPanelView";
-import { MOCK_CERTIFICATE } from "./ApplicationDetail.config";
+import { stepNotice, visibleDetailTabs } from "./ApplicationDetail.config";
 import { ReturnForEditModal, SignatureModal } from "./Modal";
 import { PDFViewer } from "./PDFViewer";
 
@@ -39,11 +43,10 @@ export default function ApplicationDetailContent({
   const router = useRouter();
   const { detail, isLoading, isError } = useApplicationDetail(id);
   const { profile } = useProfile();
-  const { sign, decide } = useApplicationActions(id);
-  // detection is the modal's job; this is only the signing half
-  const { sign: tokenSign } = useSigningToken(false);
+  const { approve, decide } = useApplicationActions(id);
 
-  const [activeTab, setActiveTab] = useState<DetailTabKey>(DETAIL_TABS[0].key);
+  /** unset until the officer picks a tab — the first visible tab is shown */
+  const [activeTab, setActiveTab] = useState<DetailTabKey>();
   const [action, setAction] = useState<ActionMode | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
 
@@ -57,33 +60,33 @@ export default function ApplicationDetailContent({
       />
     );
 
-  // a `pin` means the final signer's USB token makes the signature; a button
-  // signature still uses the stand-in certificate
-  const handleSign = async (pin?: string) => {
-    let token;
-    if (pin) {
-      try {
-        token = await tokenSign.mutateAsync({ applicationId: detail.id, pin });
-      } catch {
-        // the message goes back to the modal through `error`
-        return;
-      }
-    }
+  const tabs = visibleDetailTabs(detail.panels);
+  const currentTab = tabs.some((tab) => tab.key === activeTab)
+    ? activeTab!
+    : tabs[0]?.key;
+  const currentPanel = currentTab ? detail.panels[currentTab] : undefined;
+
+  // earlier signers confirm; the final signer signs by their own method
+  const handleSign = async (input: { pin?: string; notes: string }) => {
+    const method = signMethodFor(detail.isFinalSigner, profile?.signingMethod);
+    if (!method) return;
     try {
-      await sign.mutateAsync({
-        certificateId: token?.certificateId ?? MOCK_CERTIFICATE.id,
-        certificateOwner: token?.certificateOwner ?? profile?.name ?? "",
-        signature: token?.signature ?? "base64_encoded_signature",
-        timestamp: new Date().toISOString(),
-        applicationId: detail.id,
+      await approve.mutateAsync({
+        method,
+        pin: input.pin,
+        notes: input.notes,
         officerId: profile?.id ?? "",
-        notes: "",
       });
       // the list has the signed document's download, so no success dialog
       toast.success(`ลงนามสำเร็จ — คำขอ ${detail.requestNo}`);
       router.push(ROUTES.applications);
-    } catch {
-      toast.error("ลงนามไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      // a token failure is shown beside the PIN; anything else (already
+      // signed, not this officer's turn …) is a toast, and the page refetches
+      if (!(error instanceof TokenSignError)) {
+        toast.error((error as Error).message);
+        setAction(null);
+      }
     }
   };
 
@@ -97,8 +100,8 @@ export default function ApplicationDetailContent({
       });
       setAction(null);
       toast.success(isReject ? "ไม่อนุมัติคำขอแล้ว" : "ส่งคืนคำขอเพื่อแก้ไขแล้ว");
-    } catch {
-      toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      toast.error((error as Error).message);
     }
   };
 
@@ -108,12 +111,9 @@ export default function ApplicationDetailContent({
   return (
     <div className="flex flex-col gap-4">
       <Link
-        // a request still รอการอนุมัติ goes back to that menu's list instead
-        href={
-          detail.summary.status === APPLICATION_STATUS.PENDING_APPROVAL
-            ? ROUTES.applicationsPending
-            : ROUTES.applications
-        }
+        // a request waiting for this officer goes back to the รอการอนุมัติ
+        // list, the only list that menu shows
+        href={detail.canAct ? ROUTES.applicationsPending : ROUTES.applications}
         className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-navy-mid"
       >
         <ChevronLeft className="size-4" aria-hidden />
@@ -122,6 +122,8 @@ export default function ApplicationDetailContent({
 
       <ApplicationDetailSummary
         summary={detail.summary}
+        canAct={detail.canAct}
+        notice={stepNotice(detail)}
         onAction={setAction}
         onPreviewLicense={() =>
           setViewer({
@@ -132,23 +134,32 @@ export default function ApplicationDetailContent({
       />
 
       <div className="rounded-xl border bg-card">
-        <TabNav
-          items={DETAIL_TABS}
-          value={activeTab}
-          onChange={(key) => setActiveTab(key as DetailTabKey)}
-          className="px-2"
-        />
-        {/* not in Figma: keyed by tab so each switch remounts and fades in */}
-        <div
-          key={activeTab}
-          className="animate-in p-2 duration-200 fade-in motion-reduce:animate-none"
-        >
-          <DetailPanelView
-            panel={detail.panels[activeTab]}
-            tab={activeTab}
-            onOpenDocument={openDocument}
+        {currentPanel ? (
+          <>
+            <TabNav
+              items={tabs}
+              value={currentTab}
+              onChange={(key) => setActiveTab(key as DetailTabKey)}
+              className="px-2"
+            />
+            {/* not in Figma: keyed by tab so each switch remounts and fades in */}
+            <div
+              key={currentTab}
+              className="animate-in p-2 duration-200 fade-in motion-reduce:animate-none"
+            >
+              <DetailPanelView
+                panel={currentPanel}
+                tab={currentTab}
+                onOpenDocument={openDocument}
+              />
+            </div>
+          </>
+        ) : (
+          <EmptyState
+            title="ไม่มีรายละเอียดคำขอ"
+            description="ระบบยังไม่ได้รับข้อมูลรายละเอียดของคำขอนี้จากต้นทาง"
           />
-        </div>
+        )}
       </div>
 
       {/* mounted only while open so the token PIN never survives a close */}
@@ -156,10 +167,14 @@ export default function ApplicationDetailContent({
         <SignatureModal
           open
           details={[detail]}
-          isSubmitting={sign.isPending || tokenSign.isPending}
-          error={tokenSign.error?.message}
+          isSubmitting={approve.isPending}
+          error={
+            approve.error instanceof TokenSignError
+              ? approve.error.message
+              : undefined
+          }
           onClose={() => setAction(null)}
-          onConfirm={(pin) => void handleSign(pin)}
+          onConfirm={(input) => void handleSign(input)}
         />
       )}
 

@@ -12,7 +12,7 @@ async function statValue(page: Page, label: string) {
   return Number((await value.innerText()).replace(/,/g, ""));
 }
 
-test("stat cards add up and the sidebar badge matches รอการอนุมัติ", async ({
+test("รอการอนุมัติ counts only the officer's turn, on the card, badge and menu", async ({
   page,
 }) => {
   await page.goto("/applications");
@@ -21,11 +21,16 @@ test("stat cards add up and the sidebar badge matches รอการอนุ�
   const approved = await statValue(page, "อนุมัติ");
   const rejectedOrReturned = await statValue(page, "ไม่อนุมัติ/ส่งกลับแก้ไข");
 
-  expect(total).toBeGreaterThan(0);
-  expect(pending + approved + rejectedOrReturned).toBe(total);
+  expect(pending).toBeGreaterThan(0);
+  // the rest of the pending requests are with another signer, so the cards
+  // no longer add up to the total
+  expect(pending + approved + rejectedOrReturned).toBeLessThan(total);
   await expect(
     page.locator("aside nav").getByRole("link", { name: /รอการอนุมัติ/ }),
   ).toHaveText(`รอการอนุมัติ${pending}`);
+
+  await page.goto("/applications/pending");
+  await expect(page.getByText(new RegExp(`จาก ${pending}\\s+รายการ`))).toBeVisible();
 });
 
 test("the type filter lists every application type", async ({ page }) => {
@@ -46,7 +51,8 @@ test.describe("request detail", () => {
     page,
   }) => {
     await page.getByRole("tab", { name: "ประวัติการดำเนินการ" }).click();
-    await expect(page.getByText("กระบวนการลงนาม: BEK")).toBeVisible();
+    // every mock chain now ends at the ผู้ตรวจสอบและลงนาม; this is the first
+    await expect(page.getByText(/^กระบวนการลงนาม: ส่งออก นำเรียน รอง ปล\.กห\./)).toBeVisible();
     await expect(page.getByText("ลงนามโดย ปล.กห.")).toBeVisible();
     await expect(page.getByText("พล.อ.สมบัติ ทองดี").last()).toBeVisible();
   });

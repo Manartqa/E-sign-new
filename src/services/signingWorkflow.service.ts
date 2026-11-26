@@ -1,5 +1,10 @@
+import { isAxiosError } from "axios";
+import { APPLICATION_STATUS } from "@/constant/status";
+import { apiErrorMessage } from "@/lib/api/error-message";
 import { USE_MOCK } from "@/lib/env";
 import { sortRows } from "@/lib/sort";
+import { MOCK_APPLICATIONS } from "@/mocks/applications.mock";
+import { mockChain } from "@/mocks/signingChain.mock";
 import {
   createSigningWorkflowApi,
   deleteSigningWorkflowApi,
@@ -10,11 +15,12 @@ import {
 import { MOCK_PROFILE } from "@/mocks/profile.mock";
 import { MOCK_USERS } from "@/mocks/users.mock";
 import { MOCK_SIGNING_WORKFLOWS } from "@/mocks/signingWorkflows.mock";
-import type {
-  SigningWorkflow,
-  SigningWorkflowInput,
-  SigningWorkflowListParams,
-  SigningWorkflowListResult,
+import {
+  WorkflowInUseError,
+  type SigningWorkflow,
+  type SigningWorkflowInput,
+  type SigningWorkflowListParams,
+  type SigningWorkflowListResult,
 } from "@/types/app/signingWorkflows";
 
 const DEFAULT_LIMIT = 10;
@@ -39,6 +45,7 @@ const withCurrentSigners = (workflow: SigningWorkflow): SigningWorkflow => ({
           signerName: signer.name,
           position: signer.position,
           approvalLevel: signer.approvalLevel,
+          signerActive: signer.isActive,
         }
       : step;
   }),
@@ -143,11 +150,27 @@ export async function updateSigningWorkflow(
   return res.data.data;
 }
 
+/**
+ * Throws WorkflowInUseError while requests are still being signed on the
+ * workflow (legacy deleted it anyway and left their chains dangling).
+ */
 export async function deleteSigningWorkflow(id: string): Promise<void> {
   if (USE_MOCK) {
+    const inUse = MOCK_APPLICATIONS.some(
+      (item) =>
+        item.status === APPLICATION_STATUS.PENDING_APPROVAL &&
+        mockChain(item).workflow.id === id,
+    );
+    if (inUse) throw new WorkflowInUseError();
     const index = MOCK_SIGNING_WORKFLOWS.findIndex((w) => w.id === id);
     if (index >= 0) MOCK_SIGNING_WORKFLOWS.splice(index, 1);
     return;
   }
-  await deleteSigningWorkflowApi(id);
+  try {
+    await deleteSigningWorkflowApi(id);
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 409)
+      throw new WorkflowInUseError(apiErrorMessage(error, new WorkflowInUseError().message));
+    throw error;
+  }
 }

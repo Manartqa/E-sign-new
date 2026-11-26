@@ -3,7 +3,7 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { AlertTriangle, Check, Eye, EyeOff, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { useChangePassword } from "@/hooks/profile";
+import { useChangePassword, useProfile } from "@/hooks/profile";
 import { cn } from "@/lib/utils";
 import { PASSWORD_RULES } from "./Profile.config";
 
@@ -89,7 +89,9 @@ export function ChangePasswordModal({
   const [confirmPwd, setConfirmPwd] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const rulesPassed = PASSWORD_RULES.every((rule) => rule.test(newPwd));
+  const { profile } = useProfile();
+  const ruleContext = { username: profile?.username ?? "" };
+  const rulesPassed = PASSWORD_RULES.every((rule) => rule.test(newPwd, ruleContext));
   const sameAsCurrent = newPwd !== "" && newPwd === currentPwd;
   const mismatch = confirmPwd !== "" && confirmPwd !== newPwd;
   const canSubmit =
@@ -185,7 +187,7 @@ export function ChangePasswordModal({
               <p className="text-sm font-medium text-foreground">ข้อกำหนดรหัสผ่าน</p>
               <ul className="flex flex-col gap-1.5">
                 {PASSWORD_RULES.map((rule) => {
-                  const passed = rule.test(newPwd);
+                  const passed = rule.test(newPwd, ruleContext);
                   return (
                     <li
                       key={rule.label}

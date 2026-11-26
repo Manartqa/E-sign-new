@@ -19,7 +19,23 @@ import {
   ssoEndpoints,
   toRoles,
 } from "@/lib/sso";
-import { canSignIn, findMockAccount } from "@/mocks/auth.mock";
+import {
+  canSignIn,
+  checkMockOtp,
+  findMockAccount,
+  sendMockOtp,
+} from "@/mocks/auth.mock";
+import {
+  MFA_INVALID_ERROR,
+  MFA_LOCKED_ERROR,
+  maskEmail,
+  mfaRequiredError,
+} from "@/constant/mfa";
+import {
+  SESSION_ABSOLUTE_MS,
+  SESSION_EXPIRED_ERROR,
+  isPastAbsoluteLimit,
+} from "@/constant/session";
 
 /** Claims this app reads off the SSO id_token / userinfo response. */
 interface SsoProfile extends Profile {
@@ -73,7 +89,9 @@ function isUnderBasePath(pathname: string) {
  * accounts instead of the network.
  */
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  // the cookie never outlives the absolute limit; the jwt callback and the
+  // proxy enforce the limit itself, counted from sign-in
+  session: { strategy: "jwt", maxAge: SESSION_ABSOLUTE_MS / 1000 },
   // NextAuth redirects to these as-is, relative to the origin — the basePath
   // has to be spelled out
   pages: {
@@ -110,14 +128,25 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         username: { label: "ชื่อผู้ใช้งาน", type: "text" },
         pwd: { label: "รหัสผ่าน", type: "password" },
+        // the e-mailed one-time code — empty on the first step (constant/mfa)
+        otp: { label: "รหัส OTP", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.pwd) return null;
+        const otp = credentials.otp?.trim() ?? "";
 
         if (USE_MOCK) {
           const account = findMockAccount(credentials.username);
           if (!account || credentials.pwd !== account.pwd) return null;
           if (!canSignIn(account.profile.email)) throw new Error(ACCESS_DENIED_ERROR);
+          const username = account.profile.username;
+          if (!otp) {
+            sendMockOtp(username);
+            throw new Error(mfaRequiredError(maskEmail(account.profile.email)));
+          }
+          const check = checkMockOtp(username, otp);
+          if (check === "locked") throw new Error(MFA_LOCKED_ERROR);
+          if (check === "invalid") throw new Error(MFA_INVALID_ERROR);
           return {
             id: account.profile.id,
             name: account.profile.name,
@@ -126,6 +155,13 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
+        /*
+         * POST /api/auth/login { username, pwd, otp? } — not in the handoff:
+         *   202 { maskedEmail }  password right, code e-mailed (no otp sent)
+         *   401 { code: "MFA_INVALID" } / 423  wrong code / too many wrong codes
+         *   403  right password, but no active account or role here
+         *   200 { accessToken, user }
+         */
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
           {
@@ -134,11 +170,20 @@ export const authOptions: NextAuthOptions = {
             body: JSON.stringify({
               username: credentials.username,
               pwd: credentials.pwd,
+              ...(otp && { otp }),
             }),
           },
         );
-        // 403 = right password, but no active account or role here
         if (res.status === 403) throw new Error(ACCESS_DENIED_ERROR);
+        if (res.status === 202) {
+          const { maskedEmail } = await res.json();
+          throw new Error(mfaRequiredError(maskedEmail ?? ""));
+        }
+        if (res.status === 423) throw new Error(MFA_LOCKED_ERROR);
+        if (res.status === 401 && otp) {
+          const body = await res.json().catch(() => ({}));
+          if (body?.code === "MFA_INVALID") throw new Error(MFA_INVALID_ERROR);
+        }
         if (!res.ok) return null;
 
         const { accessToken, user } = await res.json();
@@ -181,7 +226,13 @@ export const authOptions: NextAuthOptions = {
         };
       }
 
-      // ── later requests: refresh the SSO access token shortly before it dies ──
+      // ── later requests: 8 hours after sign-in the session is over, however
+      // active (legacy limit) — AuthGuard signs the app out on this error ──
+      if (isPastAbsoluteLimit(token.signedInAt)) {
+        return { ...token, error: SESSION_EXPIRED_ERROR };
+      }
+
+      // ── refresh the SSO access token shortly before it dies ──
       if (token.provider !== SSO_PROVIDER_ID) return token;
       if (token.error) return token; // already dead — don't retry every poll
 

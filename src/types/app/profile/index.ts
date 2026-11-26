@@ -1,4 +1,5 @@
 import type { PermissionKey, RoleRef } from "@/types/app/roles";
+import type { SigningMethod } from "@/types/app/signers";
 
 export interface UserProfile {
   id: string;
@@ -27,4 +28,13 @@ export interface UserProfile {
    * Read-only: the backend decides it and must enforce it on every endpoint.
    */
   permissions: PermissionKey[];
+  /**
+   * วิธีลงลายเซ็นต์ from ตั้งค่าระบบ › ผู้ใช้งาน — how this officer makes the
+   * final signature: USB_TOKEN signs on this PC, CERTIFICATE_FILE lets the
+   * server sign with the stored certificate. null for an account that is not
+   * a signer. Read-only here.
+   */
+  signingMethod: SigningMethod | null;
+  /** the stored certificate's file name, for CERTIFICATE_FILE; null when none */
+  certificateFileName: string | null;
 }

@@ -1,8 +1,29 @@
 import type { SelectOption } from "@/components/common";
+import { APPROVAL_LEVEL_FINAL } from "@/types/app/signers";
 import {
   REPLACEMENT_USAGE,
   REQUEST_USAGE,
+  type SigningWorkflowStep,
 } from "@/types/app/signingWorkflows";
+
+/** legacy NOTE1 */
+export const NOTE_MAX = 512;
+
+/**
+ * What is wrong with a chain, or undefined when it can be saved. The last
+ * signer is the ผู้ตรวจสอบและลงนาม who issues the licence, so a chain needs
+ * exactly one, at the end (user's call, 2026-11-26 — legacy checked nothing).
+ */
+export function chainError(
+  steps: Pick<SigningWorkflowStep, "approvalLevel">[],
+): string | undefined {
+  if (steps.length === 0) return "กรุณาเลือกผู้ลงนามอย่างน้อย 1 คน";
+  if (steps.some((step) => !step.approvalLevel))
+    return "มีผู้ลงนามที่ยังไม่กำหนดระดับการอนุมัติ";
+  const finals = steps.filter((step) => step.approvalLevel === APPROVAL_LEVEL_FINAL);
+  if (finals.length !== 1 || steps.at(-1)?.approvalLevel !== APPROVAL_LEVEL_FINAL)
+    return "ต้องมีผู้ตรวจสอบและลงนาม 1 คน และต้องอยู่ลำดับสุดท้าย";
+}
 
 /**
  * "all" is this app's value, not a master entry — the lists themselves come

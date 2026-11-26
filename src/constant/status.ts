@@ -58,3 +58,12 @@ export const STATUS_OPTIONS = (
  * statuses, so clicking it needs a filter value the dropdown never offers.
  */
 export const REJECTED_OR_RETURNED_FILTER = "REJECTED_OR_RETURNED" as const;
+
+/**
+ * Not a real status either — the รอการอนุมัติ menu, its sidebar badge and the
+ * รอการอนุมัติ stat card mean "waiting for MY decision now" (legacy inbox):
+ * a pending request whose current step is the signed-in officer's
+ * (`canAct`). A pending request still with an earlier signer, or one the
+ * officer already approved, is only under คำขอทั้งหมด.
+ */
+export const MY_TURN_FILTER = "MY_TURN" as const;

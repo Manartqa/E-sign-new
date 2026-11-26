@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import { ROUTES } from "@/constant/routes";
-import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationDetail } from "@/hooks/applications";
 import { usePermission } from "@/hooks/profile";
 import { logoutEverywhere } from "@/lib/logout";
@@ -62,13 +61,14 @@ export function Sidebar({ user, counts, open = false, onClose }: SidebarProps) {
   const { can } = usePermission();
   const navItems = getVisibleNavItems(can);
   // an application detail page (/applications/:id) belongs to รอการอนุมัติ
-  // while the request is still pending — the same rule as its back link —
-  // so opening one from a notification doesn't light up คำขอทั้งหมด. The
-  // detail query is shared with the page, so this adds no extra request.
+  // while it waits for this officer's decision (`canAct` — the only requests
+  // that menu lists, and the same rule as its back link), so opening one from
+  // a notification doesn't light up คำขอทั้งหมด. The detail query is shared
+  // with the page, so this adds no extra request.
   const detailId = pathname.match(/^\/applications\/(?!pending$)([^/]+)$/)?.[1];
   const { detail } = useApplicationDetail(detailId ?? "");
   const activeHref =
-    detailId && detail?.summary.status === APPLICATION_STATUS.PENDING_APPROVAL
+    detailId && detail?.canAct
       ? ROUTES.applicationsPending
       : getActiveNavHref(pathname);
   // the group owning the active page opens on arrival and folds again when the

@@ -2,10 +2,10 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  approveApplication,
   decideApplication,
-  signApplication,
 } from "@/services/application.service";
-import { signWithToken } from "@/services/signingToken.service";
+import type { BulkRowResult, SignMethod } from "@/types/api/main/application";
 import type { ActionMode } from "@/types/app/applications";
 import { APPLICATION_LIST_QUERY_KEY } from "./useApplicationList";
 import { APPLICATION_STATS_QUERY_KEY } from "./useApplicationStats";
@@ -13,13 +13,15 @@ import { APPLICATION_STATS_QUERY_KEY } from "./useApplicationStats";
 interface BulkActionInput {
   ids: string[];
   action: ActionMode;
-  /** officer note carried on every request in the batch */
-  notes?: string;
+  /** หมายเหตุ / รายละเอียด carried on every request in the batch */
+  notes: string;
+  /** reject / return: the one reason applied to every request */
+  reasonCode?: string;
   officerId: string;
-  /** only needed by `approve`, which goes through the sign endpoint */
-  certificate?: { id: string; owner: string };
-  /** the selected ids this officer signs last — they go through the token */
+  /** approve: the selected ids this officer signs last */
   finalSignerIds?: string[];
+  /** approve: how those rows are signed — the rest are confirmed */
+  finalMethod?: SignMethod;
   /** USB token PIN, entered once for the whole batch */
   pin?: string;
 }
@@ -29,6 +31,8 @@ export interface BulkActionResult {
   failed: string[];
   /** the first failure's message, e.g. a wrong token PIN */
   error?: string;
+  /** every row's outcome in selection order — the batch endpoint's shape */
+  results: BulkRowResult[];
 }
 
 /**
@@ -46,51 +50,48 @@ export const useBulkApplicationActions = () => {
       ids,
       action,
       notes,
+      reasonCode = "",
       officerId,
-      certificate,
       finalSignerIds = [],
+      finalMethod = "CONFIRM",
       pin,
     }) => {
-      const result: BulkActionResult = { succeeded: [], failed: [] };
+      const result: BulkActionResult = {
+        succeeded: [],
+        failed: [],
+        results: [],
+      };
 
       for (const id of ids) {
         try {
           if (action === "approve") {
-            // rows this officer signs last go through the USB token, exactly
-            // as the detail page does; the rest keep the stand-in certificate
-            const token =
-              pin && finalSignerIds.includes(id)
-                ? await signWithToken({ applicationId: id, pin })
-                : undefined;
-            await signApplication(id, {
-              certificateId: token?.certificateId ?? certificate?.id ?? "",
-              certificateOwner:
-                token?.certificateOwner ?? certificate?.owner ?? "",
-              signature: token?.signature ?? "base64_encoded_signature",
-              timestamp: new Date().toISOString(),
-              applicationId: id,
+            await approveApplication(id, {
+              method: finalSignerIds.includes(id) ? finalMethod : "CONFIRM",
+              pin,
+              notes,
               officerId,
-              notes: notes ?? "",
             });
           } else {
-            // a batch collects no reason — see BulkConfirmModal
             await decideApplication(id, {
               action: action === "reject" ? "REJECT" : "RETURN",
-              reasonCode: "",
-              notes: notes ?? "",
+              reasonCode,
+              notes,
             });
           }
           result.succeeded.push(id);
+          result.results.push({ id, ok: true });
         } catch (error) {
+          const message = error instanceof Error ? error.message : undefined;
           result.failed.push(id);
-          result.error ??=
-            error instanceof Error ? error.message : undefined;
+          result.results.push({ id, ok: false, message });
+          result.error ??= message;
         }
       }
 
       return result;
     },
-    onSuccess: () => {
+    // a failed row is likely stale (already decided, not this officer's turn)
+    onSettled: () => {
       void queryClient.invalidateQueries({
         queryKey: APPLICATION_LIST_QUERY_KEY,
       });

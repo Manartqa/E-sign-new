@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { ROUTES } from "@/constant/routes";
+import { isPastAbsoluteLimit } from "@/constant/session";
 import {
   BASE_PATH,
   LOGOUT_MARKER_COOKIE,
@@ -57,7 +58,9 @@ export async function proxy(request: NextRequest) {
   }
 
   const liveToken = isLoggedOut ? null : token;
-  const isSignedIn = Boolean(liveToken && !liveToken.error);
+  const isSignedIn = Boolean(
+    liveToken && !liveToken.error && !isPastAbsoluteLimit(liveToken.signedInAt),
+  );
 
   if (PUBLIC_PATHS.includes(path)) {
     // an ?error= from NextAuth must stay visible even with a cookie present
@@ -77,7 +80,12 @@ export async function proxy(request: NextRequest) {
     return finish(NextResponse.redirect(login));
   }
 
-  if (liveToken.error === "RefreshAccessTokenError") {
+  if (
+    liveToken.error === "RefreshAccessTokenError" ||
+    // the raw cookie never passes the jwt callback here, so check the
+    // 8-hour limit directly; this app's session only — SSO is left alone
+    isPastAbsoluteLimit(liveToken.signedInAt)
+  ) {
     // drop the dead cookie too, or /login would bounce back here in a loop
     return noStore(clearSessionCookie(redirectTo(request, ROUTES.login)));
   }

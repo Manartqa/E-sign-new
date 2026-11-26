@@ -12,9 +12,11 @@ test.describe("ผู้มีอำนาจลงนาม (sombat)", () => {
     await expect(navLinks(page)).toHaveText([
       "คำขอทั้งหมด",
       /^รอการอนุมัติ/,
-      "รายงานภาพรวม",
       "โปรไฟล์ผู้ใช้งาน",
     ]);
+    // the รายงาน group (both reports need REPORTS:VIEW, which this role has)
+    await page.getByRole("button", { name: "รายงาน" }).click();
+    await expect(navLinks(page)).toContainText(["รายงานภาพรวม", "สรุปการตรวจสอบและลงนาม"]);
     await expect(page.getByRole("button", { name: "ตั้งค่าระบบ" })).toHaveCount(0);
   });
 

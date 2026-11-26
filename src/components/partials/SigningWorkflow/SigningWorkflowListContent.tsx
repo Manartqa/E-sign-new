@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AlertTriangle,
   Copy,
   FilePen,
   FilePlus2,
@@ -34,7 +35,10 @@ import {
 } from "@/hooks/signingWorkflows";
 import { useApplicationTypes, useWeaponCategories } from "@/hooks/master";
 import { formatThaiDateTime } from "@/lib/format";
-import type { SigningWorkflow } from "@/types/app/signingWorkflows";
+import {
+  WorkflowInUseError,
+  type SigningWorkflow,
+} from "@/types/app/signingWorkflows";
 import {
   ALL_LICENSE_TYPES,
   ALL_WEAPON_CATEGORIES,
@@ -111,8 +115,12 @@ export default function SigningWorkflowListContent() {
       setDeleting(null);
       // stepping back keeps the user off an emptied last page
       if (items.length === 1 && page > 1) setPage(page - 1);
-    } catch {
-      toast.error("ลบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      toast.error(
+        error instanceof WorkflowInUseError
+          ? error.message
+          : "ลบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+      );
     }
   };
 
@@ -235,6 +243,17 @@ export default function SigningWorkflowListContent() {
                           <span className="font-semibold text-brand-navy-mid">
                             {workflow.name}
                           </span>
+                          {!workflow.isActive && (
+                            <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
+                              ปิดใช้งาน
+                            </span>
+                          )}
+                          {workflow.steps.some((step) => !step.signerActive) && (
+                            <span className="mt-1 flex items-center gap-1 text-xs text-action-reject">
+                              <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+                              มีผู้ลงนามที่ถูกปิดใช้งาน
+                            </span>
+                          )}
                         </td>
                         <td className={TD}>
                           <div className="flex flex-col gap-1 whitespace-nowrap">

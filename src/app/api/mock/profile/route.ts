@@ -51,6 +51,8 @@ async function currentProfile(): Promise<UserProfile> {
       lastLoginAt: new Date().toISOString(),
       roles: [],
       permissions: [],
+      signingMethod: null,
+      certificateFileName: null,
     }
   );
 }

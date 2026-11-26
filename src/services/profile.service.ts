@@ -31,7 +31,15 @@ async function mockProfileRequest(init?: RequestInit): Promise<UserProfile> {
   const user = MOCK_USERS.find(
     (item) => item.id === profile.id || (email && item.email.toLowerCase() === email),
   );
-  return user ? { ...profile, ...rolesOf(user.roleIds) } : profile;
+  // the signing method is edited there too, so it follows the user record
+  return user
+    ? {
+        ...profile,
+        ...rolesOf(user.roleIds),
+        signingMethod: user.signingMethod,
+        certificateFileName: user.certificateFileName,
+      }
+    : profile;
 }
 
 export async function getProfile(): Promise<UserProfile> {
@@ -63,13 +71,26 @@ let mockPassword: string = MOCK_CREDENTIALS.pwd;
 
 const WRONG_CURRENT_PASSWORD = "รหัสผ่านปัจจุบันไม่ถูกต้อง";
 const CHANGE_PASSWORD_FAILED = "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+/** legacy SSPF locked the account after this many wrong current passwords */
+const MAX_WRONG_CURRENT = 3;
+const LOCKED_MESSAGE =
+  "กรอกรหัสผ่านปัจจุบันผิดเกิน 3 ครั้ง บัญชีถูกระงับชั่วคราว กรุณาติดต่อผู้ดูแลระบบ";
+let mockWrongCurrent = 0;
 
 /** Rejects with an Error whose message is ready to show the user. */
 export async function changePassword(
   body: ChangePasswordRequest,
 ): Promise<void> {
   if (USE_MOCK) {
-    if (body.currentPwd !== mockPassword) throw new Error(WRONG_CURRENT_PASSWORD);
+    // the real lock is the backend's; the mock only says what it would say
+    if (mockWrongCurrent >= MAX_WRONG_CURRENT) throw new Error(LOCKED_MESSAGE);
+    if (body.currentPwd !== mockPassword) {
+      mockWrongCurrent += 1;
+      throw new Error(
+        mockWrongCurrent >= MAX_WRONG_CURRENT ? LOCKED_MESSAGE : WRONG_CURRENT_PASSWORD,
+      );
+    }
+    mockWrongCurrent = 0;
     mockPassword = body.newPwd;
     return;
   }

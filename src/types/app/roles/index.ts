@@ -11,6 +11,10 @@ export const PERMISSION_MODULE = {
   SIGNING_WORKFLOWS: "SIGNING_WORKFLOWS",
   ROLES: "ROLES",
   USERS: "USERS",
+  /** ประวัติการเข้าใช้งานระบบ (legacy SC05) */
+  LOGON_LOGS: "LOGON_LOGS",
+  /** ประวัติการเปลี่ยนแปลงข้อมูล (legacy SC04) */
+  CHANGE_LOGS: "CHANGE_LOGS",
 } as const;
 export type PermissionModule =
   (typeof PERMISSION_MODULE)[keyof typeof PERMISSION_MODULE];
@@ -78,6 +82,8 @@ export const PERMISSION_MATRIX: {
       PERMISSION_ACTION.DELETE,
     ],
   },
+  { module: PERMISSION_MODULE.LOGON_LOGS, actions: [PERMISSION_ACTION.VIEW] },
+  { module: PERMISSION_MODULE.CHANGE_LOGS, actions: [PERMISSION_ACTION.VIEW] },
 ];
 
 /** every key in the matrix — what บทบาทผู้ดูแลระบบ holds */

@@ -1,7 +1,10 @@
-import { ReportsContent } from "@/components/partials/Reports";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/constant/routes";
 
-export const metadata = { title: "รายงานภาพรวม" };
-
+/**
+ * รายงาน is a sidebar sub menu with no page of its own; a direct visit (and
+ * every link to the old /reports) lands on its first entry.
+ */
 export default function ReportsPage() {
-  return <ReportsContent />;
+  redirect(ROUTES.reportsOverview);
 }

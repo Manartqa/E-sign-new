@@ -1,6 +1,7 @@
 import { APPLICATION_STATUS, type ApplicationStatus } from "@/constant/status";
-import type { ApplicationItem } from "@/types/app/applications";
+import { MY_STEP_STATUS, type ApplicationItem } from "@/types/app/applications";
 import { MOCK_FINAL_SIGNER_PROFILE, MOCK_PROFILE } from "./profile.mock";
+import { mockChain } from "./signingChain.mock";
 
 const TYPES = [
   {
@@ -12,8 +13,8 @@ const TYPES = [
     typeName: "คำขออนุญาตขนย้ายวัตถุหรืออาวุธฯ (อ.9)",
   },
   {
-    type: "storage_permit",
-    typeName: "คำขออนุญาตตั้งหรือมีคลังเก็บ (อ.4)",
+    type: "import_permit",
+    typeName: "คำขออนุญาตสั่งหรือนำเข้ามาฯ (อ.4)",
   },
   {
     type: "sell_in_kingdom",
@@ -106,6 +107,21 @@ const ownerOf = (i: number) =>
  */
 const URGENT_INDEXES = new Set([0, 4, 8, 13, 17, 20, 24]);
 
+/**
+ * ส่งไปยัง/ขายให้กับ — only the move and sale requests name one (legacy
+ * BuyerName); the rest of the types have no buyer or destination.
+ */
+const BUYERS: Record<string, string[]> = {
+  transport_permit: ["คลังเก็บอาวุธ กองพลทหารราบที่ 9 จ.กาญจนบุรี", "โรงงานสาขา 2 นิคมอุตสาหกรรมอมตะซิตี้ ชลบุรี"],
+  sell_in_kingdom: ["กองทัพบก", "สำนักงานตำรวจแห่งชาติ"],
+  sell_export: ["Ministry of Defence, Kingdom of Cambodia", "Philippine Army Logistics Command"],
+};
+
+const URGENT_REMARKS = [
+  "ใช้ในภารกิจราชการเร่งด่วน",
+  "ใบอนุญาตเดิมจะหมดอายุภายใน 7 วัน",
+];
+
 export const MOCK_APPLICATIONS: MockApplication[] = Array.from(
   { length: 47 },
   (_, i) => {
@@ -113,7 +129,9 @@ export const MOCK_APPLICATIONS: MockApplication[] = Array.from(
     const a = APPLICANTS[i % APPLICANTS.length];
     const day = String((i % 28) + 1).padStart(2, "0");
     const month = String((i % 12) + 1).padStart(2, "0");
-    return {
+    const isUrgent = URGENT_INDEXES.has(i);
+    const buyers = BUYERS[t.type];
+    const base = {
       id: `APP-2567-${String(1234 + i).padStart(6, "0")}`,
       type: t.type,
       typeName: t.typeName,
@@ -125,12 +143,24 @@ export const MOCK_APPLICATIONS: MockApplication[] = Array.from(
       applicantNationalId: a.nationalId,
       status: STATUSES[i % STATUSES.length],
       submittedAt: `2026-${month}-${day}T09:30:00Z`,
+      // the request document carries the day it was submitted
+      documentDate: `2026-${month}-${day}T00:00:00Z`,
       // spread backwards over the last few days
       updatedAt: new Date(NOW - (i + 1) * 2 * 3_600_000).toISOString(),
       assignedOfficer: OFFICERS[i % OFFICERS.length],
       officerEmail: ownerOf(i).email,
       isFinalSigner: ownerOf(i) === MOCK_FINAL_SIGNER_PROFILE,
-      isUrgent: URGENT_INDEXES.has(i),
+      isUrgent,
+      urgentRemark: isUrgent ? URGENT_REMARKS[i % URGENT_REMARKS.length] : null,
+      buyerName: buyers ? buyers[i % buyers.length] : null,
+    };
+    const { myStep } = mockChain(base);
+    return {
+      ...base,
+      myStep,
+      canAct:
+        base.status === APPLICATION_STATUS.PENDING_APPROVAL &&
+        myStep.status === MY_STEP_STATUS.MY_TURN,
     };
   },
 );

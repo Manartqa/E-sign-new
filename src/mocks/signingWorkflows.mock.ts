@@ -6,9 +6,19 @@ import {
   type SigningWorkflowStep,
 } from "@/types/app/signingWorkflows";
 
-/** the nine rows of the legacy กระบวนการลงนาม screen; the steps are invented */
+/** the only ผู้ตรวจสอบและลงนาม in the mock users (sombat) */
+const FINAL_POSITION = "ปล.กห.";
+
+/**
+ * the nine rows of the legacy กระบวนการลงนาม screen; the steps are invented.
+ * Every chain ends with the ผู้ตรวจสอบและลงนาม who issues the licence — the
+ * form refuses a chain without one (chainError), so the seed holds to it too.
+ */
 const steps = (...positions: string[]): SigningWorkflowStep[] =>
-  positions.map((position, i) => {
+  [
+    ...positions.filter((position) => position !== FINAL_POSITION),
+    FINAL_POSITION,
+  ].map((position, i) => {
     const signer = MOCK_USERS.find((s) => s.position === position)!;
     return {
       id: `step-${i + 1}`,
@@ -16,6 +26,7 @@ const steps = (...positions: string[]): SigningWorkflowStep[] =>
       signerName: signer.name,
       position,
       approvalLevel: signer.approvalLevel,
+      signerActive: signer.isActive,
     };
   });
 
@@ -33,6 +44,8 @@ const row = (
   requestUsage: REQUEST_USAGE.NEW_AND_RENEW,
   replacementUsage: REPLACEMENT_USAGE.NORMAL_AND_REPLACEMENT,
   steps: signers,
+  isActive: true,
+  note: "",
   createdBy: created[0],
   createdAt: created[1],
   updatedBy: updated[0],

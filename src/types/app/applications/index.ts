@@ -1,6 +1,7 @@
 import type { SortParams } from "@/types/app/common";
 import type {
   ApplicationStatus,
+  MY_TURN_FILTER,
   REJECTED_OR_RETURNED_FILTER,
 } from "@/constant/status";
 
@@ -48,10 +49,53 @@ export interface ApplicationItem {
    * with a button. Decided by the backend, which owns the approval chain.
    */
   isFinalSigner: boolean;
+  /**
+   * The signed-in officer's own step on this request's signing chain, or null
+   * when they are not on it. Request `status` says where the request stands;
+   * this says where the officer stands — a request still รอการอนุมัติ may
+   * already carry their approval, or not have reached them yet.
+   */
+  myStep: MyStep | null;
+  /**
+   * Whether the officer may approve / reject / return this request now:
+   * their step is MY_TURN on a request still รอการอนุมัติ. Signing runs in
+   * step order, so the backend decides this and refuses the action otherwise
+   * (legacy: "รายการนี้ลงนามแล้ว หรือยังไม่ถึงลำดับการลงนาม").
+   */
+  canAct: boolean;
+  /** ส่งไปยัง/ขายให้กับ — buyer or destination; null when the type has none */
+  buyerName: string | null;
+  /** วันที่คำขอ — the date on the request document (ISO) */
+  documentDate: string;
+  /** หมายเหตุด่วน — why the originating system flagged it ด่วน; null otherwise */
+  urgentRemark: string | null;
+}
+
+/** Where the signed-in officer's own step stands. */
+export const MY_STEP_STATUS = {
+  /** an earlier step has not approved yet */
+  WAITING_PREVIOUS: "WAITING_PREVIOUS",
+  /** every earlier step approved — the officer decides now */
+  MY_TURN: "MY_TURN",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  RETURNED: "RETURNED",
+} as const;
+export type MyStepStatus = (typeof MY_STEP_STATUS)[keyof typeof MY_STEP_STATUS];
+
+export interface MyStep {
+  /** 1-based position on the chain */
+  stepNo: number;
+  status: MyStepStatus;
+  /** ISO; null until the officer decides */
+  decidedAt: string | null;
+  /** หมายเหตุ the officer wrote with their decision */
+  remark: string | null;
 }
 
 export interface ApplicationStats {
   total: number;
+  /** waiting for the signed-in officer's decision now — see MY_TURN_FILTER */
   pending: number;
   approved: number;
   rejectedOrReturned: number;
@@ -69,10 +113,16 @@ export interface ApplicationListParams extends SortParams {
   status?:
     | ApplicationStatus
     | typeof REJECTED_OR_RETURNED_FILTER
+    | typeof MY_TURN_FILTER
     | "all";
   type?: string | "all";
   /** `only` keeps just the ด่วน rows; they are pinned on top either way */
   urgent?: "all" | "only";
+  /**
+   * ผลการพิจารณาของฉัน — the legacy "ดูคำขอที่ลงนาม" view: requests by what
+   * the signed-in officer's own step decided. `DECIDED` = any decision.
+   */
+  myDecision?: "all" | "DECIDED" | "APPROVED" | "REJECTED" | "RETURNED";
   /** ช่วงวันที่รับเรื่อง — inclusive ISO bounds, both optional */
   dateFrom?: string;
   dateTo?: string;
@@ -92,6 +142,18 @@ export interface TimelineEvent {
    * approve, and a green tick would read as if they had.
    */
   status: "COMPLETED" | "PENDING" | "REJECTED" | "RETURNED";
+  /**
+   * ครั้งที่ — the submission round the event belongs to. A request sent back
+   * and resubmitted starts a new round on a fresh copy of its chain (legacy
+   * REVISION_NO); intake events belong to their round too.
+   */
+  revisionNo: number;
+  /** signing steps only: 1-based position on the chain */
+  stepNo?: number;
+  /** signing steps only: the signer's ระดับการอนุมัติ ("1"–"19" or REVIEW_AND_SIGN) */
+  approvalLevel?: string;
+  /** signing steps only: the หมายเหตุ written with the decision */
+  remark?: string;
 }
 
 export interface ApplicationField {
@@ -141,7 +203,7 @@ export interface DetailTableColumn {
  * and a timeline. Panels are data-driven so a tab's content can change with
  * the backend without touching a component.
  */
-export type DetailPanel =
+export type DetailPanel = (
   | { kind: "fields"; sections: DetailSection[]; documents?: DocumentItem[] }
   | {
       kind: "table";
@@ -158,7 +220,15 @@ export type DetailPanel =
       compact?: boolean;
       documents: DocumentItem[];
     }
-  | { kind: "timeline"; heading?: string; events: TimelineEvent[] };
+  | { kind: "timeline"; heading?: string; events: TimelineEvent[] }
+) & {
+  /**
+   * The tab's label for this request, where it depends on the request type —
+   * the `transfer` tab reads ข้อมูลการขนย้าย on อ.9 but ข้อมูลการส่งออก on
+   * อ.14. Unset: the DETAIL_TABS label.
+   */
+  tabLabel?: string;
+};
 
 /**
  * Tab labels are taken from the tab bar itself, not the frame names — they
@@ -169,10 +239,15 @@ export const DETAIL_TABS = [
   { key: "applicant", label: "ข้อมูลผู้ยื่น/บริษัท" },
   { key: "factory", label: "ข้อมูลโรงงาน" },
   { key: "people", label: "บุคคลและผู้มีอำนาจ" },
+  // not in Figma — legacy sections (user's call, 2026-11-26): the move / sale
+  // details of อ.9, อ.15 and อ.14 (labelled per type through `tabLabel`) …
+  { key: "transfer", label: "ข้อมูลการขนย้าย/จำหน่าย" },
   { key: "buildings", label: "อาคารและสถานที่" },
   { key: "permits", label: "รายการอาวุธ/วัตถุดิบ" },
   { key: "project", label: "ข้อมูลโครงการ" },
   { key: "docs", label: "เอกสารแนบอื่นๆ" },
+  // … and the legacy RequestInfo tab ผลการตรวจสอบ
+  { key: "checks", label: "ผลการตรวจสอบ" },
   { key: "history", label: "ประวัติการดำเนินการ" },
 ] as const;
 

@@ -19,14 +19,14 @@ import {
 import { ROUTES } from "@/constant/routes";
 import { APPLICATION_STATUS } from "@/constant/status";
 import { useApplicationActions } from "@/hooks/applications";
-import { useSigningToken } from "@/hooks/signing";
 import { usePermission, useProfile } from "@/hooks/profile";
 import { formatThaiShortDate } from "@/lib/format";
+import { signMethodFor } from "@/lib/sign-method";
 import { cn } from "@/lib/utils";
+import { TokenSignError } from "@/services/application.service";
 import type { ApplicationItem, ReturnFormValues } from "@/types/app/applications";
 import type { SortParams } from "@/types/app/common";
 import {
-  MOCK_CERTIFICATE,
   PDFViewer,
   ReturnForEditModal,
   SignatureModal,
@@ -152,21 +152,17 @@ export function ApplicationTable({
   onSort,
 }: ApplicationTableProps) {
   const table = useDataTable(sort, onSort);
-  // only a pending request can be bulk-acted on, so selection is restricted
-  // to รอการอนุมัติ rows — everything else's checkbox stays disabled
+  // only a request at this officer's own turn can be acted on, so selection
+  // is restricted to `canAct` rows — everything else's checkbox stays disabled
   const { can } = usePermission();
   const canDecide = can("APPLICATIONS:APPROVE");
   const canSign = can("APPLICATIONS:SIGN");
   // nothing to do with a selection without either permission
-  const pendingItems =
-    canDecide || canSign
-      ? items.filter(
-          (item) => item.status === APPLICATION_STATUS.PENDING_APPROVAL,
-        )
-      : [];
+  const actionableItems =
+    canDecide || canSign ? items.filter((item) => item.canAct) : [];
   const allSelected =
-    pendingItems.length > 0 &&
-    pendingItems.every((item) => selectedIds.includes(item.id));
+    actionableItems.length > 0 &&
+    actionableItems.every((item) => selectedIds.includes(item.id));
   const [previewItem, setPreviewItem] = useState<ApplicationItem | null>(null);
   const [returnTarget, setReturnTarget] = useState<ApplicationItem | null>(
     null,
@@ -174,9 +170,7 @@ export function ApplicationTable({
   const [signTarget, setSignTarget] = useState<ApplicationItem | null>(null);
   const { profile } = useProfile();
   const { decide } = useApplicationActions(returnTarget?.id ?? "");
-  const { sign } = useApplicationActions(signTarget?.id ?? "");
-  // detection is the modal's job; this is only the signing half
-  const { sign: tokenSign } = useSigningToken(false);
+  const { approve } = useApplicationActions(signTarget?.id ?? "");
 
   const handleReturn = async (values: ReturnFormValues) => {
     try {
@@ -187,39 +181,27 @@ export function ApplicationTable({
       });
       setReturnTarget(null);
       toast.success("ส่งคืนคำขอเพื่อแก้ไขแล้ว");
-    } catch {
-      toast.error("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      toast.error((error as Error).message);
     }
   };
 
-  const handleSign = async (pin?: string) => {
+  const handleSign = async (input: { pin?: string; notes: string }) => {
     if (!signTarget) return;
-    let token;
-    if (pin) {
-      try {
-        token = await tokenSign.mutateAsync({
-          applicationId: signTarget.id,
-          pin,
-        });
-      } catch {
-        // the message goes back to the modal through `error`
-        return;
-      }
-    }
+    const method = signMethodFor(signTarget.isFinalSigner, profile?.signingMethod);
+    if (!method) return;
     try {
-      await sign.mutateAsync({
-        certificateId: token?.certificateId ?? MOCK_CERTIFICATE.id,
-        certificateOwner: token?.certificateOwner ?? profile?.name ?? "",
-        signature: token?.signature ?? "base64_encoded_signature",
-        timestamp: new Date().toISOString(),
-        applicationId: signTarget.id,
+      await approve.mutateAsync({
+        method,
+        pin: input.pin,
+        notes: input.notes,
         officerId: profile?.id ?? "",
-        notes: "",
       });
       setSignTarget(null);
       toast.success("อนุมัติและลงนามแล้ว");
-    } catch {
-      toast.error("ลงนามไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      // a token failure is shown beside the PIN; anything else is a toast
+      if (!(error instanceof TokenSignError)) toast.error((error as Error).message);
     }
   };
 
@@ -257,7 +239,7 @@ export function ApplicationTable({
                         <Checkbox
                           checked={allSelected}
                           onCheckedChange={onToggleSelectAll}
-                          disabled={pendingItems.length === 0}
+                          disabled={actionableItems.length === 0}
                           aria-label="เลือกทั้งหมด"
                           className="size-4 rounded-[3px]"
                         />
@@ -295,7 +277,7 @@ export function ApplicationTable({
                       <Checkbox
                         checked={selectedIds.includes(item.id)}
                         onCheckedChange={() => onToggleSelect(item.id)}
-                        disabled={!pendingItems.includes(item)}
+                        disabled={!actionableItems.includes(item)}
                         aria-label={"เลือกคำขอ " + item.requestNo}
                         className="size-4 rounded-[3px]"
                       />
@@ -308,9 +290,19 @@ export function ApplicationTable({
                     >
                       {item.typeName}
                       {item.isUrgent && (
-                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-urgent px-2 py-0.5 align-middle text-[11px] font-semibold whitespace-nowrap text-white">
+                        <span
+                          // หมายเหตุด่วน on hover; screen readers get it inline
+                          title={item.urgentRemark ?? undefined}
+                          className="ml-2 inline-flex items-center gap-1 rounded-full bg-urgent px-2 py-0.5 align-middle text-[11px] font-semibold whitespace-nowrap text-white"
+                        >
                           <Flag className="size-3 fill-current" aria-hidden />
                           ด่วน
+                          {item.urgentRemark && (
+                            <span className="sr-only">
+                              {" — "}
+                              {item.urgentRemark}
+                            </span>
+                          )}
                         </span>
                       )}
                     </td>
@@ -321,6 +313,14 @@ export function ApplicationTable({
                       )}
                     >
                       {item.requestNo}
+                    </td>
+                    <td
+                      className={cn(
+                        CELL,
+                        "text-sm whitespace-nowrap text-muted-foreground",
+                      )}
+                    >
+                      {formatThaiShortDate(item.documentDate)}
                     </td>
                     <td
                       className={cn(
@@ -340,6 +340,9 @@ export function ApplicationTable({
                     </td>
                     <td className={cn(CELL, "text-sm text-muted-foreground")}>
                       {item.operatorName}
+                    </td>
+                    <td className={cn(CELL, "text-sm text-muted-foreground")}>
+                      {item.buyerName ?? "—"}
                     </td>
                     <td className={CELL}>
                       <StatusBadge status={item.status} />
@@ -366,19 +369,18 @@ export function ApplicationTable({
                       {/*
                     Figma 171:2032 colours the row actions — eye #1b3a6b,
                     edit #22c55e, rotate-ccw #ef4444 — but only while the
-                    application is still รอการอนุมัติ; there is nothing left
-                    to edit or return once it has been acted on (อนุมัติ,
-                    ไม่อนุมัติ, or ส่งกลับแก้ไข already happened), so those
-                    icons stay muted for every other status. eye and pdf are
-                    always available, so both stay navy on every status.
+                    application waits for THIS officer's decision (`canAct`:
+                    รอการอนุมัติ and their turn on the chain); before their
+                    turn, after they approved, or once it was decided there
+                    is nothing for them to do, so those icons stay muted.
+                    eye and pdf are always available, so both stay navy.
                     (rotate-ccw is red in the design, but follows the amber
                     ส่งคืนเพื่อแก้ไข button instead, at the user's request.)
                   */}
                       {(() => {
                         const isApproved =
                           item.status === APPLICATION_STATUS.APPROVED;
-                        const canEdit =
-                          item.status === APPLICATION_STATUS.PENDING_APPROVAL;
+                        const canEdit = item.canAct;
 
                         return (
                           <div className="flex items-center justify-end gap-4">
@@ -495,10 +497,14 @@ export function ApplicationTable({
         <SignatureModal
           open
           details={[signTarget]}
-          isSubmitting={sign.isPending || tokenSign.isPending}
-          error={tokenSign.error?.message}
+          isSubmitting={approve.isPending}
+          error={
+            approve.error instanceof TokenSignError
+              ? approve.error.message
+              : undefined
+          }
           onClose={() => setSignTarget(null)}
-          onConfirm={(pin) => void handleSign(pin)}
+          onConfirm={(input) => void handleSign(input)}
         />
       )}
     </div>

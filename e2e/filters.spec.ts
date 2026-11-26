@@ -12,7 +12,9 @@ test("list filters survive leaving the page and a reload, until รีเซ็�
   await page.getByRole("button", { name: "ค้นหา", exact: true }).click();
 
   // away through the sidebar and back
-  await page.locator("aside nav").getByRole("link", { name: /รายงาน/ }).click();
+  // รายงาน is a sub menu now: open it, then its first entry
+  await page.locator("aside nav").getByRole("button", { name: "รายงาน" }).click();
+  await page.locator("aside nav").getByRole("link", { name: "รายงานภาพรวม" }).click();
   await expect(page).toHaveURL(/\/reports/);
   await page.locator("aside nav").getByRole("link", { name: /คำขอทั้งหมด/ }).click();
   await expect(keyword).toHaveValue("2569");
